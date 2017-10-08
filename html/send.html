@@ -1,0 +1,174 @@
+<!-- Send Funds Form -->
+<form class="form-horizontal" id="send-form" data-toggle="validator" role="form">
+    <ul  class="nav nav-tabs">
+        <li class="active"><a href="#send-simple" data-toggle="tab"><i class="fa fa-user"></i> Simple Send</a></li>
+        <li><a href="#send-multi" data-toggle="tab"><i class="fa fa-list"></i> Multi Send</a></li>
+        <li><a href="#send-group" data-toggle="tab"><i class="fa fa-users"></i> Group Send</a></li>
+    </ul>
+    <div class="tab-content clearfix">
+
+        <!-- Simple Send -->
+        <div class="tab-pane active panel panel-default" id="send-simple">
+            <div class="panel-body">
+                <div class="form-group" id="source-address-field">
+                    <!-- Source Address Field -->
+                </div>
+                <div class="form-group" id="destination-address-field">
+                    <!-- Destination Address Field -->
+                </div>
+                <div class="form-group" id="token-name-select-field">
+                    <!-- Token Name Field  -->
+                </div>
+                <div class="form-group" id="available-field">
+                    <!-- Available  Field -->
+                </div>
+                <div class="form-group" id="amount-field">
+                    <!-- Amount Field -->
+                </div>
+                <div class="form-group" id="memo-field">
+                    <!-- Memo Field -->
+                </div>
+                <div class="form-group" id="tx-fee-field">
+                    <!-- Transaction Fee Field -->
+                </div>
+                <div id="btn-submit" class="btn btn-success pull-right"><i class="fa fa-lg fa-fw fa-paper-plane"></i> Send Funds</div>
+                <div id="btn-cancel" class="btn btn-danger pull-right margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
+            </div>
+        </div>
+
+        <!-- Multi Send -->
+        <div class="tab-pane panel panel-default table-responsive" id="send-multi">
+            <div class="panel-body text-center">
+                Coming soon
+            </div>
+        </div>  
+
+        <!-- Grouped Send -->
+        <div class="tab-pane panel panel-default table-responsive" id="send-group">
+            <div class="panel-body text-center">
+                Coming soon
+            </div>
+        </div>  
+
+    </div>
+
+</form>
+
+
+<script>
+$(document).ready(function(){
+
+    // Load form field
+    $('#source-address-field').load('html/fields/source-address.html');
+    $('#destination-address-field').load('html/fields/destination-address.html');
+    $('#token-name-select-field').load('html/fields/token-name-select.html');
+    $('#available-field').load('html/fields/available.html');
+    $('#amount-field').load('html/fields/amount.html');
+    $('#memo-field').load('html/fields/memo.html');
+    $('#tx-fee-field').load('html/fields/tx-fee.html');
+
+    // Set host name based off a wallet network
+    var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
+
+    // Delay initializing some fields to give things a chance to load
+    setTimeout(function(){
+
+        // Handle loading any data from FW.DIALOG_DATA
+        var data = FW.DIALOG_DATA;
+        if(data.destination)
+            $('#destination-address').val(data.destination);
+        if(data.token){
+            $('#token-name-select').val(data.token);
+            $('#token-name-select').change();
+        }
+        if(data.message)
+            $('#memo').val(data.message);
+        if(data.amount)
+            $('#amount').val(data.amount);
+
+        // Reset dialog data so we don't reuse data on form in the future
+        FW.DIALOG_DATA = {};
+
+        // Initialize any tooltips
+        $('[data-toggle="tooltip"]').tooltip({ 
+            html: true,
+            placement: 'bottom'
+        }); 
+
+        // Remove any error indicators when user changes a field value
+        $('#send-form input').change(function(e){
+            $(this).closest('.form-group').removeClass('has-error has-danger');
+        });
+
+    },100);
+
+    // Submit form when user 'Send Funds' button
+    $('#btn-submit').click($.debounce(100,function(e){
+        $('#send-form').submit()
+    }));
+
+    // Hide the send form if users clicks 'cancel' button
+    $('#btn-cancel').click($.debounce(100,function(e){
+        dialogClose('dialog-send');
+    }));
+
+    // Handle form validation and displaying any errors
+    $('#send-form').validator().on('submit', function(e){
+        // prevent normal form submission
+        e.preventDefault(); 
+        // Get object with form values
+        var vals   = array2Object($(this).serializeArray()),
+            errors = [];
+        console.log('vals=',vals);
+        // Remove error indicators from any fields 
+        $('.form-group').removeClass('has-error has-danger');
+        // Verify we have a valid address
+        if(!isValidAddress(vals.destination)){
+            errors.push('You must enter a valid destination address!');
+            $('#destination-address').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Verify we have a token name
+        if(typeof vals.name==='undefined'){
+            errors.push('You must select a token to send!');
+            $('#token-name-select').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Verify we have valid amount 
+        if(numeral(vals.amount).value()==0){
+            errors.push('You must enter an amount which is greater than 0!');
+            $('#amount').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Verify we have valid fee amount 
+        if(numeral(vals['fee-amount']).value()==0){
+            errors.push('You must enter a fee which is greater than 0.00000000!');
+            $('#fee-amount').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+        } else {
+            // Callback to run after broadcasting send
+            var doneCb = function(tx){
+                if(tx){
+                    dialogClose('dialog-send');
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Send Successfull', '<center>Your send has been broadcast to the network and should complete shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="https://' + host +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                }
+            }
+            // Callback to run if user confirms action
+            var confirmCb = function(){
+                var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                    amt_sat = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
+                    fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value());
+                cpSend(network, vals.source, vals.destination, vals.memo, vals.name, amt_sat, fee_sat, doneCb);
+            }
+            // Confirm the action with the user
+            var title = '<img src="https://xchain.io/icon/' + FW.ASSET_INFO.asset + '.png" class="fw-icon-20 margin-right-5"> Confirm ' + vals.name + ' Send?';
+            var msg  = 'Send <b>' + vals.amount + ' ' + vals.name + '</b>';
+                msg += ' <br/>to <b>' + vals.destination + '</b>';
+            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+
+        }
+    });
+
+});
+</script>

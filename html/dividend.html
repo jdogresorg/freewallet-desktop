@@ -1,0 +1,130 @@
+<form class="form-horizontal" id="dividend-form" data-toggle="validator" role="form">
+    <div class="form-group" id="source-address-field">
+        <!-- Source Address Field -->
+    </div>
+    <div class="form-group" id="token-name-field">
+        <!-- Token Name Field -->
+    </div>
+    <div class="form-group" id="dividend-token-name-field">
+        <!-- Token Name Field -->
+    </div>
+    <div class="form-group" id="available-field">
+        <!-- Available  Field -->
+    </div>
+    <div class="form-group" id="amount-field">
+        <!-- Amount Field -->
+    </div>
+    <div class="form-group" id="tx-fee-field">
+        <!-- Transaction Fee Field -->
+    </div>
+    <div class="text-right">
+        <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
+        <div id="btn-submit" class="btn btn-success "><i class="fa fa-lg fa-fw fa-sitemap"></i> Pay Dividends</div>
+    </div>
+</form>
+
+
+<script>
+$(document).ready(function(){
+
+    // Set host name based off a wallet network
+    var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
+
+    // Load any field content
+    $('#source-address-field').load('html/fields/source-address.html');
+    $('#token-name-field').load('html/fields/token-name-suggest.html');
+    $('#dividend-token-name-field').load('html/fields/token-name-select.html');
+    $('#available-field').load('html/fields/available.html');
+    $('#amount-field').load('html/fields/amount.html');
+    $('#tx-fee-field').load('html/fields/tx-fee.html');
+
+    // Delay initializing some fields to give things a chance to load
+    setTimeout(function(){
+
+        // Handle loading any data from FW.DIALOG_DATA
+        var data = FW.DIALOG_DATA;
+        if(data.token){
+            $('#token-name').val(data.token);
+            $('#token-name').change();
+        }
+
+        // Reset dialog data so we don't reuse data on form in the future
+        FW.DIALOG_DATA = {};
+
+        // Initialize any tooltips
+        $('[data-toggle="tooltip"]').tooltip({ 
+            html: true,
+            placement: 'bottom'
+        }); 
+
+        // Remove any error indicators when user changes a field value
+        $('#dividend-form input').change(function(e){
+            $(this).closest('.form-group').removeClass('has-error has-danger');
+        });
+
+    },100);
+
+    // Submit form if user clicks 'Submit' button
+    $('#btn-submit').click($.debounce(100,function(e){
+        $('#dividend-form').submit();
+    }));
+
+    // Hide the form if users clicks 'Cancel' button
+    $('#btn-cancel').click($.debounce(100,function(e){
+        dialogClose('dialog-pay-dividend');
+    }));
+
+    // Handle form validation and displaying any errors
+    $('#dividend-form').validator().on('submit', function(e){
+        // prevent form submission
+        e.preventDefault(); 
+        // Get object with form values
+        var vals   = array2Object($(this).serializeArray()),
+            errors = [];
+        console.log('vals=',vals);
+        // Remove error indicators from any fields 
+        $('.form-group').removeClass('has-error has-danger');
+        // Verify we have a token name
+        if(String(vals.name).length==0){
+            errors.push('You must enter a token name to pay dividends on!');
+            $('#token-name').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Verify we have valid amount 
+        if(numeral(vals.amount).value()==0){
+            errors.push('You must enter an amount which is greater than 0!');
+            $('#amount').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Verify we have valid fee amount 
+        if(numeral(vals['fee-amount']).value()==0){
+            errors.push('You must enter a fee which is greater than 0.00000000!');
+            $('#fee-amount').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+        } else {
+            // Callback to run after broadcasting send
+            var doneCb = function(tx){
+                if(tx){
+                    dialogClose('dialog-pay-dividend');
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Dividend Successfull', '<center>Your dividend transaction has been broadcast to the network and your dividends should be paid out updated shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="https://' + host +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                }
+            }
+            // Callback to run if user confirms action
+            var confirmCb = function(){
+                var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                    amt_sat  = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
+                    fee_sat  = parseInt(numeral(vals['fee-amount']).multiply(100000000).value());
+                cpDividend(network, vals.source, vals.name, vals.dividend, amt_sat, fee_sat, doneCb);
+            }
+            // Confirm the action with the user
+            var title = '<i class="fa fa-lg fa-fw fa-sitemap"></i> Pay Dividends?',
+                msg   = 'Pay dividend of <b>' + vals.amount + ' ' + vals.dividend + '</b> per unit to <b>' + vals.name + '</b> holders?';
+            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+        }
+    })
+
+
+});
+</script>

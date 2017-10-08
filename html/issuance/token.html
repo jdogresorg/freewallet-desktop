@@ -1,0 +1,299 @@
+<!-- Create Token Form -->
+<form class="form-horizontal" id="create-token-form" data-toggle="validator" role="form">
+    <div class="form-group" id="source-address-field">
+        <!-- Source Address Field -->
+    </div>
+    <div class="form-group">
+        <label class="col-sm-3 control-label text-left" for="token-type">
+            Type 
+            <a href="#" data-toggle="tooltip" title='This is the type of token you would like to create' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <select id="token-type" name="type" class="selectpicker">
+                <option data-content="<i class='fa fa-lg fa-sort-alpha-asc'></i> Named (0.5 XCP)">Named</option>
+                <option data-content="<i class='fa fa-lg fa-sitemap'></i> Subasset (0.25 XCP)">Subasset</option>
+                <option data-content="<i class='fa fa-lg fa-sort-numeric-asc'></i> Numeric (free)">Numeric</option>
+            </select>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-3 control-label text-left" for="token-name">
+            Token Name 
+            <a href="#" data-toggle="tooltip" title='This is the name of the token you would like to create' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <input type="text" class="form-control" id="token-name" name="name" placeholder="Token Name" data-minlength="4" required>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-3 control-label text-left" for="token-amount">
+            Quantity
+            <a href="#" data-toggle="tooltip" title='This is the amount of supply you would like to issue' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <input type="text" class="form-control pull-left" name="amount"  id="token-amount" placeholder="0.00000000" style="width:224px" value="0">
+            <div class="input-group pull-right" style="width:180px;margin-left:14px;">
+                <span class="input-group-addon">Divisible</span>
+                <select id="asset-divisible" name="divisible" class="selectpicker">
+                    <option>Yes</option>
+                    <option>No</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="form-group" id="token-description-field">
+        <!-- Token Description Field -->
+    </div>
+    <div class="form-group" id="tx-fee-field">
+        <!-- Transaction Fee Field -->
+    </div>
+    <div class="text-right">
+        <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
+        <div id="btn-submit" class="btn btn-success "><i class="fa fa-lg fa-fw fa-plus-circle"></i> Create Token</div>
+    </div>
+</form>
+
+
+<script>
+$(document).ready(function(){
+
+    // Set host name based off a wallet network
+    var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
+
+    // Load any field content
+    $('#tx-fee-field').load('html/fields/tx-fee.html');
+    $('#source-address-field').load('html/fields/source-address.html');
+    $('#token-description-field').load('html/fields/token-description.html');
+
+    // Stash current price info on BTC and XCP
+    var btc_info   = getAssetPrice('BTC',true),
+        xcp_info   = getAssetPrice('XCP',true);
+
+    // Delay initializing some fields to give things a chance to load
+    setTimeout(function(){
+
+        // Initialize any tooltips
+        $('[data-toggle="tooltip"]').tooltip({ 
+            html: true,
+            placement: 'bottom'
+        }); 
+
+        // Remove any error indicators when user changes a field value
+        $('#create-token-form input').change(function(e){
+            $(this).closest('.form-group').removeClass('has-error has-danger');
+        });
+
+    },100);
+
+    // Make sure token amount stays in correct format
+    $('#token-amount').change(function(e){
+        var amt = String($(this).val()).replace(/[^0-9.]/g,''),
+            fmt = ($('#asset-divisible').val()=='Yes') ? '0,0.00000000' : '0,0';
+        $(this).val(numeral(amt).format(fmt));
+    });
+
+    // Make sure token amount stays in correct format
+    $('#asset-divisible').change(function(e){
+        var amt = String($('#token-amount').val()).replace(/[^0-9.]/g,''),
+            fmt = ($(this).val()=='Yes') ? '0,0.00000000' : '0,0';
+        $('#token-amount').val(numeral(amt).format(fmt));
+    });
+
+    // Handle updating asset name when token type changes
+    $('#token-type').change(function(e){
+        var val = $(this).val();
+        if(val=='Numeric'){
+            $('#token-name').val('A' + Math.floor(Math.random() * 9999999999999999999));
+        } else {
+            // Clear out asset name if it starts with A
+            if($('#token-name').val().substr(0,1)=='A')
+                $('#token-name').val('');
+            // Trigger change so we re-trigger validation logic
+            $('#token-name').change();
+        }
+    });
+
+    // Make selectpicker dropdowns work
+    $('#token-type').selectpicker({ width: '100%' });
+    $('#asset-divisible').selectpicker();
+
+    // Trigger change on token amount so we format it correctly
+    $('#token-amount').change();
+
+    // Submit form when user 'Create Token' button
+    $('#btn-submit').click($.debounce(100,function(e){
+        $('#create-token-form').submit()
+    }));
+
+    // Hide the form if users clicks 'cancel' button
+    $('#btn-cancel').click($.debounce(100,function(e){
+        dialogClose('dialog-create-token');
+    }));
+
+    // Handle validating token name on 'Create Token' form
+    $('#token-name').change(function(e){
+        var type = $('#token-type').val();
+            val = $(this).val();
+        // Set host name based off a wallet network
+        var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
+        if(type=='Named')
+            name = val.toUpperCase();
+        if(type=='Numeric' && val.toUpperCase().substr(0,1)!='A')
+            name = 'A' + val;
+        if(type=='Subasset'){
+            var parts  = val.split('.'),
+                parent = parts[0].toUpperCase();
+            name =  parent + val.replace(parts[0],'');
+        }
+        if(name && name!=val)
+            $(this).val(name);
+        if(val!='' && val!=null){
+            $.getJSON( 'https://' + host + '/api/asset/' + name, function(o){
+                // An error indicates asset is not registered
+                if(o.error){
+                    // Verify parent asset is owned by current address
+                    if(type=='Subasset'){
+                        // Lookup if this asset is already registered to another address... send to coindaddy to make purchase offer
+                        $.getJSON( 'https://' + host + '/api/asset/' + parent, function(data){
+                            // Parent asset does not exist yet, notify user they must first register named asset before child
+                            if(data.error){
+                                dialogMessage('Notice', '<center>Before you can create <b><i>' + name + '</i></b>, you must first create the parent token <b><i>' + parent +'</i></b></center>', true);
+                            } else {
+                                // Parent asset is owned by another address
+                                if(data.owner!=FW.WALLET_ADDRESS){
+                                    dialogMessage('Notice', '<center><p>The name <b><i>' + parent + '</i></b> is already registered to address ' + data.owner + '</p>' +
+                                                  '<p>You may still purchase <b><i>' + name + '</b></i> from the current owner if they have listed it for sale.</p>' + 
+                                                  '<a href="https://coindaddy.io/search?network=xcp&q=' + name + '" class="btn btn-success" target="_blank"><i class="fa fw-coindaddy pull-left" style="top:0px"></i> Check if this token is listed for sale on CoinDaddy</a></center>', true);
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    // Error if asset is owned by another address
+                    if(o.owner!=FW.WALLET_ADDRESS){
+                        var found = false;
+                        FW.WALLET_ADDRESSES.forEach(function(item){
+                            if(item.address==o.owner)
+                                found = true;
+                        });
+                        if(found){
+                            // Notify user that they need to switch 
+                            dialogMessage('Notice', '<center>The name <b><i>' + name + '</i></b> is already registered to another address in your wallet ' + o.owner + '</center>', true);
+                        } else {
+                                // Notify user asset is registered to another address
+                                dialogMessage('Notice', '<center><p>The name <b><i>' + name + '</i></b> is already registered to address ' + o.owner + '</p>' +
+                                              '<p>You may still purchase this token from the current owner if they have listed it for sale.</p>' + 
+                                              '<a href="https://coindaddy.io/search?network=xcp&q=' + name + '" class="btn btn-success" target="_blank"><i class="fa fw-coindaddy pull-left" style="top:0px"></i> Check if ' + name + ' is for sale on CoinDaddy</a></center>', true);
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    // Handle form validation and displaying any errors
+    $('#create-token-form').validator().on('submit', function(e){
+        // prevent form submission
+        e.preventDefault(); 
+        // Get object with form values
+        var vals   = array2Object($(this).serializeArray()),
+            errors = [];
+        console.log('vals=',vals);
+        // Remove error indicators from any fields 
+        $('.form-group').removeClass('has-error has-danger');
+        var type = vals.type
+        // Verify we have an asset name
+        if(vals.name=='')
+            errors.push('You must enter a name for your token!');
+        // Handle validating numeric assets
+        if(type=='Numeric'){
+            // Verify length
+            if(vals.name.length<18 || vals.name.length>21)
+                errors.push('Token name must be between 18 and 21 characters!');
+            // Verify asset starts with A and rest is numeric
+            if(vals.name.substr(0,1)!='A'||isNaN(vals.name.substr(1)))
+                errors.push('Token name must begin with the letter A followed by up to 20 <b><i>numeric</i></b> characters!');
+        // Handle validating named assets
+        } else if(type=='Named'){
+            // Verify length
+            if(vals.name.length<4 || vals.name.length>12)
+                errors.push('Token name must be between 4 and 14 characters!');
+            // Verify only contains A-Z
+            if(!/^[A-Z]+$/i.test(vals.name))
+                errors.push('Token name must only contain <b><i>upper-case alphabetical</i></b> characters!');
+            // Error on asset starting with A
+            if(vals.name.substr(0,1)=='A')
+                errors.push('Token name can not begin with the letter A!');
+        // Handle validating named assets
+        } else if(type=='Subasset'){
+            var parts    = vals.name.split('.');
+                subasset = vals.name.replace(parts[0],'');
+            // Verify parent.child format
+            if(parts.length==1){
+                errors.push('Token name must be in parent.child format!');
+            } else {
+                // Verify parent asset is in valid format
+                if(parts[0].length<4 || parts[0].length>12)
+                    errors.push('Parent token name must be between 4 and 14 characters!');
+                // Verify only contains A-Z
+                if(!/^[A-Z]+$/.test(parts[0]))
+                    errors.push('Parent token name must only contain <b><i>upper-case alphabetical</i></b> characters!');
+                // Error on parent asset starting with A
+                if(parts[0].substr(0,1)=='A')
+                    errors.push('Parent token name can not begin with the letter A!');
+                // Verify subasset between 1-250 characters
+                if(subasset.length==0 || subasset.length>250)
+                    errors.push('Subasset name must be between 1 and 250 characters!');
+                // Verify subasset contains only a-zA-Z0-9.-_@!
+                if(!/^[a-zA-Z0-9.\-_@!]+$/i.test(subasset))
+                    errors.push('Subasset name must only contain the following characters: a-zA-Z0-9.-_@!');
+                // Cannot contain multiple consecutive periods (..)
+                if(subasset.indexOf('..')!=-1)
+                    errors.push('Subasset name can not contain multiple consecutive periods');
+                // Cannot end with a period (.)
+                if(subasset.substr(subasset.length-1)=='.')
+                    errors.push('Subasset name can not end in a period.');
+            }
+        }
+        // Show error for token name
+        if(errors.length)
+            $('#token-name').closest('.form-group').addClass('has-error has-danger');
+        // Verify we have valid fee amount 
+        if(numeral(vals['fee-amount']).value()==0){
+            errors.push('You must enter a fee which is greater than 0.00000000!');
+            $('#fee-amount').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Verify that the user has enough XCP balance to cover the fee
+
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+        } else {
+            // Callback to run after broadcasting send
+            var doneCb = function(tx){
+                if(tx){
+                    dialogClose('dialog-create-token');
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Issuance Successfull', '<center>Your issuance has been broadcast to the network and your token should be create shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="https://' + host +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                }
+            }
+            // Callback to run if user confirms action
+            var confirmCb = function(){
+                var network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                    amt_sat   = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
+                    fee_sat   = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
+                    divisible = (vals.divisible=='Yes') ? true : false;
+                console.log('divisible=',divisible);
+                cpIssuance(network, vals.source, vals.name, amt_sat, divisible, vals.description, null, fee_sat, doneCb);
+            }
+            // Confirm the action with the user
+            var title = '<i class="fa fa-lg fa-fw fa-question-circle"></i> Confirm  Issuance?',
+                fmt   = ($('#asset-divisible').val()=='Yes') ? '0,0.00000000' : '0,0',
+                msg   = 'Issue a token named <b>' + vals.name + '</b> with a inital supply of ' + numeral(vals.amount).format(fmt) + '?';
+            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+        }
+    })
+
+
+});
+</script>

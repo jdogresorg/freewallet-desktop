@@ -1,0 +1,90 @@
+<!-- Transaction Fee / Priority Field-->
+<label class="col-sm-3 control-label text-left" for="fee-amount">
+    Fee
+    <a href="#" data-toggle="tooltip" title='This is the transaction fee to pay the bitcoin miners' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>
+<div class="col-sm-9">
+    <input type="text" class="form-control pull-left" name="fee-amount"  id="fee-amount" placeholder="0.00000000" style="width:110px" data-minlength="10" required >
+    <div class="input-group pull-right" id="fee-priority-wrapper" style="width:180px;">
+        <span class="input-group-addon">Priority</span>
+        <select id="fee-priority" class="selectpicker">
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+            <option>Custom</option>
+        </select>
+    </div>
+    <div class="input-group pull-right" id="fee-value-wrapper" style="width:100px;">
+        <a class="input-group-addon" id=""><i class="fa fa-usd"></i></a>
+        <input type="text" class="form-control" name="fee-value"  id="fee-value" placeholder="0.00" readonly>
+    </div>
+</div>
+
+
+<script>
+$(document).ready(function(){
+    var ls = localStorage;
+
+    btc_info = getAssetPrice('BTC',true);
+
+    // Function to calculate and set miners fee fiat value based on miners fee amount
+    var updateTxFeeValue = function(amt){
+        var val = numeral(amt).value() * btc_info.price_usd;
+        $('#fee-value').val(numeral(val).format('0,0.00'));
+    }
+
+    // On the 'Send Funds' form, resize the fee fields a bit since less space is available
+    $('#send-form #fee-priority-wrapper').width(160);
+    $('#send-form #fee-value-wrapper').width(95);
+
+    var val = ls.getItem('feePriority') || 'High';
+    $('#fee-priority').val(val);
+
+    // Make priority a dropdown
+    $('#fee-priority').selectpicker();
+
+    // When user changes priority, set fee amount based on priority selected
+    $('#fee-priority').change($.debounce(100,function(e){
+        var val = $(this).val(),
+            o   = FW.NETWORK_INFO.fee_info,
+            avg = 265,       // Average send is 265 bytes (come back in future and base on actual tx size, not average)
+            fee = o.optimal; // default to high priority
+        if(val=='Low')
+            fee = o.low_priority;
+        if(val=='Medium')
+            fee = ((o.low_priority + o.optimal) / 2); // Medium fee is between high and low
+        // Calculate the actual fee cost for this transaction
+        var cost = numeral(((fee / 1000) * avg) * 0.00000001).format('0.00000000');
+        // Do nothing for custom fees
+        if(val=='Custom')
+            cost = '0.00000000';
+        $('#fee-amount').val(cost);
+        $('#fee-amount').change();
+        updateTxFeeValue(cost);
+    }));
+
+    // Make sure BTC value is in correct format
+    $('#fee-amount').change(function(e){
+        var amt = String($(this).val()).replace(/[^0-9.]/g,'');
+        $(this).val(numeral(amt).format('0,0.00000000'));
+    });
+
+    // When user changes fee, update fee fiat
+    $('#fee-amount').keyup($.debounce(100,function(e){
+        var amt = String($(this).val()).replace(/[^0-9.]/g,'');
+        updateTxFeeValue(amt);
+        $('#fee-priority').val('Custom');
+        $('#fee-priority').selectpicker('refresh');
+    }));
+
+    // Make sure BTC value is in correct format
+    $('#fee-amount').keyup(function(e){
+        console.log('detected keyup')
+        $('#fee-priority').val('Custom');
+    });
+
+    // Trigger a change on the priority field so we re-calculate price
+    $('#fee-priority').change();
+
+});
+</script>

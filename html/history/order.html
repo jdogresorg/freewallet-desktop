@@ -1,0 +1,117 @@
+<!-- Transaction Information -->
+<div class="row">
+    <div class="col-xs-12">
+        <div class="panel panel-default table-responsive">
+            <div class="panel-heading panel-heading-lg">
+                <i class="fa fa-lg fa-book"></i> Order Details
+                <a href="#" class="btn btn-xs btn-success pull-right" id="history-info-more" target="_blank"><i class="fa fa-info-circle"></i> more info</a>
+            </div>
+            <table class="table table-bordered table-condensed no-bottom-margin border-bottom-1">
+            <thead>
+            <tr>
+                <th class="info bold">Transaction Hash</th>
+                <th class="info bold" width="100">Tx Index</th>
+                <th class="info bold" width="100">Block #</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="tx-hash"></td>
+                <td id="tx-index"></td>
+                <td id="block"></td>
+            </tr>
+            </tbody>
+            <table class="table table-bordered table-condensed no-bottom-margin border-bottom-1">
+            <thead>
+            <tr>
+                <th class="info bold">Source</th>
+                <th class="info bold">Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="source"></td>
+                <td id="status"></td>
+            </tr>
+            </tbody>
+            </table>
+            <table class="table table-bordered table-condensed no-bottom-margin border-bottom-1">
+            <thead>
+            <tr>
+                <th class="info bold">Time</th>
+                <th class="info bold">Expiration</th>
+                <th class="info bold">Expire Index</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="timestamp"></td>
+                <td id="expiration"></td>
+                <td id="expire-index"></td>
+            </tr>
+            </tbody>
+            </table>
+            <table class="table table-bordered table-condensed no-bottom-margin">
+            <thead>
+            <tr>
+                <th class="info bold" width="25%">Buy Quantity</th>
+                <th class="info bold" width="25%">Buy Remaining</th>
+                <th class="info bold" width="25%">Sell Quantity</th>
+                <th class="info bold" width="25%">Sell Remaining</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="get-quantity"></td>
+                <td id="get-remaining"></td>
+                <td id="give-quantity"></td>
+                <td id="give-remaining"></td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Code to load/update data -->
+<script type="text/javascript">
+    var testnet = (FW.WALLET_NETWORK==2) ? true : false,
+        host    = (testnet) ? 'testnet.xchain.io' : 'xchain.io',
+        tx      = FW.CURRENT_TRANSACTION.tx;
+
+    $(document).ready(function(){
+
+        // Update 'more info' link to point to transaction url
+        $('#history-info-more').attr('href','https://' + host + '/tx/' + tx);
+
+        // Request transaction information
+        $.getJSON('https://' + host + '/api/tx/' + tx, function( o ){
+            if(!o.error){
+                $('#source').html(o.source);
+                $('#feed-address').html(o.feed_address);
+                $('#expiration').text(numeral(o.expiration).format('0,0'));
+                $('#tx-hash').html(o.tx_hash);
+                $('#fee').text(o.fee + ' ('+ numeral(o.fee * 100).format('0,0.00')+ '%)');
+                $('#status').text(o.status);
+                $('#timestamp').html('<span data-livestamp='  + o.timestamp + ' class="nowrap"></span>');
+                var give_asset  = '&nbsp;<img src="https://xchain.io/icon/' + o.give_asset + '.png" class="asset-icon-sm pull-left">' + o.give_asset,
+                    get_asset   = '&nbsp;<img src="https://xchain.io/icon/' + o.get_asset  + '.png" class="asset-icon-sm pull-left">' + o.get_asset,
+                    give_format = (String(o.give_quantity).indexOf('.')==-1) ? '0,0' : '0,0.00000000',
+                    get_format  = (String(o.get_quantity).indexOf('.')==-1) ? '0,0' : '0,0.00000000';
+                $('#give-quantity').html(numeral(o.give_quantity).format(give_format) + give_asset);
+                $('#give-remaining').html(numeral(o.give_remaining).format(give_format) + give_asset);
+                $('#get-quantity').html(numeral(o.get_quantity).format(get_format) + get_asset);
+                $('#get-remaining').html(numeral(o.get_remaining).format(get_format) + get_asset);
+                if(o.tx_index){
+                    $('#block').html(numeral(o.block_index).format('0,0'));
+                    $('#tx-index').text(numeral(o.tx_index).format('0,0'));
+                } else {
+                    $('#block').text('-');
+                    $('#tx-index').text('-');
+                }
+            }
+        });   
+
+    });
+
+</script>

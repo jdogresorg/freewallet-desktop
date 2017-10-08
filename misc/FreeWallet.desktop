@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=FreeWallet
+Comment=by Jeremy Johnson <j-dog@j-dog.net>
+Exec=/usr/share/FreeWallet/FreeWallet
+Icon=/usr/share/icons/FreeWallet/FreeWallet.png
+Terminal=false
+Categories=Office; 

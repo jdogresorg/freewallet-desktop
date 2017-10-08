@@ -1,0 +1,163 @@
+
+ * Theme CSS for FreeWallet Desktop
+ */
+
+
+/* Grey Theme */
+.theme-grey .navbar-default .navbar-nav>li>a {
+    color: #777;
+}
+.theme-grey .header li > a.active {
+    border-bottom: 5px solid #777;
+}
+.theme-grey .header li > a:hover {
+    background-color: #ddd;
+    border-bottom: 5px solid #ccc;
+}
+.theme-grey .header .dropdown-menu li > a:hover {
+    background-color: #ddd;
+    padding-left: 5px;
+    border-left: 5px solid #ccc;
+    border-bottom: 0px;
+    padding-bottom: 5px;
+}
+.theme-grey .balances-list li.active,
+.theme-grey .history-list li.active {
+    border-right: 5px solid #777;
+    padding-right: 11px;
+}
+.theme-grey .balances-list li:hover,
+.theme-grey .history-list li:hover {
+    color: #333;
+    background-color: #ddd;
+    border-right: 5px solid #ccc;
+    padding-right: 11px;
+}
+.theme-grey .panel-theme > .panel-heading { 
+    color: #fff; 
+    background-color: #ff0000; 
+    border-color: #ff0000;
+}
+.theme-grey .address-list li.active {
+    border-left: 5px solid #777;
+    padding-left: 10px;
+}
+.theme-grey .address-list li:hover {
+    color: #333;
+    background-color: #ddd;
+    border-left: 5px solid #ccc;
+    padding-left: 10px;
+}
+.theme-grey .panel-middle {
+    color: #fff;
+}
+.theme-grey .panel-default .panel-heading {
+    color: #fff;
+    background-color: #777;
+}
+.theme-grey .panel-default table tr.info th {
+    background-color: #ccc;
+}
+.theme-grey .bootstrap-dialog.type-default .modal-header { 
+    color: #fff;
+    background-color: #777;
+}
+.theme-grey .bootstrap-dialog.type-default .bootstrap-dialog-title { 
+    color: #fff; 
+}
+.theme-grey .dropdown-menu-header {
+    color: #fff;
+    background: #777;
+}
+
+
+/* Blue Theme */
+.theme-blue .navbar-default .navbar-nav>li>a {
+    color: #777;
+}
+.theme-blue .header li > a.active {
+    border-bottom: 5px solid #428bca;
+}
+.theme-blue .header li > a:hover, 
+.theme-blue .modal  li > a:hover {
+    background-color: #ddd;
+    border-bottom: 5px solid #ccc;
+}
+.theme-blue .header .dropdown-menu li > a:hover,
+.theme-blue .modal  .dropdown-menu li > a:hover {
+    background-color: #ddd;
+    padding-left: 5px;
+    border-left: 5px solid #ccc;
+    border-bottom: 0px;
+    padding-bottom: 5px;
+}
+.theme-blue .balances-list li.active,
+.theme-blue .history-list li.active {
+    border-right: 5px solid #428bca;
+    padding-right: 11px;
+}
+.theme-blue .balances-list li:hover,
+.theme-blue .history-list li:hover {
+    color: #333;
+    background-color: #ddd;
+    border-right: 5px solid #ccc;
+    padding-right: 11px;
+}
+.theme-blue .panel-theme > .panel-heading { 
+    color: #fff; 
+    background-color: #ff0000; 
+    border-color: #ff0000;
+    border-top: 0px;
+}
+.theme-blue .address-list li.active {
+    border-left: 5px solid #428bca;
+    padding-left: 10px;
+}
+.theme-blue .address-list li:hover {
+    color: #333;
+    background-color: #ddd;
+    border-left: 5px solid #ccc;
+    padding-left: 10px;
+}
+.theme-blue .panel-middle {
+    color: #fff;
+}
+.theme-blue .panel-default .panel-heading {
+    color: #fff;
+    background-color: #428bca;
+}
+.theme-blue .panel-default table tr.info th {
+    background-color: #d9edf7;
+}
+.theme-blue .bootstrap-dialog.type-default .modal-header { 
+    color: #fff;
+    background-color: #428bca;
+}
+.theme-blue .bootstrap-dialog.type-default .bootstrap-dialog-title { 
+    color: #fff; 
+}
+.theme-blue .dropdown-menu-header {
+    color: #fff;
+    background: #0067A5;
+}
+
+
+/* Red Theme - #ff0000 */
+/*
+.theme-red .btc-wallet { color: #fff; border-color: #ff0000; }
+.theme-red .btc-wallet .wallet-header { color: #fff; background-color: #ff0000; }
+.theme-red .navbar-default { border-color: #ff0000; }
+.theme-red .navbar-default .navbar-nav > .open > a, 
+.theme-red .navbar-default .navbar-nav > .open > a:hover, 
+.theme-red .navbar-default .navbar-nav > .open > a:focus { background-color: #ff0000; }
+.theme-red .navbar-default .navbar-nav > li > .dropdown-menu > li > a:hover,
+.theme-red .navbar-default .navbar-nav > li > .dropdown-menu > li > a:focus { color: #fff; background-color: #ff0000; }
+.theme-red .panel-theme > .panel-heading { color: #fff; background-color: #ff0000; border-color: #ff0000;}
+.theme-red .panel-theme { border-color: #ff0000; }
+.theme-red .nav-pills > li.active > a { color: #fff; background-color: #ff0000; }
+.theme-red .search-results-footer { background-color: #ff0000; border-color: #ff0000; }
+.theme-red .bootstrap-dialog.type-default .modal-header { background-color: #ff0000; }
+.theme-red .bootstrap-dialog.type-default .bootstrap-dialog-title { color: #fff; }
+.theme-red .btn-theme { color: #fff; background-color: #ff0000; border-color: #ff0000; }
+.theme-red .dataTables_length > label > select { color: #000; }
+

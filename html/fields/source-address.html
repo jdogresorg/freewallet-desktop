@@ -1,0 +1,67 @@
+<!-- Source Address Field -->
+<label class="col-sm-3 control-label text-left" for="source-address">
+    <span id="source-address-label-wrapper">Source</span>
+    <a href="#" data-toggle="tooltip" title='This is the address which will be the source of the transaction' class="pull-right" id="source-address-tooltip"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>            
+<div class="col-sm-9">
+    <div class="input-group" id="source-address-wrapper">
+        <input type="text" class="form-control" name="source" id="source-address" placeholder="Source Address" readonly>
+        <a class="input-group-addon" id="edit-source-address" data-toggle="tooltip" title='<div class="nowrap">Change Address</div>'><i class="fa fa-edit"></i></a>
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+
+    // Get the current form type and tooltip
+    var type = getFormType(),
+        tip  = $('#source-address-tooltip');
+
+    // Change the look/feel of the form based on form type
+    if(type=='callback'){
+        $('#edit-source-address').hide();
+        $('#source-address').addClass('input-rounded-right');
+        $('#source-address-wrapper').width(415);
+        $('#source-address-label-wrapper').text('Address');
+
+    // } else if(type=='issue-supply'){
+    //     // do something elese here
+    }
+
+    // Wait a brief moment to allow things to initialize
+    setTimeout(function(){
+
+        // Change toolip text based on form type 
+        var txt = false;
+        if(type=='send')
+            txt = 'This is the address you will be sending the funds from';
+        if(type=='create-token')
+            txt = 'This is the address which will own your new token';
+        if(type=='change-description'||type=='issue-supply'||type=='lock-supply'||type=='transfer-ownership')
+            txt = 'This is the address which owns the token';
+        if(type=='dividend')
+            txt = 'This is the address which will be paying out the dividend';
+        if(type=='sign-message')
+            txt = 'This is the the address that will be used to sign the message';
+        if(type=='sign-transaction')
+            txt = 'This is the the address that will be used to sign the transaction';
+        if(type=='broadcast')
+            txt = 'This is the address where the broadcast will originate from';
+        if(type=='callback')
+            txt = 'This is the address which has signed the message';
+        if(txt)
+            tip.attr('data-original-title',txt);
+
+    },750);
+
+    // Set source address to current wallet address
+    $('#source-address').val(FW.WALLET_ADDRESS);
+
+    // Display 'Change Address' dialog box when user clicks edit button
+    $('#edit-source-address').click($.debounce(100,function(e){
+        dialogClose();
+        dialogChangeAddress();
+    }));
+
+});
+</script>

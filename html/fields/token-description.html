@@ -1,0 +1,27 @@
+<!-- Token Description Field -->
+<label for="token-description" class="col-sm-3 control-label text-left">
+    Description
+    <a href="#" data-toggle="tooltip" title='This is an optional description for your token' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>            
+<div class="col-sm-9">
+    <div class="input-group">
+        <input type="text" class="form-control" id="token-description" name="description" placeholder="Token Description" >
+        <a href="#" class="input-group-addon" id="token-description-coindaddy" data-toggle="tooltip" title="Point token description at CoinDaddy.io"><i class="fa fa-lg fw-coindaddy" style="top: 0px"></i></a>
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+
+    // When user clicks CoinDaddy button, update description to point to asset JSON
+    $('#token-description-coindaddy').click(function(e){
+        var name = $('#token-name').val(),
+            type = $('#token-type').val();
+        if(FW.ASSET_INFO && type=='')
+            name = FW.ASSET_INFO.asset;
+        desc = 'xcp.coindaddy.io/' + name + '.json';
+        $('#token-description').val(desc);
+    }); 
+
+});
+</script>

@@ -1,0 +1,79 @@
+<div class="normal-page-content">
+    <div class="col-sm-12">
+        <div class="panel panel-default">
+            <!-- Betting Information -->
+            <div class="panel-heading">
+                <i class="fa fa-lg fa-exchange"></i> Decentralized Exchange (DEX) Bounty
+            </div>
+            <div class="panel-body">
+                <div class="panel panel-default pull-right" style="width: 250px;margin-left: 10px"">
+                    <!-- Betting Information -->
+                    <div class="panel-heading">
+                        <i class="fa fa-lg fa-bitcoin"></i> Bounty Information
+                    </div>
+                    <div class="panel-body text-center" style="background-color: #d9edf7">
+                        <div id="bounty-amount">0 XCP</div>
+                        <div id="bounty-funded">0.00% Funded (0 XCP)</div>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;" id="bounty-progressbar">
+                            </div>
+                        </div>            
+                        <p class="text-justify">Donations of at least <b>1 XCP</b> or more will receive a <b>FREEWALLET</b> token which grants early access to new features in FreeWallet.</p>
+                        <a href="#" class="btn btn-block btn-success margin-bottom-5" id="donate-now">Donate Now</a>
+                    </div>
+                </div>
+                <p>Counterparty has a <a href="https://xcpdex.com/">Decentralized EXchange (DEX)</a> built into the protocol which enables peer-to-peer trading of BTC, XCP, or any Counterparty asset. All buy and sell orders are automatically escrowed in the Bitcoin blockchain until they are completed, which means your funds are never at risk of being lost or stolen. </p>
+                <p>The FreeWallet team would like to add support for a <b><i>integrated exchange interface</i></b> with the following features :</p>
+                <ul>
+                    <li>Simple trading interface similar to poloniex.com (Charts, Buy/Sell, Orders, Depth, History) </li>
+                    <li>Automatically sign/send BTCpay transaction when order matches are detected </li>
+                    <li>'Markets' interface to allow browsing of counterparty</li>
+                    <li>'Trade History' interface which allows exporting order data</li>
+                </ul>
+                <p>If an easy-to-use Decentralized EXchange (DEX) interface sounds like a good idea to you, please consider making a donation to support the development of this feature.</p>
+                <p><b>Bounty Address</b> : <span id="bounty-address"></span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+
+    // Define information about this bounty;
+    var address = '1FWDEXhxWcxtrbqnGhLoKofLwKs7aSbREj',
+        bounty  = 1250,
+        balance = 0,
+        percent = 0;
+
+    // Update bounty address and amount
+    $('#bounty-address').html('<a href="https://xchain.io/address/' + address + '" target="_blank">' + address + '</a>')
+    $('#bounty-amount').html(numeral(bounty).format('0,0') + ' XCP');
+
+    // Lookup the current balance at the bounty address
+    $.getJSON('https://xchain.io/api/balances/' + address, function(o){
+        if(o.address==address){
+            o.data.forEach(function(item){
+                if(item.asset=='XCP'){
+                    balance = numeral(item.quantity).format('0');
+                    percent = (numeral(item.quantity).value() / bounty) * 100;
+                }
+            });
+            $('#bounty-progressbar').attr('aria-valuenow',percent);
+            $('#bounty-progressbar').css('width',percent + '%');
+            $('#bounty-funded').text(numeral(percent).format('0.00') + '% Funded (' + balance + ' XCP)');
+        }
+    });
+
+    // When a user clicks the donate now button, save bounty address and launch 'Send Funds' window
+    $('#donate-now').click($.debounce(100, function(e){
+        FW.DIALOG_DATA = {
+            destination: address,
+            token: 'XCP'
+        };
+        dialogSend();
+    }));
+
+});
+</script>
+

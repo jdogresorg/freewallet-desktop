@@ -1,0 +1,29 @@
+<!-- Destination Address Field -->
+<label for="memo" class="col-sm-3 control-label text-left">
+    Memo
+    <a href="#" data-toggle="tooltip" title='This is an optional memo to include' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>
+<div class="col-sm-9">
+    <input type="text" class="form-control" name="memo"  id="memo" placeholder="Enter Memo / Note" >
+</div>
+
+<script>
+
+$(document).ready(function(){
+
+    // Handle Disabling the memo for BTC transactions
+    $('#token-name-select').change(function(e){
+        var val = $(this).val(),
+            el  = $('#memo');
+        // If this is BTC, hardcode the values and skip getting asset info
+        if(val=='BTC'){
+            // Disable the memo
+            el.attr('disabled', true);
+            el.val('');
+        } else {
+            el.attr('disabled', false);
+        }
+    });
+
+});
+</script>

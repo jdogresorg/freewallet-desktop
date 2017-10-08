@@ -1,0 +1,24 @@
+<!-- Timestamp Field -->
+<label class="col-sm-3 control-label text-left">
+    Timestamp
+    <a href="#" data-toggle="tooltip" title='This is the date and time you would like to use for this transaction' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>
+<div class="col-sm-9">
+    <div class="input-group date datetimepicker">
+        <input type="text" class="form-control" name="timestamp" id="timestamp"/>
+        <span class="input-group-addon">
+            <span class="glyphicon glyphicon-calendar"></span>
+        </span>
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+
+    // Setup broadcast date/time picker and initalize value to current date/time
+    $('.datetimepicker').datetimepicker({
+        defaultDate: new Date()
+    });
+
+});
+</script>

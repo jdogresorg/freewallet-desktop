@@ -1,0 +1,124 @@
+<!-- Confirm callback to remove server -->
+<form class="form-horizontal" id="callback-form" data-toggle="validator" role="form">
+    <div class="form-group">
+        <label for="message" class="col-sm-3 control-label text-left">
+            Server Name
+            <a href="#" data-toggle="tooltip" title='This is the name of the server where the data will be sent' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <img class="fw-callback-icon pull-left">
+            <div class="fw-callback-hostname nowrap"></div>
+            <div class="fw-callback-protocol"></div>
+        </div>
+    </div>
+
+    <div class="form-group" id="source-address-field">
+        <!-- Source Address Field -->
+    </div>
+    <div class="form-group">
+        <label for="message" class="col-sm-3 control-label text-left">
+            Message
+            <a href="#" data-toggle="tooltip" title='This is the message that has been signed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <textarea type="text" class="form-control" id="message" name="message" placeholder="Message" data-minlength="1" required rows="3" readonly></textarea>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="address" class="col-sm-3 control-label text-left">
+            Signature
+            <a href="#" data-toggle="tooltip" title='This is the signature which can be used to verify the signed message' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <textarea type="text" class="form-control" id="signature" name="signature" placeholder="Message Signature" rows="3" readonly></textarea>
+        </div>
+    </div>
+    <div class="text-right">
+        <div id="btn-no" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-thumbs-down"></i> No</div>
+        <div id="btn-yes" class="btn btn-success "><i class="fa fa-lg fa-fw fa-thumbs-up"></i> Yes</div>
+    </div>
+</form>
+
+
+<script>
+
+// Simple functions
+var getHostname = function(url){
+    return String(url).replace(/^(http|https):\/\//,'').split('/')[0];
+};
+var getProtocol = function(url){
+    var str = 'HTTP (Not Encrypted)';
+    if(/^https:/.test(url))
+        str = 'HTTPS/SSL (Encrypted)';
+    return str;
+};
+var getColor = function(url){
+    if(/^https:/.test(url))
+        return 'green';
+    return 'red';
+}
+
+$(document).ready(function(){
+
+    var data = FW.DIALOG_DATA;
+
+    // Load form field
+    $('#source-address-field').load('html/fields/source-address.html');
+
+    // Delay initializing some fields to give things a chance to load
+    setTimeout(function(){
+
+        // Handle loading any data from FW.DIALOG_DATA
+        var icon = $('.fw-callback-icon');
+
+        // Display the hostname and protocol of the remote server
+        $('.fw-callback-hostname').html(getHostname(data.callback));
+        $('.fw-callback-protocol').html(getProtocol(data.callback));
+        $('.fw-callback-protocol').addClass(getColor(data.callback));
+
+        if(data.address)
+            $('#source-address').val(data.address);
+        if(data.message)
+            $('#message').val(data.message);
+        if(data.signature)
+            $('#signature').val(data.signature);
+        if(data.icon){
+            icon.attr('src',data.icon);
+        } else {
+            icon.hide();
+        }
+
+        // Reset dialog data so we don't reuse data on form in the future
+        FW.DIALOG_DATA = {};
+
+        // Initialize any tooltips
+        $('[data-toggle="tooltip"]').tooltip({ 
+            html: true,
+            placement: 'bottom'
+        }); 
+
+    },100);
+
+    // Handle sending data to remote server if user clicks 'Yes'
+    $('#btn-yes').click($.debounce(100,function(e){
+        $.ajax({
+            type: "POST",
+            url: data.callback,
+            data: { 
+                address: data.address,
+                message: data.message,
+                signature: data.signature
+            },
+            complete: function(o){
+                dialogClose('dialog-confirm-callback');
+            }
+        });
+    }));
+
+    // Hide the form if users clicks 'No' button
+    $('#btn-no').click($.debounce(100,function(e){
+        dialogClose('dialog-confirm-callback');
+    }));
+
+});
+</script>

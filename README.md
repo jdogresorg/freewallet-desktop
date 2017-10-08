@@ -7,12 +7,15 @@ If you would like to license this application please contact Jeremy Johnson <j-d
 
 Build Notes
 ---
-The majority of the building is done via nw-builder
-    npm install nw-builder
+The majority of the building is done via nw-builder :
 
-Edit build.sh and change your Mac Developer Identity
+```shell
+npm install nw-builder
+```
 
-Run build.sh to handle generating builds on Mac/OSX
+Edit `build.sh` and change your Mac Developer Identity
+
+Run `build.sh` to handle generating builds on Mac/OSX
 
 Installation Instructions
 ---

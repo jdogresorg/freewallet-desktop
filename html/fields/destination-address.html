@@ -1,0 +1,47 @@
+<!-- Destination Address Field -->
+<label class="col-sm-3 control-label text-left" for="destination-address">
+    Destination
+    <a href="#" data-toggle="tooltip" title='This is the destination address you would like to use' class="pull-right" id="destination-address-tooltip"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>            
+<div class="col-sm-9">
+    <div class="input-group">
+        <input type="text" class="form-control" name="destination" id="destination-address" placeholder="Destination Address" autocomplete="off" data-minlength="24" required >
+        <a class="input-group-addon" id="destination-address-book" data-toggle="tooltip" title='<div class="nowrap">Address Book</div>'><i class="fa fa-book"></i></a>
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+
+    // Get the current form type and tooltip
+    var type = getFormType(),
+        tip  = $('#destination-address-tooltip');
+
+    // Change the look/feel of the form based on form type
+    // if(type=='send'){
+    //     // do something here
+    // } else if(type=='issue-supply'){
+    //     // do something elese here
+    // }
+
+    // Wait a brief moment to allow things to initialize
+    setTimeout(function(){
+
+        // Change toolip text based on form type 
+        var txt = false;
+        if(type=='send')
+            txt = 'This is the address which will be receiving funds from you';
+        if(type=='transfer-ownership')
+            txt = 'This is the address which you are transferring token ownership to';
+        if(txt)
+            tip.attr('data-original-title',txt);
+
+    },750);
+
+    // Display 'Address Book' when user clicks address book link
+    $('#destination-address-book').click($.debounce(100,function(e){
+        dialogComingSoon();
+    }));
+
+});
+</script>

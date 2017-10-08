@@ -1,0 +1,150 @@
+<!-- Transaction Information -->
+<div class="row">
+    <div class="col-xs-12">
+        <div class="panel panel-default table-responsive">
+            <div class="panel-heading">
+                <i class="fa fa-lg fa-trophy"></i> Bet Details
+                <a href="#" class="btn btn-xs btn-success pull-right" id="history-info-more" target="_blank"><i class="fa fa-info-circle"></i> more info</a>
+            </div>
+            <table class="table table-bordered table-condensed no-bottom-margin border-bottom-1">
+            <thead>
+            <tr>
+                <th class="info bold">Transaction Hash</th>
+                <th class="info bold text-center hidden-sm" width="100">Tx Index</th>
+                <th class="info bold text-center hidden-sm" width="100">Block #</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="tx-hash"></td>
+                <td class="hidden-sm text-center" id="tx-index"></td>
+                <td class="hidden-sm text-center" id="block"></td>
+            </tr>
+            </tbody>
+            </table>
+            <table class="table table-bordered table-condensed no-bottom-margin border-bottom-1 text-center">
+            <thead>
+            <tr>
+                <th class="info bold">Source</th>
+                <th class="info bold">Feed</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="source"></td>
+                <td id="feed-address"></td>
+            </tr>
+            </tbody>
+            </table>
+
+            <table class="table table-bordered table-condensed no-bottom-margin  border-bottom-1 text-center">
+            <thead>
+            <tr>
+                <th class="info bold">Time</th>
+                <th class="info bold">Deadline</th>
+                <th class="info bold">Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="timestamp"></td>
+                <td id="deadline"></td>
+                <td id="status"></td>
+            </tr>
+            </table>
+            </table>
+            <table class="table table-bordered table-condensed no-bottom-margin border-bottom-1 text-center">
+            <thead>
+            <tr>
+                <th class="info bold" width="16%">Bet Type</th>
+                <th class="info bold" width="16%">Target Value</th>
+                <th class="info bold" width="16%">Leverage</th>
+                <th class="info bold" width="16%">Expiration</th>
+                <th class="info bold" width="16%">Expire Index</th>
+                <th class="info bold" width="*%">Fee</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="bet-type"></td>
+                <td id="target-value"></td>
+                <td id="leverage"></td>
+                <td id="expiration"></td>
+                <td id="expire-index"></td>
+                <td id="fee"></td>
+            </tr>
+            </table>
+            <table class="table table-striped table-bordered table-condensed no-bottom-margin text-center">
+            <thead>
+            <tr>
+                <th class="info bold" width="25%">Wager Quantity</th>
+                <th class="info bold" width="25%">Wager Remain</th>
+                <th class="info bold" width="25%">Counterwager Quantity</th>
+                <th class="info bold" width="25%">Counterwager Remain</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="wager-quantity"></td>
+                <td id="wager-remaining"></td>
+                <td id="counterwager-quantity"></td>
+                <td id="counterwager-remaining"></td>
+            </tr>
+            </table>
+        </div>
+    </div>
+</div><!-- end row -->
+
+
+
+<!-- Code to detect JSON file, request it, and load certain data into page -->
+<script type="text/javascript">
+    var testnet   = (FW.WALLET_NETWORK==2) ? true : false,
+        host      = (testnet) ? 'testnet.xchain.io' : 'xchain.io',
+        tx        = FW.CURRENT_TRANSACTION.tx,
+        bet_types = [];
+
+    // Define array of bet types
+    bet_types[0] = 'Bullish'; // CFD (deprecated), 
+    bet_types[1] = 'Bearish'; // CFD (deprecated), 
+    bet_types[2] = 'Equal';
+    bet_types[3] = 'Not Equal';
+
+    $(document).ready(function(){
+        
+        // Update 'more info' link to point to transaction url
+        $('#history-info-more').attr('href','https://' + host + '/tx/' + tx);
+
+        // Handle requesting block information
+        $.getJSON('https://' + host + '/api/tx/' + tx, function( o ){
+            if(!o.error){
+                $('#source').html(o.source);
+                $('#feed-address').html(o.feed_address );
+                $('#tx-hash').html(o.tx_hash);
+                $('#fee').text(o.fee + ' ('+ numeral(o.fee * 100).format('0,0.00')+ '%)');
+                $('#status').text(o.status);
+                $('#bet-type').text(bet_types[o.bet_type]);
+                $('#target-value').text(o.target_value);
+                $('#leverage').text(o.leverage);
+                $('#expiration').text(numeral(o.expiration).format('0,0'));
+                $('#expire-index').html(numeral(o.expire_index).format('0,0'));
+                $('#deadline').html('<span data-livestamp='  + o.deadline + ' class="nowrap"></span>');
+                var link = '&nbsp;XCP';
+                $('#wager-quantity').html(o.wager_quantity + link);
+                $('#wager-remaining').html(o.wager_remaining + link);
+                $('#counterwager-quantity').html(o.counterwager_quantity + link);
+                $('#counterwager-remaining').html(o.counterwager_remaining + link);
+                $('#timestamp').html('<span data-livestamp='  + o.timestamp + ' class="nowrap"></span>');
+                if(o.tx_index){
+                    $('#block').html(numeral(o.block_index).format('0,0'));
+                    $('#tx-index').text(numeral(o.tx_index).format('0,0'));
+                } else {
+                    $('#block').text('-');
+                    $('#tx-index').text('-');
+                }
+            }
+        });   
+
+    });
+</script>
+

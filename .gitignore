@@ -1,0 +1,6 @@
+.DS_Store
+/releases
+/build
+/builds
+/cache
+/node_modules

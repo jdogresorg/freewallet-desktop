@@ -1,0 +1,46 @@
+<div class="history-container">
+    <!-- Transaction History List -->
+    <div class="history-list">
+        <div class="history-list-toolbar">
+            <a href="#" class="history-list-refresh"><i class="fa fa-refresh pull-left"></i></a></li>
+            <input type="text" class="form-control history-list-search" placeholder="Search">
+            <div style="clear:both;"></div>
+        </div>        
+        <div class="history-list-transactions">
+            <ul class="nav">
+            </ul>
+        </div>
+    </div>
+    <!-- Transaction Information -->
+    <div class="history-content">
+
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+
+    // Display history/transaction list        
+    updateHistoryList();
+
+    // // Display BTC asset info
+    // loadAssetInfo('BTC');
+
+    // Handle detecting keyup events and filter the balances list to show matches
+    // buffer the event by 250ms so we can allow for additional keystrokes before processing
+    $('.history-list-search').keyup($.debounce(250,function(e){
+        updateHistoryList();
+    }));
+
+    // Handle refreshing address history when user clicks refresh button
+    // buffer the event by 250ms so we can allow for spamming the click button
+    $('.history-list-refresh').click($.debounce(250,function(e){
+        updateWalletHistory(getWalletAddress(), true);
+    }));
+
+
+
+
+
+});
+</script>

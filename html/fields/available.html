@@ -1,0 +1,60 @@
+<!-- Available Field -->
+<label class="col-sm-3 control-label text-left" for="available">
+    Available 
+    <a href="#" data-toggle="tooltip" title='This is the amount that you have available at this moment' class="pull-right" id="available-tooltip"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>
+<div class="col-sm-9">
+    <input type="text" class="form-control pull-left" name="available" id="available" placeholder="0.00000000" readonly style="width:223px">
+    <div class="input-group pull-right" style="width:180px" id="available-value-wrapper">
+        <a class="input-group-addon"><i class="fa fa-usd"></i></a>
+        <input type="text" class="form-control" name="available-value" id="available-value" placeholder="0.00" readonly>
+    </div>
+</div>
+
+<script>
+// Function to handle updating the 'Available' information
+function updateAvailableQuantity(){
+    var asset   = $('#token-name-select').val(),
+        balance = getAddressBalance(FW.WALLET_ADDRESS, asset),
+        fmt     = (String(balance.quantity).indexOf('.')!=-1) ? '0,0.00000000' : '0,0',
+        avail   = numeral(balance.quantity).format(fmt),
+        val     = (balance && balance.estimated_value) ? balance.estimated_value.usd : 0,
+        value   = numeral(val).format('0,0.00');
+    $('#available').val(avail);
+    $('#available-value').val(value);
+    // Clear 'Amount' fields
+    $('#amount').val('');
+    $('#amount-value').val('');
+}
+
+$(document).ready(function(){
+
+    // Get the current form type and tooltip
+    var type = getFormType(),
+        tip  = $('#available-tooltip-tooltip');
+
+    // Change the look/feel of the form based on form type
+    if(type=='send'){
+        // On the 'Send Funds' form, resize the fee fields a bit since less space is available
+        $('#available').width(184);
+        $('#available-value-wrapper').width(170);
+    // } else if(type=='issue-supply'){
+    //     // do something else here
+    }
+
+    // Wait a brief moment to allow things to initialize
+    setTimeout(function(){
+
+        // Change toolip text based on form type 
+        var txt = false;
+        if(type=='send')
+            txt = 'This is the amount that is currently available to send';
+        if(type=='dividend')
+            txt = 'This is the amount that is currently available to pay out as dividends';
+        if(txt)
+            tip.attr('data-original-title',txt);
+
+    },750);
+
+});
+</script>

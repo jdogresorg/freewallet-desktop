@@ -1,0 +1,60 @@
+
+<center>
+    <p>FreeWallet is a free wallet which supports Bitcoin and Counterparty.</p>
+    <img src="images/logo.png" height="100" style="margin-bottom: 15px">
+    <p>Freewallet uses public APIs available from the following providers:</p>
+    <div>
+        <a href="https://xchain.io" target="_blank"><img class="about-logo" src="images/xchain-color-500.png"></a>
+        <a href="https://coindaddy.io" target="_blank"><img class="about-logo" src="images/coindaddy-500.jpg"></a>
+        <a href="https://blocktrail.com" target="_blank"><img class="about-logo" src="images/blocktrail-logo.png"></a>
+        <a href="https://chain.so" target="_blank"><img class="about-logo" src="images/sochain-logo.png"></a>
+    </div>
+    <br>
+    <p>If you would like to support continued development of FreeWallet, please consider making a donation using the 'Donate' button below, or donate to one of the wallet bounties.</p>
+</center>
+
+<style>
+img.about-logo {
+    height: 40px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+</style>
+
+<div class="text-right">
+    <div id="btn-debug" class="btn btn-info pull-left"><i class="fa fa-lg fa-fw fa-bug"></i> Debug</div>
+    <div id="btn-donate" class="btn btn-info"><i class="fa fa-lg fa-fw fa-bitcoin"></i> Donate</div>
+    <div id="btn-ok" class="btn btn-success "><i class="fa fa-lg fa-fw fa-thumbs-up"></i> Ok</div>
+</div>
+
+<script>
+$(document).ready(function(){
+
+    // Define donation address
+    var address = '1FWDonkMbC6hL64JiysuggHnUAw2CKWszs',
+        debug   = $('#btn-debug');
+
+    // Handle showing/hiding the debug button
+    if(is_nwjs()){
+        debug.click($.debounce(100,function(e){
+            nw.Window.get().showDevTools();
+        }));
+    } else {
+        debug.hide();       
+    }
+
+    // When a user clicks the donate now button, save bounty address and launch 'Send Funds' window
+    $('#btn-donate').click($.debounce(100, function(e){
+        FW.DIALOG_DATA = {
+            destination: address
+        };
+        dialogSend();
+    }));
+
+    // Hide the send form if users clicks 'cancel' button
+    $('#btn-ok').click($.debounce(100,function(e){
+        dialogClose('dialog-about');
+    }));
+
+});
+</script>

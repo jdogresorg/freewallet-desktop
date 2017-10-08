@@ -1,0 +1,143 @@
+<form class="form-horizontal" id="sign-transaction-form" data-toggle="validator" role="form">
+    <div class="form-group" id="source-address-field">
+        <!-- Source Address Field -->
+    </div>
+    <div class="form-group">
+        <label for="sign-transaction" class="col-sm-3 control-label text-left">
+            Unsigned
+            <a href="#" data-toggle="tooltip" title='This is the raw transaction to be signed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+            <br/>Transaction
+        </label>
+        <div class="col-sm-9">
+            <textarea type="text" class="form-control" id="sign-transaction" name="transaction" placeholder="Unsigned Transaction" data-minlength="1" required rows="3"></textarea>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="address" class="col-sm-3 control-label text-left">
+            Signed
+            <a href="#" data-toggle="tooltip" title='This is the signed transaction which is ready to be broadcast' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+            <br/>Transaction
+        </label>
+        <div class="col-sm-9">
+            <textarea type="text" class="form-control" id="signed-transaction" name="signed-transaction" placeholder="Signed Transaction" rows="3" readonly></textarea>
+        </div>
+    </div>
+    <div class="text-right">
+        <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
+        <div id="btn-submit" class="btn btn-success"><i class="fa fa-lg fa-fw fa-file-text"></i> Sign </div>
+        <div id="btn-broadcast" class="btn btn-info"><i class="fa fa-lg fa-fw fa-bullhorn"></i> Broadcast</div>
+    </div>
+</form>
+
+
+<script>
+$(document).ready(function(){
+
+    // Set host name based off a wallet network
+    var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
+
+    // Load any field content
+    $('#source-address-field').load('html/fields/source-address.html');
+
+    // Delay initializing some fields to give things a chance to load
+    setTimeout(function(){
+
+        // Handle loading any data from FW.DIALOG_DATA
+        var data = FW.DIALOG_DATA;
+        console.log('data=',data);
+        if(data.tx)
+            $('#sign-transaction').val(data.tx);
+
+        // Reset dialog data so we don't reuse data on form in the future
+        FW.DIALOG_DATA = {};
+
+        // Initialize any tooltips
+        $('[data-toggle="tooltip"]').tooltip({ 
+            html: true,
+            placement: 'bottom'
+        }); 
+
+    },100);
+
+    // Submit form if user clicks 'Submit' button
+    $('#btn-submit').click($.debounce(100,function(e){
+        $('#sign-transaction-form').submit();
+    }));
+
+    // Hide the form if users clicks 'Cancel' button
+    $('#btn-cancel').click($.debounce(100,function(e){
+        dialogClose('dialog-sign-transaction');
+    }));
+
+    // Verify if transaction is signed, then confirm broadcast
+    $('#btn-broadcast').click($.debounce(100,function(e){
+        var signedTx = $('#signed-transaction').val();
+        if(signedTx==''){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', 'You must sign your transaction before you can broadcast it!' );
+        } else {
+            // Callback to run after broadcasting send
+            var doneCb = function(tx){
+                if(tx){
+                    dialogClose('dialog-sign-transaction');
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Broadcast Successfull', '<center>Your transaction has been broadcast to the network and should be confirmed shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="https://' + host +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                }
+            }
+            // Callback to run if user confirms action
+            var confirmCb = function(){
+                var network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
+                // Broadcast the transaction
+                broadcastTransaction(network, signedTx, function(txid){
+                    if(txid){
+                        doneCb(txid);
+                    } else {
+                        cbError('Error while trying to broadcast transaction. Please try again.', doneCb);
+                    }
+                });
+            }
+            // Confirm the action with the user
+            var title = '<i class="fa fa-lg fa-fw fa-broadcast"></i> Confirm Broadcast?',
+                msg   = 'Are you sure you wish to broadcast this signed transaction?';
+            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+        }
+    }));
+
+    // Handle form validation and displaying any errors
+    $('#sign-transaction-form').validator().on('submit', function(e){
+        // prevent form submission
+        e.preventDefault(); 
+        // build out object with name:value pairs
+        var arr    = $(this).serializeArray(),
+            vals   = {},
+            errors = [];
+        for(var i=0;i<arr.length;i++){
+            var o = arr[i];
+            vals[o.name] = o.value;
+        }
+        console.log('vals=',vals);
+        // Verify we have a message to broadcast
+        if(String(vals.transaction).length==0){
+            errors.push('You must enter a transaction to sign! ');
+            $('#sign-transaction').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+        } else {
+            // Handle signing the message and populating the 'Signed' box
+            var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
+            signTransaction(network, vals.source, vals.transaction, function(tx){
+                var val = '';
+                if(tx){
+                    val = tx;
+                } else {
+                    dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', 'Error while trying to sign transaction! Please try again.' );
+                }
+                $('#signed-transaction').val(val);
+            });            
+        }
+    })
+
+
+});
+</script>

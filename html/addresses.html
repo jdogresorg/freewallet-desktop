@@ -1,0 +1,105 @@
+<div class="center">
+    <p>Please select an address from the list below and click 'Ok'</p>
+    <!-- Search Toolbar -->
+    <div class="btn-toolbar" role="toolbar" aria-label="">
+        <input type="text" class="form-control address-list-search pull-left" placeholder="Search">
+        <div class="btn-group pull-right address-list-type" role="group" aria-label="">
+            <button type="button" value="0" class="btn btn-default active">All</button>
+            <button type="button" value="1" class="btn btn-default">Indexed</button>
+            <button type="button" value="2" class="btn btn-default">Imported</button>
+            <button type="button" value="3" class="btn btn-default">Watch Only</button>
+        </div>
+    </div>
+    <!-- Address List-->
+    <div class="address-list">
+        <ul class="nav">
+            <div class="address-list-empty">No addresses found</div>
+        </ul>
+    </div>
+    <input type="hidden" name="selected-address" class="selected-address" value="">
+    <div class="action-buttons pull-right">
+        <div id="btn-ok" class="btn btn-ok btn-success pull-right margin-left-5"><i class="fa fa-lg fa-fw fa-thumbs-up"></i> Ok</div>
+        <div id="btn-cancel" class="btn btn-ok btn-danger pull-right margin-left-5"><i class="fa fa-lg fa-fw fa-thumbs-down"></i> Cancel</div>
+        <div class="dropdown pull-right">
+            <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+            <i class="fa fa-lg fa-cog"></i> Options
+            <span class="caret"></span></button>
+            <ul class="dropdown-menu">
+                <li><a href="#" id="btn-generate"><i class="fa fa-lg fa-plus-circle"></i> Generate New Address</a></li>
+                <li><a href="#" id="btn-import"><i class="fa fa-lg fa-key"></i> Import Private Key</a></li>
+                <li><a href="#" id="btn-watch"><i class="fa fa-lg fa-eye"></i> Add 'Watch Only' Address</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="clear-both"></div>
+</div>
+<script>
+$(document).ready(function(){
+
+    // Default to showing all types
+    FW.WALLET_ADDRESS_TYPE = 1; 
+
+    // Display address list
+    updateAddressList();
+
+    // Handle updating/toggling the 'active' item in the address type button
+    $('.address-list-type button').click($.debounce(100,function(e){
+        $('.address-list-type button').removeClass('active');
+        $(this).addClass('active');
+        FW.WALLET_ADDRESS_TYPE = $(this).val();
+        updateAddressList();
+    }));
+
+    // Handle detecting keyup events and filter the balances list to show matches
+    // buffer the event by 250ms so we can allow for additional keystrokes before processing
+    $('.address-list-search').keyup($.debounce(250,function(e){
+        updateAddressList();
+    }));
+
+    // When user clicks the ok button, update the address and close the dialog box
+    $('#btn-ok').click($.debounce(100,function(e){
+        var addr = $('.selected-address').val();
+        if(addr && addr!=FW.WALLET_ADDRESS){
+            setWalletAddress(addr, true);
+            dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Wallet address changed', 'Your wallet address has been changed to ' + addr + '.');
+        }
+        dialogClose('dialog-change-address');
+    }));
+
+    // Handle generating new addresses
+    $('#btn-generate').click($.debounce(100,function(e){
+        // Make sure wallet is unlocked
+        if(dialogCheckLocked('generate a new address'))
+            return;
+        addr = addNewWalletAddress(FW.WALLET_NETWORK);
+        // Only display confirmation message if we have an address
+        if(addr)
+            dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> New Wallet Address', 'Address ' + addr + ' has been added to your wallet.');
+        updateAddressList();
+    }));
+
+    // Handle adding 'Watch Only' addresses
+    $('#btn-watch').click($.debounce(100,function(e){
+        // Make sure wallet is unlocked
+        if(dialogCheckLocked('add a watch-only address'))
+            return;
+        // Display the 'Add watch-only address' dialog box
+        dialogImportWatchAddress();
+    }));
+
+    // Handle importing private keys
+    $('#btn-import').click($.debounce(100,function(e){
+        // Make sure wallet is unlocked
+        if(dialogCheckLocked('import a private key'))
+            return;
+        // Display the 'Import Private Key' dialog box
+        dialogImportPrivateKey();
+    }));
+
+    // Handle canceling the action
+    $('#btn-cancel').click($.debounce(100,function(e){
+        dialogClose('dialog-change-address');
+    }));
+
+});
+</script>

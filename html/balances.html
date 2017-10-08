@@ -1,0 +1,169 @@
+<div class="balances-container">
+    <!-- Balances List -->
+    <div class="balances-list">
+        <div class="balances-list-toolbar">
+            <a href="#" class="balances-list-refresh"><i class="fa fa-refresh pull-left"></i></a></li>
+            <input type="text" class="form-control balances-list-search" placeholder="Enter search here">
+            <div style="clear:both;"></div>
+        </div>        
+        <div class="balances-list-assets">
+            <ul class="nav">
+            </ul>
+        </div>
+    </div>
+    <!-- Balances Content -->
+    <div class="balances-content">
+        <div class="panel panel-default">
+
+            <!-- Basic Information -->
+            <div class="panel-heading">
+                <i class="fa fa-lg fa-info-circle"></i> Basic Information
+            </div>
+            <table width="100%" class="table table-condensed table-bordered no-bottom-margin">
+            <tr>
+                <td width="75" rowspan="2" valign="middle" align="center" style="vertical-align:middle;"><img src="https://xchain.io/icon/xcp.png" id="asset-icon" border="0"></td>
+                <th width="*%" class="info">Name</th>
+                <th width="33%" class="info text-center">Current Balance</th>
+            </tr>
+            <tr>
+                <td id="asset-name">&nbsp;</td>
+                <td id="asset-current-balance" class="text-center">&nbsp;</td>
+            </tr>
+            </table>
+
+            <!-- Estimated Value-->
+            <div class="panel-heading panel-middle">
+                <i class="fa fa-lg fa-money"></i> Estimated Value
+            </div>
+            <table class="table table-condensed table-striped table-bordered no-bottom-margin table-centered text-center">
+            <thead>
+                <tr class="info">
+                    <th width="33%">Bitcoin (BTC)</th>
+                    <th width="34%">Counterparty (XCP)</th>
+                    <th width="33%">US Dollars (USD)</th>
+                </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="asset-value-btc">&nbsp;</td>
+                <td id="asset-value-xcp">&nbsp;</td>
+                <td id="asset-value-usd">&nbsp;</td>
+            </tr>                
+            </tbody>
+            </table>
+
+            <!-- Market Information-->
+            <div class="panel-heading panel-middle">
+                <i class="fa fa-lg fa-bank"></i> Market Information
+            </div>
+            <table class="table table-condensed table-bordered text-center no-bottom-margin">
+            <thead>
+                <tr class="info">
+                    <th width="33%">Total Supply</th>
+                    <th width="34%">Last Trade Price (XCP)</th>
+                    <th width="33%">Market Cap. (USD)</th>
+                </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="asset-total-supply">&nbsp;</td>
+                <td id="asset-last-price">&nbsp;</td>
+                <td id="asset-marketcap">&nbsp;</td>
+            </tr>
+            </tbody>
+            </table>
+
+            <!-- Reputation Information-->
+            <div class="panel-heading panel-middle">
+                <i class="fa fa-lg fa-shield"></i> Reputation
+                <a href="https://reputation.coindaddy.io/xcp/asset/{QUERY}" class="btn btn-xs btn-success pull-right" id="asset-reputation-feedback" target="_blank"><i class="fa fa-bullhorn"></i> Feedback</a>
+            </div>
+            <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin text-center">
+            <thead>
+            <tr class="info">
+                <th width="25%">Current Rating</th>
+                <th width="25%">Last 30 Days</th>
+                <th width="25%">6 months ago</th>
+                <th width="25%">1 Year ago</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td id="rating_current">&nbsp;</td>
+                <td id="rating_30day">&nbsp;</td>
+                <td id="rating_6month">&nbsp;</td>
+                <td id="rating_1year">&nbsp;</td>
+            </tr>
+            </tbody>
+            </table>
+
+            <!-- Additional Information-->
+            <div class="panel-heading panel-middle">
+                <i class="fa fa-lg fa-paperclip"></i> Additional Information</a>
+                <a href="#" class="btn btn-xs btn-success pull-right" id="asset-info-more" target="_blank"><i class="fa fa-info-circle"></i> more info</a>
+            </div>
+            <!-- Default page if no enhanced asset info is found-->
+            <div id="asset-info-not-available" class="panel-body" style="display: none">
+                <center>No additional information is available at this time</center>
+            </div>
+            <div id="asset-info" style="display: none">
+                <div id="asset-info-enhanced" style="display: none">
+                    <!-- Name / Website / PGP Signature -->
+                    <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border">
+                    <thead>
+                    <tr class="info">
+                        <th width="33%">Name</th>
+                        <th width="34%">Website</th>
+                        <th width="33%">PGP Signature</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td><div id="asset-info-name">&nbsp;</div></td>
+                        <td><div id="asset-info-website">&nbsp;</div></td>
+                        <td><div id="asset-info-pgpsig">&nbsp;</div></td>
+                    </tr>
+                    </tbody>
+                    </table>
+                </div>
+                <!-- Description  -->
+                <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border">
+                <thead>
+                <tr class="info">
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td id="asset-description">&nbsp;</td>
+                </tr>
+                </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+
+    // Display balances list        
+    updateBalancesList();
+
+    // Display BTC asset info
+    loadAssetInfo('BTC');
+
+    // Handle detecting keyup events and filter the balances list to show matches
+    // buffer the event by 250ms so we can allow for additional keystrokes before processing
+    $('.balances-list-search').keyup($.debounce(250,function(e){
+        updateBalancesList();
+    }));
+
+    // Handle refreshing address balances when user clicks refresh button
+    // buffer the event by 250ms so we can allow for spamming the click button
+    $('.balances-list-refresh').click($.debounce(250,function(e){
+        updateWalletBalances(getWalletAddress(), true);
+    }));
+
+});
+</script>

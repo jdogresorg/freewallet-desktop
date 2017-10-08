@@ -1,0 +1,161 @@
+<!-- Token Name Field (auto-suggest) -->
+<label class="col-sm-3 control-label text-left" for="token-name">
+    Token Name 
+    <a href="#" data-toggle="tooltip" title='This is the name of a token or asset' class="pull-right" id="token-name-tooltip"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>
+<div class="col-sm-9">
+    <input type="text" class="form-control" id="token-name" name="name" placeholder="Token Name" data-minlength="4" required autocomplete="off" >
+</div>
+
+<script>
+$(document).ready(function(){
+
+    // Set host name based off a wallet network
+    var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
+
+    // Define placeholder for last asset name
+    var last_asset = false;
+
+    // Get the current form type and tooltip
+    var type = getFormType(),
+        tip  = $('#token-name-tooltip');
+
+    // Change the look/feel of the form based on form type
+    // if(type=='send'){
+    //     // do something here
+    // } else if(type=='issue-supply'){
+    //     // do something elese here
+    // }
+
+    // Wait a brief moment to allow things to initialize
+    setTimeout(function(){
+
+        // Change toolip text based on form type 
+        var txt = false;
+        if(type=='change-description')
+            txt = 'This is the name of the token you would like to change the description of';
+        if(type=='transfer-ownership')
+            txt = 'This is the name of the token you would like to transfer ownership of';
+        if(type=='issue-supply')
+            txt = 'This is the name of the token you would like to issue additional supply on';
+        if(type=='lock-supply')
+            txt = 'This is the name of the token you would like to lock the supply of';
+        if(type=='dividend')
+            txt = 'This is the name of the token you would like to pay a dividend on';
+        if(txt)
+            tip.attr('data-original-title',txt);
+
+    },750);
+
+
+    // Define a list of popular assets
+    var popular = [
+        'BTC',
+        'BITCRYSTALS',
+        'COVALC',
+        'DATABITS',
+        'FLDC',
+        'PEPECASH',
+        'SCOTCOIN',
+        'XCP'
+    ];
+
+    // Handle offering asset name suggestions
+    // We define all this in a function because updating suggestions requires destroying the field and re-creating it (stupid)
+    var setupTokenNameField = function(data){
+        // console.log('setupTypehead data=',data);
+        // Save the last known query any results length
+        var last_length = $('#token-name').val().length;
+        $('#token-name').typeahead('destroy');
+        $('#token-name').typeahead({
+            minLength: 3,
+            source: data,
+            fitToElement: true
+        });
+
+        // Setup listener to detect any keypresses and determine if we need to update the typeahead data
+        $('#token-name').keyup($.debounce(100,function(e){
+            var val  = String($('#token-name').val()).toUpperCase();
+            // If we have at least 3 characters, look up some suggestions
+            if(val.length>=3){
+                // Run if user has entered more 2 more characters of search data, and we have more results
+                // Run if this is first time user has typed 3 or more characters
+                // Run if user has deleted 2 characters of search data
+                if((val.length>last_length+1 && data.length>=100)||last_length==0||val.length<last_length)
+                    updateSuggestions(val);
+            // Re-initialize the list with the popular assets
+            } else if(val.length==0 && last_length>0){
+                setupTokenNameField(popular);
+            }
+        }));
+
+       
+        // Handle validating token name on 'Change Description' form
+        $('#token-name').change($.debounce(100,function(e){
+            var name = $(this).val();
+            if(name!='' && name!=null && name!=last_asset){
+                last_asset = name;
+                // Lookup if this asset is already registered to another address... send to coindaddy to make purchase offer
+                $.getJSON( 'https://' + host + '/api/asset/' + name, function(o){
+                    var type = getFormType();
+                    // An error indicates asset is not registered
+                    if(o.error){
+                        // Determine the action based on form type
+                        var action = '';
+                        if(type=='description')
+                            action = 'change the description of';
+                        if(type=='issue-supply')
+                            action = 'issue additional supply for';
+                        if(type=='lock-supply')
+                            action = 'lock the supply of';
+                        if(type=='transfer-ownership')
+                            action = 'transfer ownership of';
+                        dialogMessage('Notice', '<center>Before you can ' + action + ' <b><i>' + name + '</i></b>, you must first register the name', true);
+                    } else {
+                        // If this is a dividend payment, then bail out and DO NOT update FW.ASSET_INFO as it overwrites the dividend asset data
+                        if(type=='dividend')
+                            return;
+                        FW.ASSET_INFO = o;
+                        // Error if asset is owned by another address
+                        if(o.owner!=FW.WALLET_ADDRESS){
+                            var found = false;
+                            FW.WALLET_ADDRESSES.forEach(function(item){
+                                if(item.address==o.owner)
+                                    found = true;
+                            });
+                            if(found){
+                                // Notify user that they need to switch 
+                                dialogMessage('Notice', '<center>The name <b><i>' + name + '</i></b> is registered to another address in your wallet ' + o.owner + '</center>', true);
+                            } else {
+                                // Notify user asset is registered to another address
+                                dialogMessage('Notice', '<center><p>The name <b><i>' + name + '</i></b> is registered to address ' + o.owner + '</p>' +
+                                              '<p>You may still purchase this token from the current owner if they have listed it for sale.</p>' + 
+                                              '<a href="https://coindaddy.io/search?network=xcp&q=' + name + '" class="btn btn-success" target="_blank"><i class="fa fw-coindaddy pull-left" style="top:0px"></i> Check if ' + name + ' is for sale on CoinDaddy</a></center>', true);
+                            }
+                        }
+                    }
+                });
+            }
+        }));
+    }
+
+    var updateSuggestions = function(query){
+        var update = true;
+        // Check if we already have exact match
+        $("#token-name").data('typeahead').source.forEach(function(item){
+            if(item==query)
+                update = false;
+        });
+        if(update){
+            $.getJSON('https://' + host + '/api/suggestions/' + query, function(o){
+                if(o.data)
+                    setupTokenNameField(o.data);
+            });
+        }
+    }
+
+    // Initialize the list with the popular currencies listed 
+    setupTokenNameField(popular);    
+
+});
+</script>

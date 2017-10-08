@@ -1,0 +1,115 @@
+<!-- Transaction Information -->
+<div class="row">
+    <div class="col-xs-12">
+        <div class="panel panel-default table-responsive">
+            <div class="panel-heading panel-heading-lg">
+                <i class="fa fa-lg fa-send"></i> Send Details
+                <a href="#" class="btn btn-xs btn-success pull-right" id="history-info-more" target="_blank"><i class="fa fa-info-circle"></i> more info</a>
+            </div>
+            <table class="table table-striped table-bordered table-condensed">
+            <tbody>
+            <tr>
+                <td class="info bold nowrap" width="130">Transaction Hash</td>
+                <td id="tx-hash"></td>
+            </tr>
+            <tr>
+                <td class="info bold" width="130">TX Index</td>
+                <td id="tx-index"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Block #</td>
+                <td id="block"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Time</td>
+                <td id="timestamp"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Asset</td>
+                <td id="asset"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Quantity</td>
+                <td id="quantity"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Source</td>
+                <td id="source"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Destination</td>
+                <td id="destination"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Status</td>
+                <td id="status"></td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+    </div>
+</div><!-- end row -->
+
+<!-- Code to load/update data -->
+<script type="text/javascript">
+    var testnet = (FW.WALLET_NETWORK==2) ? true : false,
+        host    = (testnet) ? 'testnet.xchain.io' : 'xchain.io';
+        net     = (testnet) ? 'tBTC' : 'BTC',
+        tx      = FW.CURRENT_TRANSACTION.tx;
+
+    $(document).ready(function(){
+
+        if(FW.CURRENT_TRANSACTION.asset=='BTC'){
+            // Update 'more info' link to point to transaction url
+            $('#history-info-more').attr('href','https://blocktrail.com/' + net + '/tx/' + tx)
+
+            // Request transaction information from xchain.io
+            $.getJSON('https://api.blocktrail.com/v1/' + net + '/transaction/' + tx + '?api_key=' + FW.API_KEYS.BLOCKTRAIL, function( o ){
+                if(!o.error){
+                    $('#source').html(o.inputs[0].address);
+                    $('#destination').html(o.outputs[0].address);
+                    $('#asset').html('<img src="images/icons/btc.png" class="asset-icon-sm pull-left">BTC');
+                    $('#tx-hash').html(o.hash);
+                    $('#quantity').text(numeral(o.estimated_value).multiply(0.00000001).format('0,0.00000000'));
+                    $('#status').text((o.block_height) ? 'Valid' : 'Pending');
+                    $('#timestamp').html('<span data-livestamp='  + moment(o.first_seen_at,["YYYY-MM-DDTH:m:s"]).unix() + ' class="nowrap"></span>');
+                    $('#block').html(numeral(o.block_height).format('0,0'));
+                    $('#tx-index').text('-');
+                }
+            });             
+        } else {
+            // Update 'more info' link to point to transaction url
+            $('#history-info-more').attr('href','https://' + host + '/tx/' + tx);
+
+            // Request transaction information from xchain.io
+            $.getJSON('https://' + host + '/api/tx/' + tx, function( o ){
+                if(!o.error){
+                    var asset = (o.asset_longname && o.asset_longname!='') ? o.asset_longname : o.asset;
+                    $('#source').html(o.source);
+                    $('#destination').html(o.destination);
+                    $('#asset').html('<img src="https://xchain.io/icon/' + o.asset + '.png" class="asset-icon-sm pull-left">' + asset);
+                    $('#tx-hash').html(o.tx_hash);
+                    var fmt = (String(o.quantity).indexOf('.')==-1) ? '0,0' : '0,0.00000000';
+                    $('#quantity').text(numeral(o.quantity).format(fmt));
+                    $('#status').text(o.status);
+                    $('#timestamp').html('<span data-livestamp='  + o.timestamp + ' class="nowrap"></span>');
+                    if(o.tx_index){
+                        $('#block').html(numeral(o.block_index).format('0,0'));
+                        $('#tx-index').text(numeral(o.tx_index).format('0,0'));
+                    } else {
+                        $('#block').text('-');
+                        $('#tx-index').text('-');
+                    }
+                }
+            });   
+
+
+        }
+
+// var 
+// 
+
+
+    });
+
+</script>

@@ -1,0 +1,157 @@
+<!-- Broadcast Message Form -->
+<form class="form-horizontal" id="broadcast-message-form" data-toggle="validator" role="form">
+    <div class="form-group" id="source-address-field">
+        <!-- Source Address Field -->
+    </div>
+    <div class="form-group">
+        <label for="address" class="col-sm-3 control-label text-left">
+            Message
+            <a href="#" data-toggle="tooltip" title='This is the message or feed URL that you would like to broadcast' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <input type="text" class="form-control" id="broadcast-message" name="message" placeholder="Message" data-minlength="1" required>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-3 control-label text-left">
+            Value
+            <a href="#" data-toggle="tooltip" title='This is the numerical value of the broadcast' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <input type="text" class="form-control pull-left" name="value"  id="broadcast-value" placeholder="0" style="width:110px" autocomplete="off" >
+            <div class="input-group pull-right" id="fee-priority-wrapper" style="width:294px;">
+                <span class="input-group-addon">
+                    Feed Fee
+                    <a href="#" data-toggle="tooltip" title='This is the fraction of bets on this feed that will go to its operator.'><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                </span>
+                <input type="text" class="form-control" name="fee" id="broadcast-fee" placeholder="0.00000000" data-minlength="1">
+            </div>
+        </div>
+    </div>
+    <div class="form-group" id="timestamp-field">
+        <!-- Timestamp Field -->
+    </div>
+    <div class="form-group" id="tx-fee-field">
+        <!-- Transaction Fee Field -->
+    </div>
+    <div class="text-right">
+        <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
+        <div id="btn-submit" class="btn btn-success "><i class="fa fa-lg fa-fw fa-bullhorn"></i> Broadcast Message</div>
+    </div>
+</form>
+
+
+<script>
+$(document).ready(function(){
+
+    // Set host name based off a wallet network
+    var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
+
+    // Load any field content
+    $('#source-address-field').load('html/fields/source-address.html');
+    $('#timestamp-field').load('html/fields/timestamp.html');
+    $('#tx-fee-field').load('html/fields/tx-fee.html');
+
+    // Delay initializing some fields to give things a chance to load
+    setTimeout(function(){
+
+        // Handle loading any data from FW.DIALOG_DATA
+        var data = FW.DIALOG_DATA;
+        if(data.message)
+            $('#broadcast-message').val(data.message);
+
+        // Reset dialog data so we don't reuse data on form in the future
+        FW.DIALOG_DATA = {};
+
+        // Initialize any tooltips
+        $('[data-toggle="tooltip"]').tooltip({ 
+            html: true,
+            placement: 'bottom'
+        }); 
+
+        // Remove any error indicators when user changes a field value
+        $('#broadcast-message-form input').change(function(e){
+            $(this).closest('.form-group').removeClass('has-error has-danger');
+        });
+
+    },100);
+
+    // Submit form if user clicks 'Submit' button
+    $('#btn-submit').click($.debounce(100,function(e){
+        $('#broadcast-message-form').submit();
+    }));
+
+    // Hide the form if users clicks 'Cancel' button
+    $('#btn-cancel').click($.debounce(100,function(e){
+        dialogClose('dialog-broadcast-message');
+    }));
+
+    // Make sure broadcast fee stays in correct format
+    $('#broadcast-fee').change($.debounce(100,function(e){
+        var val = $(this).val();
+        $(this).val(numeral(val).format('0.00000000'));
+    }));
+
+    // Make sure broadcast value stays in correct format
+    $('#broadcast-value').change($.debounce(100,function(e){
+        var val = $(this).val();
+        $(this).val(numeral(val).format('0'));
+    }));
+
+    // Handle form validation and displaying any errors
+    $('#broadcast-message-form').validator().on('submit', function(e){
+        // prevent form submission
+        e.preventDefault(); 
+        // Get object with form values
+        var vals   = array2Object($(this).serializeArray()),
+            errors = [];
+        console.log('vals=',vals);
+        // Remove error indicators from any fields 
+        $('.form-group').removeClass('has-error has-danger');
+        // Verify we have a message to broadcast
+        if(String(vals.message).length==0){
+            errors.push('You must enter a message to broadcast!');
+            $('#broadcast-message').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Verify we have valid feed fee amount 
+        if(numeral(vals['fee']).value()>=1){
+            errors.push('Feed fee must be less than 1');
+            $('#broadcast-fee').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Verify we have valid fee amount 
+        if(numeral(vals['fee-amount']).value()==0){
+            errors.push('You must enter a fee which is greater than 0.00000000!');
+            $('#fee-amount').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+        } else {
+            // Callback to run after broadcasting send
+            var doneCb = function(tx){
+                if(tx){
+                    dialogClose('dialog-broadcast-message');
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Broadcast Successfull', '<center>Your broadcast has been sent to the network and should be included to a block shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="https://' + host +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                }
+            }
+            // Callback to run if user confirms action
+            var confirmCb = function(){
+                var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                    fee_sat  = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
+                    feed_fee = parseFloat(numeral(vals.fee).format('0.00000000')),
+                    value    = parseInt(numeral(vals.value).value()),
+                    tstamp   = moment(vals.timestamp).unix();
+                cpBroadcast(network, vals.source, vals.message, value, feed_fee, tstamp, fee_sat, doneCb);
+            }
+            // Confirm the action with the user
+            var title = '<i class="fa fa-lg fa-fw fa-question-circle"></i> Confirm Broadcast?',
+                fmt   = ($('#asset-divisible').val()=='Yes') ? '0,0.00000000' : '0,0',
+                msg   = 'Broadcast the message \'<b>' + vals.message + '</b>\'';
+            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+        }
+    })
+
+
+});
+</script>
