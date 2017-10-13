@@ -212,24 +212,28 @@ while true; do
 done
 
 
-# Create DMG Installer for mac
+# Create Linux installer?
 while true; do
     read -p "Create linux installer?" yn
     case $yn in
         [Yy]* ) yn="Y"
-                cd $base_dir/builds/$app_name/linux64/
-                mkdir /tmp/$app_name 2> /dev/null
-                rm -rf /tmp/$app_name/*
-                rm -rf /tmp/$app_name_x64.tgz
-                rm -rf $app_name-x64.tgz
-                echo "### Copying files to build directory"
-                cp -a * /tmp/$app_name/
-                echo "### Copying additional files to install directory..."
-                cd $base_dir/misc/
-                cp FreeWallet.png install.sh FreeWallet.desktop /tmp/$app_name/
-                cd /tmp
-                tar -cvzf $app_name-x64.tgz $app_name
-                cp $app_name-x64.tgz $base_dir/builds/$app_name/linux64/
+                platform=( 32 64 )
+                for bits in "${platform[@]}"; do
+                    echo "### Creating $bits-bit installer"
+                    cd $base_dir/builds/$app_name/linux$bits/
+                    mkdir /tmp/$app_name 2> /dev/null
+                    rm -rf /tmp/$app_name/*
+                    rm -rf /tmp/$app_name.x$bits.tgz
+                    rm -rf $app_name.x$bits.tgz
+                    echo "### Copying files to build directory"
+                    cp -a * /tmp/$app_name/
+                    echo "### Copying additional files to install directory..."
+                    cd $base_dir/misc/
+                    cp FreeWallet.png install.sh FreeWallet.desktop /tmp/$app_name/
+                    cd /tmp
+                    tar -cvzf $app_name.x$bits.tgz $app_name
+                    cp $app_name.x$bits.tgz $base_dir/builds/$app_name/linux$bits/
+                done
                 break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
