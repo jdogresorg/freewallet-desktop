@@ -2,7 +2,7 @@
   "main": "index.html",
   "name": "FreeWallet",
   "description": "Freewallet is a free desktop wallet that supports Bitcoin and Counterparty",
-  "version": "0.9.2",
+  "version": "0.9.5",
   "window": {
     "title": "FreeWallet",
     "icon": "images/freewallet-icon-180.png",
