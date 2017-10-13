@@ -144,9 +144,10 @@ function resetWallet(){
     ss.removeItem('wallet');
     ss.removeItem('walletPassword');
     ss.removeItem('skipWalletAuth');
-    FW.WALLET_BALANCES = [];
-    FW.WALLET_HISTORY  = [];
-    FW.WALLET_KEYS     = {};    
+    FW.WALLET_ADDRESSES = [];
+    FW.WALLET_BALANCES  = [];
+    FW.WALLET_HISTORY   = [];
+    FW.WALLET_KEYS      = {};    
 }
 
 
