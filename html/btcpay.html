@@ -1,0 +1,144 @@
+<form class="form-horizontal" id="btcpay-form" data-toggle="validator" role="form">
+    <input type="hidden" name="source"      id="source">
+    <input type="hidden" name="network"     id="network">
+    <input type="hidden" name="tx0_hash"    id="tx0_hash">
+    <input type="hidden" name="tx1_hash"    id="tx1_hash">
+    <div class="alert alert-info text-center">
+        A BTC order has matched and BTC payment is required before block <span id="expire_block"></span>
+    </div>
+    <!-- Order Information -->
+    <div class="form-group">
+        <label class="col-sm-3 control-label text-left order-type">
+            Pay 
+        </label>
+        <div class="col-sm-9">
+            <table width="100%">
+            <tr>
+                <td width="180">
+                    <table border=0>
+                    <tr>
+                        <td><img src="images/icons/btc.png" class="margin-right-5" id="assetA-icon"></td>
+                        <td id="infoA" class="bold"></td>
+                    </tr>
+                    </table>                
+                </td>
+                <td width="*%" class="text-center">for</td>
+                <td width="180">
+                    <table border=0>
+                    <tr>
+                        <td><img src="images/icons/blank.png" class="margin-right-5" id="assetB-icon" ></td>
+                        <td id="infoB" class="bold"></td>
+                    </tr>
+                    </table>
+                </td>
+            </tr>
+            </table>
+        </div>
+    </div>
+    <div class="form-group" id="tx-fee-field">
+        <!-- Transaction Fee Field -->
+    </div>
+    <div class="text-right">
+        <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-thumbs-down"></i> No</div>
+        <div id="btn-submit" class="btn btn-success"><i class="fa fa-lg fa-fw fa-thumbs-up"></i> Yes</div>
+    </div>
+</form>
+
+<script>
+$(document).ready(function(){
+
+    // Load any field content
+    $('#tx-fee-field').load('html/fields/tx-fee.html');
+
+    // Delay initializing some fields to give things a chance to load
+    setTimeout(function(){
+
+        // Handle loading any data from FW.DIALOG_DATA
+        var data = FW.DIALOG_DATA;
+        if(data){
+            var asset   = (data.forward_asset=='BTC') ? data.backward_asset : data.forward_asset,
+                amountA = (data.forward_asset=='BTC') ? data.forward_quantity : data.backward_quantity,
+                amountB = (data.forward_asset=='BTC') ? data.backward_quantity : data.forward_quantity,
+                format  = '0,0.00000000';
+            $('#infoA').html(numeral(amountA).format(format) + '<br>BTC');
+            $('#infoB').html(numeral(amountB).format(format) + '<br>' + asset);
+            $('#assetB-icon').attr('src', FW.XCHAIN_API + '/icon/' + asset + '.png');
+            // Request info on the non-BTC asset and set the asset amount properly (divisible or not)
+            getAssetInfo(asset, function(o){
+                var format = (o.divisible) ? '0,0.00000000' : '0,0';
+                $('#infoB').html(numeral(amountB).format(format) + '<br>' + asset);
+            });                
+            console.log('data=',data);
+            // Update form with data
+            $('#source').val(data.source);
+            $('#tx0_hash').val(data.tx0_hash);
+            $('#tx1_hash').val(data.tx1_hash);
+            $('#network').val(data.network);
+            $('#expire_block').text(numeral(data.expire_index).format('0,0'));
+        }
+
+        // Reset dialog data so we don't reuse data on form in the future
+        FW.DIALOG_DATA = {};
+
+        // Initialize any tooltips
+        $('[data-toggle="tooltip"]').tooltip({ 
+            html: true,
+            placement: 'bottom'
+        }); 
+
+    },100);
+
+    // Submit form if user clicks 'Yes' button
+    $('#btn-submit').click($.debounce(100,function(e){
+        $('#btcpay-form').submit();
+    }));
+
+    // Hide the form if users clicks 'No' button, and remove match from queue
+    $('#btn-cancel').click($.debounce(100,function(e){
+        var vals   = array2Object($('#btcpay-form').serializeArray());
+        dialogClose('dialog-btcpay');
+        // Remove the order match from the queue and check the queue again after a brief delay to let the previous dialog box close 
+        removeFromBtcpayQueue(vals.tx0_hash, vals.tx1_hash);
+        setTimeout(function(){ processBtcpayQueue(); },1000);
+    }));
+
+    // Handle form validation and displaying any errors
+    $('#btcpay-form').validator().on('submit', function(e){
+        // prevent form submission
+        e.preventDefault(); 
+        // Get object with form values
+        var vals   = array2Object($(this).serializeArray()),
+            errors = [];
+        console.log('vals=',vals);
+        // Remove error indicators from any fields 
+        $('.form-group').removeClass('has-error has-danger');
+        // Verify we have valid fee amount 
+        if(numeral(vals['fee-amount']).value()==0){
+            errors.push('You must enter a fee which is greater than 0.00000000!');
+            $('#fee-amount').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+        } else {
+            var fee_sat  = getSatoshis(vals['fee-amount']),
+                match_id = vals.tx0_hash + '_' + vals.tx1_hash;
+            // Callback to run after broadcasting tx
+            var doneCb = function(tx){
+                if(tx){
+                    dialogClose('dialog-btcpay');
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> BTCPay Successful', '<center>Your BTC payment has been broadcast to the network and your order should complete shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                    // Remove the order match from the queue and check the queue again after a brief delay to let the previous dialog box close 
+                    removeFromBtcpayQueue(vals.tx0_hash, vals.tx1_hash);
+                    setTimeout(function(){ processBtcpayQueue(); },1000);
+                }
+            }
+            cpBtcpay(vals.network, vals.source, match_id, fee_sat, doneCb);
+        }
+    })
+
+
+
+});
+</script>

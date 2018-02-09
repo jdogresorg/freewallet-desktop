@@ -1,7 +1,7 @@
 /*********************************************************************
  * freewallet-desktop.js 
  *
- * Custom javascript for freewallet.js
+ * Custom javascript for FreeWallet (desktop version)
  *********************************************************************/
 
 // Setup some short aliases
@@ -41,30 +41,83 @@ FW.WALLET_ADDRESSES = JSON.parse(ls.getItem('walletAddresses')) || [];
 //         index: 0    // The index of the address
 // }
 
-// Object containing of address/private keys
-FW.WALLET_KEYS    = {};                             
+FW.WALLET_KEYS      = {}; // Address/Private keys
+FW.EXCHANGE_MARKETS = {}; // DEX Markets cache
 
 // Load the last known wallet balances and history
 FW.WALLET_BALANCES = JSON.parse(ls.getItem('walletBalances')) || [];
 FW.WALLET_HISTORY  = JSON.parse(ls.getItem('walletHistory'))  || [];
 
-// Public server config used to generate unsigned wallet transactions
+// Define default server info
 FW.WALLET_SERVER_INFO = {
     mainnet: {
         host: 'public.coindaddy.io',
         port: 4001,                 
         user: 'rpc',                
         pass: '1234',               
-        ssl: true                   
+        ssl: true,
+        api_host: 'xchain.io',
+        api_ssl: true
     },
     testnet: {
         host: 'public.coindaddy.io',
         port: 14001,                
         user: 'rpc',                
         pass: '1234',               
-        ssl: true                   
+        ssl: true,
+        api_host: 'testnet.xchain.io',
+        api_ssl: true
     }
 };
+
+// Define the default and base markets for the Decentralized Exchange (DEX)
+FW.DEFAULT_MARKETS = ['BTC','XCP','BITCRYSTALS','PEPECASH','WILLCOIN'];
+FW.BASE_MARKETS    = JSON.parse(ls.getItem('walletMarkets')) || FW.DEFAULT_MARKETS;
+
+// Define the default market viewing options (hide numeric by default)
+FW.MARKET_OPTIONS  = JSON.parse(ls.getItem('walletMarketOptions')) || [1,2]; // 1=named, 2=subasset, 3=numeric 
+
+// Define arrays to hold BTCPay information
+FW.BTCPAY_ORDERS  = JSON.parse(ls.getItem('btcpayOrders'))  || {}; // array of order tx_hashes to monitor for BTCpay transactions
+FW.BTCPAY_MATCHES = JSON.parse(ls.getItem('btcpayMatches')) || {}; // array of order matches that have seen/processed
+FW.BTCPAY_QUEUE   = JSON.parse(ls.getItem('btcpayQueue'))   || {}; // Array of btcpay transactions to process
+// Example of how BTCPAY data is stored 
+// FW.BTCPAY_ORDERS[network][address][order_hash] = autopay;                        // (autopay 0=false, 1=true)
+// FW.BTCPAY_MATCHES[network][order_hash]         = [order_match1, order_match2];   // Array of order match transactions that have been seen/added to queue
+// FW.BTCPAY_QUEUE[network]                       = [{ tx_info },{ tx_info }];      // Array of btcpay transactions to process
+
+// Define cache for asset information
+// We cache the data in order to reduce duplicate API calls as much as possible
+FW.ASSET_INFO  = {};
+// Example of cached asset data
+// FW.ASSET_INFO['BTC'] = {
+//     block:     0, // Block # when data was last updated
+//     ...
+// }
+
+// Define cache for reputation information ()
+// We cache the data in order to reduce duplicate API calls as much as possible
+FW.REPUTATION_INFO  = {};
+// Example of cached reputation data
+// FW.REPUTATION_INFO['BTC'] = {
+//     block:     0, // Block # when data was last updated
+//     ...
+// }
+
+// Define cache for market information
+// We cache the data in order to reduce duplicate API calls as much as possible
+FW.MARKET_DATA = {}; 
+// Example of cached market data
+// FW.MARKET_DATA['BTC/XCP'] = {
+//     block:      0, // Block # when data was last updated
+//     basics:    {}, // Basics (last price, high/low, volume)
+//     orderbook: {}, // Full Orderbook
+//     history:   {}, // Full History
+//     trades:    {}, // My Trades
+//     orders:    {}, // My Open Orders
+//     chart:     {}, // Chart data
+// }
+
 
 // Start loading the wallet 
 $(document).ready(function(){
@@ -86,6 +139,9 @@ $(document).ready(function(){
     if(info)
         FW.WALLET_SERVER_INFO = JSON.parse(info);
 
+    // Setup the xchain API url
+    setXChainAPI(FW.WALLET_NETWORK);
+
     // Initialize the wallet 
     initWallet();
 
@@ -98,9 +154,31 @@ function setTheme( theme ) {
     body.addClass(theme);        
 }
 
+// Handle getting XChain API url for given network
+function getXChainAPI( network ){
+    var name = (network==2||network=='testnet') ? 'testnet' : 'mainnet',
+        o    = FW.WALLET_SERVER_INFO[name],
+        url  = ((o.api_ssl) ? 'https' : 'http') + '://' + o.api_host;
+    return url;
+}
+
+// Handle setting server information based off current network
+function setXChainAPI( network ){
+    FW.XCHAIN_API = getXChainAPI(network);
+}
+
 // Handle loading content into the main panel
 function loadPage(page){
-    $('#main-content-panel').load('html/' + page + '.html');
+    var html = page + '.html';
+    // For bounty features, only allow paid users access until bounty is fully funded
+    if(['exchange','market','betting'].indexOf(page)!=-1){
+        var allow = checkTokenAccess(page);
+        if(page=='exchange') html = (allow) ? 'exchange/markets.html' : 'exchange.html';
+        if(page=='market')   html = (allow) ? 'exchange/market.html' : 'exchange.html';
+        if(page=='betting')  html = (allow) ? 'betting.html' : 'betting.html';
+    }
+    // Load the page content and switch the tab to active
+    $('#main-content-panel').load('html/' + html);
     $('.header .navbar-nav li > a').removeClass('active');
     $('#' + page).addClass('active');
 }
@@ -123,12 +201,15 @@ function initWallet(){
         // Decrypt the wallet using the current password (do this so we populate FW.WALLET_KEYS)
         decryptWallet(getWalletPassword());
     }
+    // Check if we have everything needed to authorize Auto-BTCpay transactions
+    checkBtcpayAuth();
     // Trigger an immediate check of if we need to update the wallet information (prices/balances)
     checkUpdateWallet();
-    // Check every 60 seconds if we should update the wallet information (prices/balances)
+    // Check every 60 seconds if we should update the wallet information
     setInterval(checkUpdateWallet, 60000);
     updateWalletOptions();
 }
+
 
 // Reset/Remove wallet
 function resetWallet(){
@@ -138,19 +219,27 @@ function resetWallet(){
     ls.removeItem('walletEncrypted');
     ls.removeItem('walletAddress');
     ls.removeItem('walletAddresses');
+    ls.removeItem('walletAddressLabel');
     ls.removeItem('walletBalances');
     ls.removeItem('walletHistory');
     ls.removeItem('walletNetwork');
+    ls.removeItem('walletMarkets');
+    ls.removeItem('btcpayOrders');
+    ls.removeItem('btcpayMatches');
+    ls.removeItem('btcpayQueue');
+    ss.removeItem('btcpayWallet');
     ss.removeItem('wallet');
     ss.removeItem('walletPassword');
     ss.removeItem('skipWalletAuth');
-    FW.WALLET_ADDRESSES = [];
     FW.WALLET_BALANCES  = [];
     FW.WALLET_HISTORY   = [];
-    FW.WALLET_KEYS      = {};    
+    FW.WALLET_KEYS      = {};
+    FW.BTCPAY_ORDERS    = {};
+    FW.BTCPAY_MATCHES   = {};
+    FW.BTCPAY_QUEUE     = {};
+    FW.BTCPAY_ORDERS    = {}
+    FW.BASE_MARKETS     = FW.DEFAULT_MARKETS;
 }
-
-
 
 // Create HD wallet
 function createWallet( passphrase ){
@@ -276,7 +365,6 @@ function lockWallet(){
     FW.WALLET_KEYS = {};
 }
 
-
 // Get wallet addresses using given index 
 function getWalletAddress( index ){
     // console.log('getWalletAddress index=',index);
@@ -383,10 +471,15 @@ function setWalletAddressLabel( address, label ){
 function setWalletNetwork(network, load=false){
     ls.setItem('walletNetwork', network);
     FW.WALLET_NETWORK = network;
+    // Reset exchange/market/asset/reputation info
+    FW.EXCHANGE_MARKETS = {};
+    FW.ASSET_INFO       = {};
+    FW.REPUTATION_INFO  = {};
+    // Update the xchain API url
+    setXChainAPI(network);
     // Set current address to first address in wallet
     setWalletAddress(getWalletAddress(0), load);
 }
-
 
 // Handle adding private key to wallet
 function addWalletPrivkey(key){
@@ -429,7 +522,6 @@ function addWalletPrivkey(key){
     }
     return address;
 }
-
 
 // Validate wallet password
 function isValidWalletPassword( password ){
@@ -546,17 +638,56 @@ function getAssetPrice(id, full){
 }
 
 // Handle retrieving asset information from xchain and handing the data to a callback function
-function getAssetInfo(asset, callback){
-    var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
-    $.getJSON( 'https://' + host + '/api/asset/' + asset, function( data ){
-        if(typeof callback === 'function')
-            callback(data);
-    });
+// We cache the information between blocks to reduce the number of duplicate API calls
+function getAssetInfo(asset, callback, force){
+    var net    = (FW.WALLET_NETWORK==2)  ? 'testnet' : 'mainnet',
+        block  = (FW.NETWORK_INFO.network_info) ? FW.NETWORK_INFO.network_info[net].block_height : 1,
+        data   = FW.ASSET_INFO[asset] || false,
+        last   = (data) ? data.block : 0,
+        update = (block > last || force) ? true : false;
+    // Initialize the asset data cache
+    if(!FW.ASSET_INFO[asset])
+        FW.ASSET_INFO[asset] = {}
+    if(update){
+        $.getJSON( FW.XCHAIN_API + '/api/asset/' + asset, function( data ){
+            data.block = block;
+            FW.ASSET_INFO[asset] = data;
+            if(typeof callback === 'function')
+                callback(data);
+        });
+    } else {
+        callback(data);
+    }
+}
+
+
+// Handle retrieving asset reputation info from coindaddy and handing the data to a callback function
+// We cache the information between blocks to reduce the number of duplicate API calls
+function getAssetReputationInfo(asset, callback, force){
+    var net    = (FW.WALLET_NETWORK==2)  ? 'testnet' : 'mainnet',
+        block  = (FW.NETWORK_INFO.network_info) ? FW.NETWORK_INFO.network_info[net].block_height : 1,
+        data   = FW.REPUTATION_INFO[asset] || false,
+        last   = (data) ? data.block : 0,
+        update = (block > last || force) ? true : false;
+    // Initialize the asset data cache
+    if(!FW.REPUTATION_INFO[asset])
+        FW.REPUTATION_INFO[asset] = {}
+    if(update){
+        $.getJSON('https://reputation.coindaddy.io/api/asset/xcp/' + asset, function( data ){
+            data.block = block;
+            FW.REPUTATION_INFO[asset] = data;
+            if(typeof callback === 'function')
+                callback(data);
+        });
+    } else {
+        callback(data);
+    }
 }
 
 // Check if wallet price/balance info should be updated
 function checkUpdateWallet(){
     updateNetworkInfo();
+    checkBtcpayTransactions();  
     var addr = getWalletAddress();
     if(addr){
         updateWalletBalances(addr);
@@ -564,13 +695,266 @@ function checkUpdateWallet(){
     }
 };
 
+// Handle checking for special tokens to enable access to features
+// Check access each time a feature is accessed instead of setting a localStorage flag (make it a pain to access feature without access token)
+function checkTokenAccess(feature){
+    var assets = ['XCHAINPEPE','FULLACCESS'],
+        access = false;
+    // Loop through all addresses except watch-only addresses (ownership not proven)
+    FW.WALLET_ADDRESSES.forEach(function(item){
+        if(item.type!=3){
+            FW.WALLET_BALANCES.forEach(function(itm){
+                if(itm.address==item.address){
+                    itm.data.forEach(function(balance){
+                        if(assets.indexOf(balance.asset)!=-1 && parseFloat(balance.quantity)>=1)
+                            access = true;
+                    });
+                }
+            });
+        }
+    });
+    return access;
+}
+
+// Handle verifying that we have wallet seed available for BTCpay transactions
+function checkBtcpayAuth(){
+    // console.log('checkBtcpayAuth FW.BTCPAY_ORDERS=',FW.BTCPAY_ORDERS);
+    var enabled = false;
+    $.each(['mainnet','testnet'],function(ndx, network){
+        $.each(FW.BTCPAY_ORDERS[network], function(address, orders){
+            $.each(orders, function(order, autopay){
+                if(autopay==1)
+                    enabled = true;
+            });
+        });
+    });
+    // If Auto-BTCpay is enabled, make sure we have unlocked wallet available
+    var a = ss.getItem('btcpayWallet'),
+        b = ss.getItem('wallet');
+    if(enabled && a==null){
+        if(b){
+            ss.setItem('btcpayWallet',b);
+        } else {
+            dialogEnableBtcpay();
+        }
+    }
+}
+
+// Check the status of any btcpay transactions
+function checkBtcpayTransactions( force ){
+    // console.log('checkBtcpayTransactions');
+    var ls   = localStorage,
+        last = ls.getItem('btcpayLastUpdated') || 0,
+        ms   = 300000,  // 5 minutes
+        save = false;
+    // Handle requesting updated order match information
+    if((parseInt(last) + ms)  <= Date.now() || force ){
+        $.each(['mainnet','testnet'], function(idx, network){
+            $.each(FW.BTCPAY_ORDERS[network],  function(address, orders){
+                // Only request data if we have orders to monitor
+                if(Object.keys(orders).length){
+                    // Set XChain url
+                    var info = FW.WALLET_SERVER_INFO[network],
+                        host = ((info.api_ssl) ? 'https' : 'http') + '://' + info.api_host;
+                        url  = host + '/api/order_matches/' + address;
+                    // Request order match data for the given address
+                    $.getJSON(url, function(o){
+                        if(!o.error){
+                            $.each(o.data,function(ndx,data){
+                                $.each(orders, function(order, autopay){
+                                    // Find any pending order matches that we care about
+                                    if(data.status=='pending' && (data.tx0_hash==order||data.tx1_hash==order)){
+                                        var tx  = (data.tx0_hash==order) ? data.tx1_hash : data.tx0_hash,           // tx hash of the other side of the order match
+                                            src = (data.tx0_hash==order) ? data.tx0_address : data.tx1_address;     // source address for our order
+                                        // Initialize the BTCPAY objects if needed
+                                        if(!FW.BTCPAY_QUEUE[network])
+                                            FW.BTCPAY_QUEUE[network] = [];
+                                        if(!FW.BTCPAY_MATCHES[network])
+                                            FW.BTCPAY_MATCHES[network] = {};
+                                        if(!FW.BTCPAY_MATCHES[network][order])
+                                            FW.BTCPAY_MATCHES[network][order] = [];
+                                        // Detect any orders we have not already seen
+                                        if(FW.BTCPAY_MATCHES[network][order].indexOf(tx)==-1){
+                                            // Add tx hash to BTCPAY_MATCHES so we know we have already detected this transaction
+                                            FW.BTCPAY_MATCHES[network][order].push(tx);
+                                            // Add tx info to BTCPAY_QUEUE so we can process
+                                            data.autopay = autopay;
+                                            data.source  = src;
+                                            FW.BTCPAY_QUEUE[network].push(data);
+                                            // Set flag to indicate we should save updated data
+                                            save = true;
+                                        }
+                                    }
+                                });
+                            });
+                            // Save updated data to disk
+                            if(save){
+                                ls.setItem('btcpayMatches',JSON.stringify(FW.BTCPAY_MATCHES));
+                                ls.setItem('btcpayQueue',JSON.stringify(FW.BTCPAY_QUEUE));
+                            }
+                            // Handle processing any BTCpay transaction
+                            processBtcpayQueue();
+                        }
+                    });
+                }
+            });
+        });
+        ls.setItem('btcpayLastUpdated', Date.now());
+    } else {
+        // Handle processing any BTCpay transactions in the queue
+        processBtcpayQueue();
+    }
+}
+
+// Handle cleaning up BTCPAY data
+// - removes expired order matches from FW.BTCPAY_QUEUE 
+// - removes expired order match data from FW.BTCPAY_MATCHES
+// - removes expired orders from FW.BTCPAY_ORDERS
+function cleanupBtcpay(){
+    // console.log('cleanupBtcpayQueue FW.BTCPAY_QUEUE=',FW.BTCPAY_QUEUE);
+    var last = ls.getItem('btcpayLastCleanup') || 0,
+        ms   = 3600000; // 60 minutes
+    // Loop through queue and process
+    $.each(['mainnet','testnet'], function(ndx, network){
+        // Remove expired order matches from the queue
+        var arr = [],
+            len = (FW.BTCPAY_QUEUE[network]) ? FW.BTCPAY_QUEUE[network].length : 0;
+        $.each(FW.BTCPAY_QUEUE[network], function(idx, o){
+            if(FW.NETWORK_INFO.network_info[network].block_height < o.expire_index)
+                arr.push(o);
+        });
+        FW.BTCPAY_QUEUE[network] = arr;
+        // Save to disk if we detected any changes 
+        if(len!=arr.length)
+            ls.setItem('btcpayQueue',JSON.stringify(FW.BTCPAY_QUEUE));
+        // Remove expired orders from BTCPAY_ORDERS and BTCPAY_MATCHES
+        if((parseInt(last) + ms)  <= Date.now()){
+            var host = getXChainAPI(network);
+            $.each(FW.BTCPAY_ORDERS[network], function(address, orders){
+                $.each(orders, function(order, autopay){
+                    $.getJSON( host + '/api/tx/' + order, function(data){
+                        // Remove order if tx is mined and status is anything other than 'open'
+                        if(data && data.block_index && data.status && data.status!='open')
+                            removeFromBtcpayOrders(order);
+                    });
+                });
+            });
+            // Save last time we ran order expiration check
+            ls.setItem('btcpayLastCleanup', Date.now());
+        }
+    });
+}
+
+// Handle locating and removing a specific order from future monitoring
+function removeFromBtcpayOrders(order_hash){
+    // console.log('removeFromBtcpayOrders order_hash=',order_hash);
+    $.each(['mainnet','testnet'], function(ndx, network){
+        // Remove order data from FW.BTCPAY_ORDERS
+        $.each(FW.BTCPAY_ORDERS[network], function(address, orders){
+            var obj = {};
+            $.each(orders, function(order, autopay){
+                if(order!=order_hash)
+                    obj[order] = autopay;
+            });
+            FW.BTCPAY_ORDERS[network][address] = obj;
+        });
+        // Remove order data from FW.BTCPAY_MATCHES
+        $.each(FW.BTCPAY_MATCHES[network], function(order, matches){
+            if(FW.BTCPAY_MATCHES[network][order])
+                delete FW.BTCPAY_MATCHES[network][order];
+        });
+    });
+    // Save updated data to disk
+    ls.setItem('btcpayOrders',JSON.stringify(FW.BTCPAY_ORDERS));
+    ls.setItem('btcpayMatches',JSON.stringify(FW.BTCPAY_MATCHES));
+}
+
+// Handle locating and removing a specific order from the queue
+function removeFromBtcpayQueue(tx0_hash, tx1_hash){
+    // console.log('removeFromBtcpayQueue x0_hash, tx1_hash=',x0_hash, tx1_hash);
+    $.each(['mainnet','testnet'], function(ndx, network){
+        $.each(FW.BTCPAY_QUEUE[network], function(idx, o){
+            if((o.tx0_hash==tx0_hash && o.tx1_hash==tx1_hash)||o.tx0_hash==tx1_hash && o.tx1_hash==tx0_hash){
+                FW.BTCPAY_QUEUE[network].splice(idx,1);
+                // Save the updated queue to disk and bail out
+                ls.setItem('btcpayQueue',JSON.stringify(FW.BTCPAY_QUEUE));
+                return false;
+            }
+        });
+    });
+}
+
+// Handle processing BTCPayment queue one item at a time
+function processBtcpayQueue(){
+    // console.log('processBtcpayQueue FW.BTCPAY_QUEUE=',FW.BTCPAY_QUEUE);
+    cleanupBtcpay();
+    // Set placeholder to hold data on first manual btcpay tx 
+    var data = false,
+        a    = ss.getItem('wallet'),
+        b    = ss.getItem('btcpayWallet');
+    // Loop through queue and process any valid order matches
+    $.each(['mainnet','testnet'], function(ndx, network){
+        $.each(FW.BTCPAY_QUEUE[network], function(idx, o){
+            if(o.autopay && (a||b)){
+                autoBtcpay(network, o);
+            } else {
+                data = o;
+                data.network = network; 
+                return false; // bail out on first match
+            }
+        });
+    });
+    // If we detected a transaction which needs manual processing, display the dialog box to the user
+    if(data){
+        // Check if the BTCPay dialog box is visible... if so, bail out
+        if($('#btcpay-form').length)
+            return;
+        FW.DIALOG_DATA = data;
+        dialogBTCpay(false);
+    }
+}
+
+// Handle automatically generating/signing/broadcasting a BTCpay transaction 
+function autoBtcpay(network, o){
+    // console.log('autoBtcpay network, o=', network, o);
+    var a       = ss.getItem('wallet'),
+        b       = ss.getItem('btcpayWallet'),
+        c       = false, // Flag to indicate if we should delete wallet after tx
+        id      = o.tx0_hash + '_' + o.tx1_hash,
+        fee     = FW.NETWORK_INFO.fee_info.optimal, // Use high priority fee for order matches
+        size    = 350,                              // 1 input is about 300 bytes... (TODO - Get actual tx size via pre-flight check)
+        fee_sat = getSatoshis(((fee / 1000) * size) * 0.00000001);
+    // Check status of the wallet and hot-swap wallet into place if needed
+    if(a==null){
+        // If no wallet/btcpayWallet is found, bail out
+        if(b==null){
+            return;
+        } else {
+            ss.setItem('wallet',b);
+            c = true;
+        }
+    }
+    // Handle automatically creating/signing/broadcasting the BTCpay tx
+    cpBtcpay(network, o.source, id, fee_sat, function(tx){
+        // Only proceed if we have a valid tx hash for the broadcast tx... otherwise leave in queue so we can try again
+        if(tx){
+            dialogMessage('<i class="fa fa-lg fa-check"></i> BTCPay Successful', '<center>Your BTC payment has been broadcast to the network and your order should complete shortly.' +
+                          '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+            // Remove the order match from the queue and check the queue again after a brief delay
+            removeFromBtcpayQueue(o.tx0_hash, o.tx1_hash);
+            setTimeout(function(){ processBtcpayQueue(); },1000);
+        }
+        // Handle removing the wallet if needed
+        if(c)
+            ss.removeItem('wallet');
+    });      
+}
 
 // Update address balances
 function updateWalletBalances( address, force ){
     var addr  = (address) ? address : FW.WALLET_ADDRESS,
         net   = (FW.WALLET_NETWORK==2) ? 'tbtc' : 'btc',
         net2  = (FW.WALLET_NETWORK==2) ? 'BTCTEST' : 'BTC',
-        host  = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io',
         info  = getAddressBalance(addr) || {},
         last  = info.lastUpdated || 0,
         ms    = 300000, // 5 minutes
@@ -625,7 +1009,7 @@ function updateWalletBalances( address, force ){
         var btc_info = getAssetPrice('BTC',true),
             xcp_info = getAssetPrice('XCP',true);
         // Handle Updating asset balances (first 500 only)
-        $.getJSON('https://' + host + '/api/balances/' + addr, function( data ){
+        $.getJSON(FW.XCHAIN_API + '/api/balances/' + addr, function( data ){
             data.data.forEach(function(item){ info.data.push(item); });
             xcp = true; // Flag to indicate we are done with XCP update
             doneCb(info);
@@ -661,33 +1045,26 @@ function updateWalletBalances( address, force ){
     }
 }
 
+
 // Update address history information
 function updateWalletHistory( address, force ){
     // console.log('updateWalletHistory address, force=',address, force);
     var addr  = (address) ? address : FW.WALLET_ADDRESS,
         net   = (FW.WALLET_NETWORK==2) ? 'tbtc' : 'btc',
-        host  = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io',
-        types = ['bets','broadcasts','burns','dividends','issuances','orders','sends','mempool'];
         info  = getAddressHistory(addr) || {},
         last  = info.lastUpdated || 0,
         ms    = 300000; // 5 minutes
     var status = {
-        btc: false, // Flag to indicate if BTC update is done
-        xcp: false // Flag to indicate if XCP update is done
+        btc: false,    // Flag to indicate if BTC update is done
+        xcp: false,    // Flag to indicate if XCP update is done
+        mempool: false // Flag to indicate if mempool update is done
     }
     // Handle updating BTC and XCP transaction history
     if((parseInt(last) + ms)  <= Date.now() || force){
         // console.log('updating wallet history');
         // Callback to handle saving data when we are entirely done 
         var doneCb = function(){
-            var done = true;
-            types.forEach(function(item){
-                if(status[item]!=true)
-                    done = false;
-            });
-            // We are not done if we are still waiting for BTC update
-            if(status.btc!=true)
-                done = false;
+            var done = (status.btc && status.xcp && status.mempool) ? true : false;
             // Handle sorting/saving the history information
             if(done){
                 // Sort the history by timestamp, newest first
@@ -732,49 +1109,7 @@ function updateWalletHistory( address, force ){
             arr.push(data);
             info.data = arr;
         }
-        // Loop through each transaction type and request history for the given address
-        types.forEach(function(type){
-            $.getJSON('https://' + host + '/api/' + type + '/' + addr, function( data ){
-            // $.getJSON('https://' + host + '/api/' + type + '/1AuspQ6wRmryPQ3SuPoy4LaVJSRdafF1Wj', function( data ){
-
-                if(String(type).substring(type.length-1)=='s')
-                    type_short = String(type).substring(0,type.length-1);                    
-                data.data.forEach(function(item){
-                    var quantity = item.quantity,
-                        tstamp   = item.timestamp,
-                        tx_type  = type_short;
-                    // Set type from mempool data, and reset timestamp, so things show as pending
-                    if(tx_type=='mempool'){
-                        tx_type = String(item.tx_type).toLowerCase();
-                        tstamp  = null;
-                    }
-                    if(tx_type=='bet'){
-                        asset    = 'XCP';
-                        quantity = item.wager_quantity;
-                    } else if(tx_type=='burn'){
-                        asset    = 'BTC';
-                        quantity = item.burned;
-                    } else if(tx_type=='order'){
-                        asset    = item.get_asset,
-                        quantity = item.get_quantity;
-                    } else if(tx_type=='send'){
-                        if(item.source==address)
-                            quantity = '-' + quantity;
-                    }                    
-                    addTransaction({
-                        type: tx_type,
-                        tx: item.tx_hash,
-                        asset: item.asset,
-                        asset_longname: item.asset_longname, 
-                        quantity: quantity,
-                        timestamp: tstamp
-                    });
-                });
-                status[type] = true;
-                doneCb();
-            });
-        });
-        // Handle updating BTC balance
+        // Handle updating BTC history
         $.getJSON( 'https://api.blocktrail.com/v1/' + net + '/address/' + addr + '/transactions?limit=100&sort_dir=desc&api_key=' + FW.API_KEYS.BLOCKTRAIL, function( data ){
             data.data.forEach(function(item){
                 var quantity = numeral(item.estimated_value * 0.00000001).format('0.00000000');
@@ -792,10 +1127,45 @@ function updateWalletHistory( address, force ){
             status.btc = true; // Flag to indicate we are done with BTC update
             doneCb();
         });
+        // Handle updating XCP Transactions
+        $.each(['/api/history/', '/api/mempool/'], function(idx, endpoint){
+            $.getJSON(FW.XCHAIN_API + endpoint + addr, function( data ){
+                data.data.forEach(function(item){
+                    var quantity = item.quantity,
+                        tstamp   = item.timestamp,
+                        asset    = item.asset,
+                        tx_type  = String(item.tx_type).toLowerCase();
+                    if(tx_type=='bet'){
+                        asset    = 'XCP';
+                        quantity = item.wager_quantity;
+                    } else if(tx_type=='burn'){
+                        asset    = 'BTC';
+                        quantity = item.burned;
+                    } else if(tx_type=='order'){
+                        asset    = item.get_asset,
+                        quantity = item.get_quantity;
+                    } else if(tx_type=='send'){
+                        if(item.source==address)
+                            quantity = '-' + quantity;
+                    }                    
+                    addTransaction({
+                        type: tx_type,
+                        tx: item.tx_hash,
+                        asset: asset,
+                        asset_longname: item.asset_longname, 
+                        quantity: quantity,
+                        timestamp: tstamp
+                    });
+                });
+                if(idx==0)
+                    status.xcp = true;     // Flag to indicate we are done with XCP update
+                if(idx==1)
+                    status.mempool = true; // Flag to indicate we are done with mempool update
+                doneCb();
+            });
+        });
     }
 }
-
-
 
 // Handle checking balances info for a given address 
 // Optionally you can specify an asset to get back just that balance
@@ -835,14 +1205,13 @@ function getAddressHistory(address, asset=''){
     return info;
 }
 
-
 // Handle updating basic wallet information via a call to xchain.io/api/network
 function updateNetworkInfo( force ){
     var last = ls.getItem('networkInfoLastUpdated') || 0,
         ms   = 300000; // 5 minutes
     if((parseInt(last) + ms)  <= Date.now() || force ){
         // BTC/USD Price
-        $.getJSON( "https://xchain.io/api/network", function( data ){
+        $.getJSON( FW.XCHAIN_API + '/api/network', function( data ){
             if(data){
                 FW.NETWORK_INFO = data;
                 ls.setItem('networkInfo',JSON.stringify(data));
@@ -852,7 +1221,6 @@ function updateNetworkInfo( force ){
         });
     }
 }
-
 
 // Display error message and run callback (if any)
 function cbError(msg, callback){
@@ -895,8 +1263,6 @@ function getPrivateKey(network, address){
     }
     return priv;
 }
-
-
 
 // Handle updating the balances list
 function updateBalancesList(){
@@ -972,13 +1338,12 @@ function updateBalancesList(){
     }));
 }
 
-
 // Handle returning html for a asset balance item
 function getBalanceHtml(data){
     var value = (data.value!='0.00') ? '$' + data.value : '';
     var html =  '<li class="balances-list-item ' + data.cls + '" data-asset="' + data.asset+ '">' +
                 '    <div class="balances-list-icon">' +
-                '        <img src="https://xchain.io/icon/' + data.icon + '.png" >' +
+                '        <img src="' + FW.XCHAIN_API + '/icon/' + data.icon + '.png" >' +
                 '    </div>' +
                 '    <div class="balances-list-info">' +
                 '        <table width="100%">' +
@@ -994,8 +1359,7 @@ function getBalanceHtml(data){
     return html;
 }
 
-
-// Handle updating the balances list
+// Handle updating the history list
 function updateHistoryList(){
     var html    = '',
         cnt     = 0,
@@ -1008,9 +1372,8 @@ function updateHistoryList(){
     if(info && info.data.length){
         // Loop through history and add to display list
         info.data.forEach(function(item){
-            // console.log('item=',item);
             var asset = (item.asset_longname!='') ? item.asset_longname : item.asset,
-                fmt   = (item.quantity && item.quantity.indexOf('.')!=-1) ? '0,0.00000000' : '0,0';
+                fmt   = (item.quantity && String(item.quantity).indexOf('.')!=-1) ? '0,0.00000000' : '0,0';
             display.push({ 
                 type: item.type,
                 tx: item.tx,
@@ -1055,8 +1418,6 @@ function updateHistoryList(){
     }));
 }
 
-
-
 // Handle returning html for a history list / transaction item
 function getHistoryHtml(data){
     // Determine the correct icon to display based on type
@@ -1068,8 +1429,10 @@ function getHistoryHtml(data){
         src = 'images/icons/broadcast.png';
     } else if(type=='dividend'){
         src = 'images/icons/dividend.png';
+    } else if(type=='cancel'){
+        src = 'images/icons/cancel.png';
     } else if((type=='send'||type=='order'||type=='issuance') && data.asset!='BTC'){
-        src = 'https://xchain.io/icon/'  + String(data.icon).toUpperCase() + '.png';
+        src = FW.XCHAIN_API + '/icon/'  + String(data.icon).toUpperCase() + '.png';
     }
     var icon = '<img src="' + src + '"/>';
     // Determine the correct description string to show
@@ -1089,6 +1452,8 @@ function getHistoryHtml(data){
         str = 'Counterparty Issuance';
     } else if(type=='order'){
         str = 'Order - Buy ';
+    } else if(type=='cancel'){
+        str = 'Cancel Order ';
     }
     if(type=='send'||type=='bet'||type=='burn'||type=='order')
         str += amt;
@@ -1118,7 +1483,6 @@ function getHistoryHtml(data){
     return html;
 }
 
-
 // Handle resetting the asset information to a fresh/new state
 function resetAssetInfo(asset){
     $('#asset-name').text(' ');
@@ -1133,9 +1497,7 @@ function resetAssetInfo(asset){
     $('#rating_6month').text('NA');
     $('#rating_1year').text('NA');
     $('#asset-info-enhanced').hide();
-
 }
-
 
 // Handle loading asset information 
 // Be VERY VERY careful about how you use any data from an untrusted source!
@@ -1150,8 +1512,8 @@ function loadAssetInfo(asset){
         resetAssetInfo();
         // Name & Icon
         $('#asset-name').text(asset);
-        $('#asset-icon').attr('src','https://xchain.io/icon/' + icon + '.png');
-        $('#asset-info-more').attr('href','https://xchain.io/asset/' + asset);
+        $('#asset-icon').attr('src', FW.XCHAIN_API + '/icon/' + icon + '.png');
+        $('#asset-info-more').attr('href', FW.XCHAIN_API + '/asset/' + asset);
         // Estimated Value
         var val = balance.estimated_value;
         $('#asset-value-btc').text(numeral(val.btc).format('0,0.00000000'));
@@ -1166,12 +1528,22 @@ function loadAssetInfo(asset){
             if(!o.error){
                 var fmt = (String(o.supply).indexOf('.')==-1) ? '0,0' : '0,0.00000000';
                 $('#asset-total-supply').text(numeral(o.supply).format(fmt));
+                // console.log('xcp,supply,usd',o.estimated_value.xcp, o.supply, xcp_usd);
                 var xcp_usd = getAssetPrice('XCP'),
                     mcap    = numeral((o.estimated_value.xcp * o.supply) * xcp_usd).format('0,0.00'),
-                    last    = numeral(o.estimated_value.xcp).format('0,0.00000000');
+                    last    = numeral(o.estimated_value.xcp).format('0,0.00000000'),
+                    lock    = $('#asset-locked-status');
                 $('#asset-marketcap').text('$' + mcap);
                 $('#asset-last-price').text(last);
                 $('#asset-description').text(o.description);
+                // Force locked on certain items
+                if(['BTC','XCP'].indexOf(asset)!=-1)
+                    o.locked = true;
+                if(o.locked){
+                    lock.removeClass('fa-unlock').addClass('fa-lock');
+                } else {
+                    lock.removeClass('fa-lock').addClass('fa-unlock');
+                }
                 // Only allow feedback on XCP and assets, not BTC
                 if(asset=='BTC'){
                     feedback.hide();
@@ -1256,12 +1628,10 @@ function loadAssetInfo(asset){
             });
         } else {
             getAssetInfo(asset, cb);
-            // Handle requesting reputation info from coindaddy.io
-            $.getJSON('https://reputation.coindaddy.io/api/asset/xcp/' + asset, function( o ){  cb2(o); });
+            getAssetReputationInfo(asset, cb2);
         }
     }
 } 
-
 
 // Function to handle requesting extended asset info (if any) and updating page with extended info
 function loadExtendedInfo(data){
@@ -1273,7 +1643,7 @@ function loadExtendedInfo(data){
     if(!re1.test(desc) && (re2.test(desc)||re3.test(desc)))
         $('#asset-description').html('<a href="' + desc + '" target="_blank">' + desc + '</a>');
     var url   = (re2.test(desc)||re3.test(desc)) ? desc : 'http://' + desc,
-        json  = 'https://xchain.io/relay?url=' + desc;
+        json  = FW.XCHAIN_API + '/relay?url=' + desc;
     $('#asset-description').html('<a href="' + url + '" target="_blank">' + desc + '</a>');
     var cb = function(o){
         // console.log('o=',o);
@@ -1302,7 +1672,6 @@ function loadExtendedInfo(data){
         $.getJSON( json, function( o ){ cb(o); });
     }
 }
-
 
 // Handle building out the HTML for the address list
 function updateAddressList(){
@@ -1370,7 +1739,6 @@ function updateAddressList(){
     }));
 }
 
-
 // Handle loading asset information 
 function loadTransactionInfo(data){
     // data = {
@@ -1381,7 +1749,6 @@ function loadTransactionInfo(data){
     FW.CURRENT_TRANSACTION = data;
     $('.history-content').load('html/history/' + data.type + '.html');
 } 
-
 
 // Function to handle making a URL a url valid by ensuring it starts with http or https
 function getValidUrl( url ){
@@ -1417,6 +1784,12 @@ var getFormType = function(){
         type = 'broadcast';
     else if($('#callback-form').length)
         type = 'callback';
+    else if($('#add-market-form').length)
+        type = 'add-market';
+    else if($('#create-order-form').length)
+        type = 'create-order';
+    else if($('#btcpay-form').length)
+        type = 'btcpay';
     return type;
 }
 
@@ -1465,8 +1838,6 @@ function cpSend(network, source, destination, memo, currency, amount, fee, callb
     });
 }
 
-
-
 // Handle creating/signing/broadcasting an 'Issuance' transaction
 function cpIssuance(network, source, asset, quantity, divisible, description, destination, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
@@ -1495,7 +1866,6 @@ function cpIssuance(network, source, asset, quantity, divisible, description, de
         }
     });
 }
-
 
 // Handle creating/signing/broadcasting an 'Broadcast' transaction
 function cpBroadcast(network, source, text, value, feed_fee, timestamp, fee, callback){
@@ -1550,6 +1920,95 @@ function cpDividend(network, source, asset, dividend_asset, quantity_per_unit, f
             });
         } else {
             var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create dividend transaction';
+            cbError(msg, cb);
+        }
+    });
+}
+
+// Handle creating/signing/broadcasting an 'Cancel' transaction
+function cpCancel(network, source, tx_hash, fee, callback){
+    var cb  = (typeof callback === 'function') ? callback : false;
+    // Create unsigned send transaction
+    createCancel(network, source, tx_hash, fee, function(o){
+        if(o && o.result){
+            // Sign the transaction
+            signTransaction(network, source, o.result, function(signedTx){
+                if(signedTx){
+                    // Broadcast the transaction
+                    broadcastTransaction(network, signedTx, function(txid){
+                        if(txid){
+                            if(cb)
+                                cb(txid);
+                        } else {
+                            cbError('Error while trying to broadcast transaction. Please try again.', cb);
+                        }
+                    });
+                } else {
+                    cbError('Error while trying to sign cancel transaction. Please try again.',cb);
+                }
+            });
+        } else {
+            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create a cancel transaction';
+            cbError(msg, cb);
+        }
+    });
+}
+
+// Handle creating/signing/broadcasting an 'BTCpay' transaction
+function cpBtcpay(network, source, order_match_id, fee, callback){
+    var cb  = (typeof callback === 'function') ? callback : false;
+    // Create unsigned send transaction
+    createBtcpay(network, order_match_id, fee, function(o){
+        if(o && o.result){
+            // Sign the transaction
+            signTransaction(network, source, o.result, function(signedTx){
+                if(signedTx){
+                    // Broadcast the transaction
+                    broadcastTransaction(network, signedTx, function(txid){
+                        if(txid){
+                            if(cb)
+                                cb(txid);
+                        } else {
+                            cbError('Error while trying to broadcast transaction. Please try again.', cb);
+                        }
+                    });
+                } else {
+                    cbError('Error while trying to sign btcpay transaction. Please try again.',cb);
+                }
+            });
+        } else {
+            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create a btcpay transaction';
+            cbError(msg, cb);
+        }
+    });
+}
+
+
+// Handle generating a send transaction
+function cpOrder(network, source, get_asset, give_asset, get_quantity, give_quantity, expiration, fee, callback){
+    var cb  = (typeof callback === 'function') ? callback : false;
+    // Create unsigned send transaction
+    createOrder(network, source, get_asset, give_asset, getSatoshis(get_quantity), getSatoshis(give_quantity), expiration, fee, function(o){
+        if(o && o.result){
+            // Sign the transaction
+            signTransaction(network, source, o.result, function(signedTx){
+                if(signedTx){
+                    // console.log('signed Tx=',signedTx);
+                    // Broadcast the transaction
+                    broadcastTransaction(network, signedTx, function(txid){
+                        if(txid){
+                            if(cb)
+                                cb(txid);
+                        } else {
+                            cbError('Error while trying to broadcast order transaction', cb);
+                        }
+                    });
+                } else {
+                    cbError('Error while trying to sign order transaction',cb);
+                }
+            });
+        } else {
+            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create order transaction';
             cbError(msg, cb);
         }
     });
@@ -1617,7 +2076,7 @@ function createIssuance(network, source, asset, quantity, divisible, description
             asset: asset,
             quantity: parseInt(quantity),
             divisible: (divisible) ? 1 : 0,
-            description: description,
+            description:  (description) ? description : null,
             transfer_destination: (destination) ? destination : null,
             fee: parseInt(fee),
             allow_unconfirmed_inputs: true
@@ -1676,6 +2135,73 @@ function createDividend(network, source, asset, dividend_asset, quantity_per_uni
     });
 }
 
+// Handle creating cancel transaction
+function createCancel(network, source, tx_hash, fee, callback){
+    // console.log('createCancel=', network, source, tx_hash, fee, callback);
+    var data = {
+       method: "create_cancel",
+       params: {
+            source: source,
+            offer_hash: tx_hash,
+            fee: parseInt(fee),
+            allow_unconfirmed_inputs: true
+        },
+        jsonrpc: "2.0",
+        id: 0
+    };
+    cpRequest(network, data, function(o){
+        if(typeof callback === 'function')
+            callback(o);
+    });
+}
+
+// Handle creating order transaction
+function createOrder(network, source, get_asset, give_asset, get_quantity, give_quantity, expiration, fee, callback){
+    // console.log('createOrder=', network, source, get_asset, give_asset, get_quantity, give_quantity, expiration, fee, callback);
+    var data = {
+       method: "create_order",
+       params: {
+            source: source,
+            get_asset: get_asset,
+            get_quantity: get_quantity,
+            give_asset: give_asset,
+            give_quantity: give_quantity,
+            expiration: expiration,
+            fee: parseInt(fee),
+            // Temp fix for bug in API (https://github.com/CounterpartyXCP/counterparty-lib/issues/1025)
+            fee_required: 0,
+            fee_provided: 0,
+            allow_unconfirmed_inputs: true
+        },
+        jsonrpc: "2.0",
+        id: 0
+    };
+    cpRequest(network, data, function(o){
+        if(typeof callback === 'function')
+            callback(o);
+    });
+}
+
+// Handle creating btcpay transaction
+function createBtcpay(network, order_match_id, fee, callback){
+    // console.log('createBtcpay=', network, order_match_id, fee, callback);
+    var data = {
+       method: "create_btcpay",
+       params: {
+            order_match_id: order_match_id,
+            fee: parseInt(fee),
+            allow_unconfirmed_inputs: true
+        },
+        jsonrpc: "2.0",
+        id: 0
+    };
+    cpRequest(network, data, function(o){
+        if(typeof callback === 'function')
+            callback(o);
+    });
+}
+
+
 // Handle signing a transaction
 function signTransaction(network, source, unsignedTx, callback){
     var net      = (network=='testnet') ? 'testnet' : 'mainnet',
@@ -1692,7 +2218,6 @@ function signTransaction(network, source, unsignedTx, callback){
     CWBitcore.signRawTransaction(unsignedTx, cwKey, cb);
 }
 
-
 // Handle signing a message and returning the signature
 function signMessage(network, source, message){
     var bc  = bitcore,
@@ -1702,15 +2227,13 @@ function signMessage(network, source, message){
     return sig;
 }
 
-
 // Broadcast a given transaction
 function broadcastTransaction(network, tx, callback){
-    var net  = (network=='testnet') ? 'BTCTEST' : 'BTC',
-        host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
+    var net  = (network=='testnet') ? 'BTCTEST' : 'BTC';
     // First try to broadcast using the XChain API
     $.ajax({
         type: "POST",
-        url: 'https://' + host + '/api/send_tx',
+        url: FW.XCHAIN_API +  '/api/send_tx',
         data: { 
             tx_hex: tx 
         },
@@ -1722,7 +2245,7 @@ function broadcastTransaction(network, tx, callback){
                 if(callback)
                     callback(txid);
                 if(txid)
-                    console.log('Broadcast transaction tx_hash=',txid);
+                    console.log('Broadcasted transaction hash=',txid);
             } else {
                 // If the request to XChain API failed, fallback to chain.so API
                 $.ajax({
@@ -1749,8 +2272,6 @@ function broadcastTransaction(network, tx, callback){
         }
     });
 }
-
-
 
 /* 
  * Dialog boxes 
@@ -1781,7 +2302,7 @@ function dialogMessage( title, message, error, closable, callback ){
 }
 
 // Generic dialog box to handle simple messages
-function dialogConfirm( title, message, error, closable, callback ){
+function dialogConfirm( title, message, error, closable, callback, failCb ){
     var title = (error) ? '<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error' : title; 
     BootstrapDialog.show({
         type: 'type-default',
@@ -1794,6 +2315,8 @@ function dialogConfirm( title, message, error, closable, callback ){
             cssClass: 'btn-danger',
             action: function(msg){
                 msg.close();
+                if(failCb==true && typeof callback === 'function')
+                    callback(false); // indicate failure
             }
         },{
             label: 'Yes',
@@ -1803,12 +2326,11 @@ function dialogConfirm( title, message, error, closable, callback ){
             action: function(msg){
                 msg.close();
                 if(typeof callback === 'function')
-                    callback();
+                    callback(true); // indicate success
             }
         }]                        
     });
 }
-
 
 // Function to handle closing dialog boxes by id
 function dialogClose(id){
@@ -1822,7 +2344,6 @@ function dialogClose(id){
 function dialogComingSoon(){
     dialogMessage('Coming Soon', 'The feature you are trying to access will be coming soon.', false);
 }
-
 
 // 'About Wallet' dialog box
 function dialogAbout(){
@@ -1877,10 +2398,6 @@ function dialogRemoveWalletAddress(address){
     });
 }
 
-
-
-
-
 // View Private key for current address
 function dialogViewPrivateKey(address){
     // Make sure wallet is unlocked before showing send dialog box
@@ -1925,7 +2442,6 @@ function dialogViewPrivateKey(address){
         }]
     });
 }
-
 
 // 'Change Address' dialog box
 function dialogChangeAddress(){
@@ -2056,7 +2572,6 @@ function dialogPassphrase(){
     });
 }
 
-
 // 'Enter Passphrase' dialog box
 function dialogManualPassphrase(){
     BootstrapDialog.show({
@@ -2105,7 +2620,6 @@ function dialogManualPassphrase(){
         }]
     });
 }
-
 
 // 'New Wallet Passphrase' dialog box
 function dialogNewPassphrase(){
@@ -2312,7 +2826,6 @@ function dialogChangeDescription(){
     });
 }
 
-
 // 'Issue Supply' dialog box
 function dialogIssueSupply(){
     // Make sure wallet is unlocked
@@ -2365,6 +2878,19 @@ function dialogBroadcastMessage(){
     });
 }
 
+// 'Create Order' dialog box
+function dialogOrder(){
+    // Make sure wallet is unlocked
+    if(dialogCheckLocked('create an order'))
+        return;
+    BootstrapDialog.show({
+        type: 'type-default',
+        id: 'dialog-create-order',
+        title: '<i class="fa fa-fw fa-exclamation-circle"></i> Confirm ' + '<span class="order-type"></span>' + ' Order?',
+        message: $('<div></div>').load('html/order.html'),
+    });
+}
+
 // 'Sign Message' dialog box
 function dialogSignMessage(){
     // Make sure wallet is unlocked
@@ -2391,6 +2917,20 @@ function dialogSignTransaction(){
     });
 }
 
+// 'BTCpay' dialog box
+function dialogBTCpay(closable=true){
+    // Make sure wallet is unlocked
+    if(dialogCheckLocked('make a payment'))
+        return;
+    BootstrapDialog.show({
+        type: 'type-default',
+        id: 'dialog-btcpay',
+        closable: closable,
+        title: '<i class="fa fa-fw fa-bitcoin"></i> Confirm BTCpay?',
+        message: $('<div></div>').load('html/btcpay.html')
+    });
+}
+
 
 // 'Pay Distribution / Dividend' dialog box
 function dialogPayDividend(){
@@ -2405,6 +2945,20 @@ function dialogPayDividend(){
     });
 }
 
+// 'Cancel Order' dialog box
+function dialogCancelOrder(){
+    // Make sure wallet is unlocked
+    if(dialogCheckLocked('cancel an order'))
+        return;
+    BootstrapDialog.show({
+        type: 'type-default',
+        id: 'dialog-cancel-order',
+        title: '<i class="fa fa-fw fa-ban"></i> Confirm Cancel Order?',
+        message: $('<div></div>').load('html/cancel-order.html')
+    });
+}
+
+
 // Confirm with user that they want to perform a callback to a remote server
 function dialogConfirmCallback(data){
     BootstrapDialog.show({
@@ -2414,7 +2968,6 @@ function dialogConfirmCallback(data){
         message: $('<div></div>').load('html/callback.html')
     }); 
 }
-
 
 // 'Confirm Send' dialog box
 function dialogLogout(){
@@ -2457,7 +3010,81 @@ function dialogLogout(){
     });
 }
 
+// 'Enable BTCpay' dialog box
+function dialogEnableBtcpay(){
+    BootstrapDialog.show({
+        type: 'type-default',
+        title: '<i class="fa fa-lg fa-fw fa-question-circle"></i> Enable Auto-BTCpay?',
+        cssClass: 'btc-wallet-password',
+        closable: false,
+        message: function(dialog){
+            var msg = $('<div></div>');
+            // msg.append('<div class="alert alert-info">Please enter your wallet password</div>');
+            msg.append('<input name="wallet_password" type="text" class="form-control"  placeholder="Enter Password" autocomplete="off" style="-webkit-text-security: disc;"/>');
+            return msg;
+        },
+        onshown: function(dialog){
+            $('[name="wallet_password"]').focus();
+        },
+        buttons:[{
+            label: 'Disable',
+            icon: 'fa fa-lg fa-fw fa-thumbs-down',       
+            cssClass: 'btn-danger', 
+            action: function(dialog){
+                // Confirm with user that auto-btcpay will be disabled
+                dialogConfirm('Disable Auto-BTCpay?','<div class="alert alert-danger text-center"><b>Notice</b>: Any order matches for BTC will need to be paid manually!</div>', false, false, function(){
+                    dialog.close();
+                });
+            }
+        },{
+            label: 'Enable',
+            icon: 'fa fa-lg fa-fw fa-thumbs-up',       
+            cssClass: 'btn-success', 
+            hotkey: 13,
+            action: function(dialog){
+                var pass = $('[name="wallet_password"]').val(),
+                    err  = false;
+                // Validate that password meets minimum requirements (7 chars, 1 number)
+                if(pass.length <=6){
+                    err = 'Wallet password must be at least 7 characters long';
+                } else if(!/\d/.test(pass)){
+                    err = 'Wallet password must contain at least 1 number';
+                }
+                if(err){
+                    dialogMessage(null, err, true);
+                } else {
+                    // Validate wallet password
+                    if(isValidWalletPassword(pass)){
+                        // Decrypt wallet and save to btcpayWallet
+                        decryptWallet(pass);
+                        var w = ss.getItem('wallet');
+                        if(w)
+                            ss.setItem('btcpayWallet',w);
+                        ss.removeItem('wallet');
+                        ss.removeItem('walletPassword');
+                        dialog.close();
+                        dialogMessage('<i class="fa fa-lg fa-fw fa-unlock"></i> Auto-BTCpay Enabled', 'Auto-BTCpay is now enabled and any order matches for BTC will be automatically paid');
+                    } else {
+                        dialogMessage(null, 'Invalid password', true);
+                    }
+                    // If we have a callback, call it
+                    if(typeof callback=='function')
+                        callback();
+                }
+            }
+        }]
+    });  
+}
 
+// 'Add Market' dialog box
+function dialogAddMarket(){
+    BootstrapDialog.show({
+        type: 'type-default',
+        id: 'dialog-add-market',
+        title: '<i class="fa fa-fw fa-file-text"></i> Add Market',
+        message: $('<div></div>').load('html/exchange/add-market.html'),
+    });
+}
 
 // 'Welcome' dialog box
 function dialogWelcome(){
@@ -2505,6 +3132,7 @@ function dialogWelcome(){
     });
 }
 
+// 'License Agreement' dialog box
 function dialogLicenseAgreement(){
     BootstrapDialog.show({
         type: 'type-default',
@@ -2571,7 +3199,6 @@ function dialogLicenseAgreement(){
     });
 }
 
-
 // Handle displaying a context menu based on target
 function displayContextMenu(event){
    var menu = false;
@@ -2588,8 +3215,11 @@ function displayContextMenu(event){
             click: function(){ loadAssetInfo(asset); }
         }));
         mnu.append(new nw.MenuItem({ 
-            label: 'View ' + asset + ' DEX Markets',
-            click: function(){ loadPage('exchange'); }
+            label: 'View ' + asset + ' Exchange Markets',
+            click: function(){ 
+                FW.DIALOG_DATA = { market: asset };
+                loadPage('exchange'); 
+            }
         }));
         mnu.append(new nw.MenuItem({ type: 'separator' }));
         mnu.append(new nw.MenuItem({ 
@@ -2628,9 +3258,6 @@ function displayContextMenu(event){
     var el = $( event.target ).closest('.history-list-item');
     if(el.length!=0){
         var tx   = el.attr('txhash'),
-            net  = (FW.WALLET_NETWORK==2) ? 'tbtc' : 'btc',
-            net2 = (FW.WALLET_NETWORK==2) ? 'BTCTEST' : 'BTC',
-            host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io',
             mnu  = new nw.Menu();
         mnu.append(new nw.MenuItem({ 
             label: 'View Transaction',
@@ -2649,8 +3276,7 @@ function displayContextMenu(event){
         mnu.append(new nw.MenuItem({ 
             label: 'View on XChain.io',
             click: function(){ 
-                var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
-                    url  = 'https://' + host + '/tx/' + tx;
+                var url  = FW.XCHAIN_API + '/tx/' + tx;
                 nw.Shell.openExternal(url);
             }
         }));
@@ -2705,6 +3331,43 @@ function displayContextMenu(event){
         menu = mnu;
     }
 
+    // Markets Tabs
+    var el = $( event.target ).closest('li.tab');
+    if(el.length!=0){
+        var mnu    = new nw.Menu(),
+            market = el.attr('data-market');
+        if(market!='XCP' && market!='BTC'){
+            mnu.append(new nw.MenuItem({ 
+                label: 'Remove Market',
+                click: function(){ 
+                    removeMarket(market);
+                }
+            }));
+        }
+        menu = mnu;
+    }    
+
+    // Markets row
+    var el = $( event.target ).closest('tr[data-market]');
+    if(el.length!=0){
+        var mnu    = new nw.Menu(),
+            market = el.attr('data-market');
+        if(market!='XCP' && market!='BTC'){
+            mnu.append(new nw.MenuItem({ 
+                label: 'Open ' + market + ' market',
+                click: function(){ 
+                    openMarket(market);
+                }
+            }));
+            mnu.append(new nw.MenuItem({ 
+                label: 'Open ' + market + ' market in new window',
+                click: function(){ 
+                    openMarket(market, true);
+                }
+            }));
+        }
+        menu = mnu;
+    }    
 
     // Generic context menu
     if(!menu){
@@ -2732,9 +3395,6 @@ function displayContextMenu(event){
         menu.popup(event.clientX, event.clientY);
 }
 
-
-
-
 // Handle extracting hostname from a url
 function getUrlHostname(url){
     var arr  = url.split('/');
@@ -2744,7 +3404,6 @@ function getUrlHostname(url){
     host = host.split(':')[0];
     return host;
 }
-
 
 // Handle processing any URI data that is passed
 function processURIData(data){
@@ -2869,4 +3528,623 @@ function processURIData(data){
     }
 }
 
+
+/* 
+ * Exchange / Markets / Market code
+ */
+
+// Function to handle automatically collapsing/expanding tabs to the 'More' menu item
+function autoCollapseTabs(rerun=false){
+    var tabs  = $('#markets-tabs'),
+        more  = $('#markets-tabs-more'),
+        last  = $('#markets-last-tab'),
+        max   = tabs.width(),
+        width = last.width(),
+        main  = [],
+        menu  = [];
+    // Loop through items and add to the correct array 
+    tabs.find('li.tab').each(function(idx, item){
+        var w = $(item).width();
+        width += w;
+        if(width <= max){
+            main.push(item);
+        } else {
+            menu.push(item);
+        }
+    });
+    // Move menu items to the correct locations
+    main.forEach(function(item){ $(item).insertBefore(last); });
+    menu.forEach(function(item){ more.append(item); });
+    // Handle hiding/showing the 'More' menu
+    if(menu.length==0)
+        last.hide();
+    else
+        last.show();
+    // If the tab bar is taller than 50 pixels, we are too tall, re-run the logic
+    if(tabs.height()>50 && !rerun)
+        autoCollapseTabs(true);
+}
+
+// Handle updating the base market pairs
+function updateBaseMarkets(force){
+    var last   = FW.EXCHANGE_MARKETS['last_updated'] || 0,
+        ms     = 300000, // 5 minutes,
+        update = ((parseInt(last) + ms) <= Date.now()||force) ? true : false;
+    // console.log('updateBaseMarkets update=',update);
+    // Callback function to run when we are done updating the market info        
+    var cb  = function(o, market){
+        updateMarketsView(market);
+        FW.EXCHANGE_MARKETS['last_updated'] = Date.now();
+    }
+    // Loop through base markets and update pairs
+    FW.BASE_MARKETS.forEach(function(market){
+        if(update)
+            updateMarkets(market,1, true, cb);
+        else
+            cb(null, market);
+    });
+}
+
+
+// Handle loading market data, saving to memory, and passing to a callback function
+function updateMarkets(market, page, full, callback){
+    var page  = (page) ? page : 1,
+        limit = 1000,
+        count = (page==1) ? 0 : ((page-1)*limit),
+        url   = FW.XCHAIN_API + '/api/markets';
+    if(market)
+        url += '/' + market;
+    $.getJSON(url + '/' + page + '/' + limit, function(o){
+        if(o.data){
+            o.data.forEach(function(item){
+                var rec = [FW.WALLET_NETWORK, item.longname, item.price.last, item.price.ask, item.price.bid, item['24hour'].volume.split('|')[1], item['24hour'].percent];
+                FW.EXCHANGE_MARKETS[item.name] = rec;
+            });
+            count += o.data.length;
+        }
+        // If a full update was requested, keep updating
+        if(full && count < o.total){
+            updateMarkets(market, page+1, true, callback);
+            return;
+        }
+        if(typeof callback === 'function')
+            callback(o, market);
+    });
+}
+
+// Handle initializing/updating the markets tables
+function updateMarketsView(market){
+    var table = $('#' + market + ' table.datatable').DataTable(FW.MARKETS_DATATABLE_CONFIG),
+        rows = getMarketsRowCount();
+    // Define some random records/data for testing
+    var data = [];
+    // Handle looking up all market pairs for the given market
+    for( name in FW.EXCHANGE_MARKETS){
+        var rec = JSON.parse(JSON.stringify(FW.EXCHANGE_MARKETS[name])),
+            a   = name.split('/'),
+            b   = String(rec[1]).split('/');
+        // console.log('rec=',rec);
+        if(rec[0]==FW.WALLET_NETWORK && (a[1]==market||b[1]==market)){
+            // Set asset name to longname|name
+            var asset = (rec[1]!='') ? (b[0] + '|' + a[0]) : a[0],
+                type  = (asset.substr(0,1)=='A') ? 3 : (asset.indexOf('.')!=-1) ? 2 : 1;
+            // Remove network and longname, and add asset
+            rec.splice(0,2, asset); 
+            // console.log('rec=',rec);
+            // Only add record if user wants to view this type of asset
+            if(FW.MARKET_OPTIONS.indexOf(type)!=-1)
+                data.push(rec);
+        }
+    }
+    // Remove all existing data, add the new data, then redraw the view
+    table.clear();
+    table.page.len(rows);
+    table.rows.add(data);
+    table.draw();
+}
+
+// Handle removing a market
+function removeMarket(market){
+    // Remove tab and tab content
+    $("li.tab[data-market='" + market + "']").remove();
+    $('#' + market).remove();
+    // Switch back to BTC tab
+    $('#markets-tabs a[href="#BTC"]').tab('show');
+    // Handle removing from base pairs 
+    if(FW.BASE_MARKETS.indexOf(market)!=-1){
+        // Remove market from FW.BASE_MARKETS
+        FW.BASE_MARKETS.splice(FW.BASE_MARKETS.indexOf(market),1);
+        // Save data to localStorage
+        ls.setItem('walletMarkets', JSON.stringify(FW.BASE_MARKETS));
+    }
+}
+
+
+// Handle opening a market for viewing
+function openMarket(market, win){
+    // console.log('openMarket market, win=',market,win);
+    // Stash market data so we can easily reference when market loads
+    FW.DIALOG_DATA = {
+        market: market
+    };
+    // Open market in new window
+    if(win){
+
+    // Open market in exiting window
+    } else {
+        loadPage('market');
+    }
+}
+
+// Function to handle loading various chart types
+function loadChartType(chart){
+    // Handle loading the correct chart
+    $('#market-chart-container').load('html/exchange/charts/' + chart + '.html');
+    // Load chart data after brief delay to let page load
+    setTimeout(function(){
+        updateMarketChart(FW.MARKET_NAME);
+    },100);
+}
+
+
+
+/* Market JS (market.html) */
+// Quick function to handle destroying a datatable
+function destroyDataTable(table){
+    if($.fn.DataTable.isDataTable(table))
+        $(table).DataTable().clear().destroy();
+}
+
+// Function to handle updating address balances
+function updateMarketBalancesView(){
+    // Update the buy/sell balances
+    var asset = String(FW.MARKET_NAME).split('/'),
+        a     = getAddressBalance(FW.WALLET_ADDRESS, asset[0]),
+        b     = getAddressBalance(FW.WALLET_ADDRESS, asset[1]),
+        balA  = (a && a.quantity) ? a.quantity : 0,
+        balB  = (b && b.quantity) ? b.quantity : 0;
+    $('#buy-balance').val(numeral(balB).format('0,0.00000000'));
+    $('#sell-balance').val(numeral(balA).format('0,0.00000000'));
+}   
+
+// Handle updating/displaying market information
+function updateMarket(market, force){
+    var net    = (FW.WALLET_NETWORK==2)  ? 'testnet' : 'mainnet',
+        block  = (FW.NETWORK_INFO.network_info) ? FW.NETWORK_INFO.network_info[net].block_height : 1,
+        data   = FW.MARKET_DATA[market] || false,
+        last   = (data) ? data.block : 0,
+        update = (block > last || force) ? true : false;
+    // Initialize the market data cache
+    if(!FW.MARKET_DATA[market])
+        FW.MARKET_DATA[market] = {}
+    //  Update the buy/sell asset balances
+    updateMarketBalancesView();    
+    if(update){
+        // Set block height for this data so we can request new data if block changes
+        FW.MARKET_DATA[market].block = block;
+        // Update market data and save in FW.MARKET_DATA[market] cache
+        updateMarketBasics(market);
+        updateMarketAssetInfo(market);
+        updateMarketOrderbook(market);
+        updateMarketHistory(market);
+        updateMarketHistory(market, FW.WALLET_ADDRESS);
+        updateMarketOrders(market, FW.WALLET_ADDRESS);
+        // Get all market chart data then update the chart
+        updateMarketChartData(market, 1, true, function(data){
+            FW.MARKET_DATA[market].chart = data;
+            updateMarketChart(market);
+        });
+    } else {
+        // Update views using cached data
+        updateMarketBasicsView(market);
+        updateMarketAssetInfo(market);
+        updateMarketOrderbookView(market);
+        updateMarketHistoryView(market);
+        updateMarketHistoryView(market, FW.WALLET_ADDRESS);
+        updateMarketOrdersView(market, FW.WALLET_ADDRESS);
+        updateMarketChart(market, 10); // delay loading by 10ms to allow chart content to load
+    }
+}
+
+// Handle updating market 'basics' data
+function updateMarketBasics( market ){
+    $.getJSON(FW.XCHAIN_API + '/api/market/' + market, function(o){
+        if(o.error){
+            console.log('Error: ',o.error);
+        } else {
+            FW.MARKET_DATA[market].basics = o;
+            updateMarketBasicsView(market);
+        }
+    });
+}
+
+// Handle updating market 'Orderbook' data
+function updateMarketOrderbook( market ){
+    $.getJSON(FW.XCHAIN_API + '/api/market/' + market + '/orderbook', function(o){
+        if(o.error){
+            console.log('Error: ',o.error);
+        } else {
+            FW.MARKET_DATA[market].orderbook = o;
+            updateMarketOrderbookView(market);
+        }
+    });
+}
+
+// Handle updating market history/trade data
+function updateMarketHistory(market, address){
+    var base = FW.XCHAIN_API + '/api/market/' + market + '/history',
+        url  = (address) ? base + '/' + address : base;
+    // console.log('updateMarketHistory url=',url);
+    $.getJSON(url, function(o){
+        if(o.error){
+            console.log('Error: ',o.error);
+        } else {
+            if(address){
+                FW.MARKET_DATA[market].trades  = o;
+            } else {
+                FW.MARKET_DATA[market].history = o;
+            }
+            updateMarketHistoryView(market, address);
+        }
+    });
+}
+
+// Handle updating 'my open orders' data
+function updateMarketOrders(market, address){
+    // console.log('updateMarketOrders market,address=',market,address);
+    // Get Basic Market information (name, price, volume, etc)
+    $.getJSON(FW.XCHAIN_API + '/api/market/' + market + '/orders/' + address, function(o){
+        if(o.error){
+            console.log('Error: ',o.error);
+        } else {
+            FW.MARKET_DATA[market].orders = o;
+            updateMarketOrdersView(market, address);
+        }
+    });
+}
+
+// Handle updating market 'basics' view
+function updateMarketBasicsView( market ){
+    var o        = FW.MARKET_DATA[market].basics,
+        assets   = o.name.split('/'),
+        longname = String(o.longname).split('/'),
+        volume   = String(o['24hour'].volume).split('|'),
+        name     = (o.longname!='') ? longname[0] : assets[0],
+        fullname = (o.longname!='') ? o.longname : o.name;
+        fmt      = (o.price.last.indexOf('.')!=-1) ? '0,0.00000000' : '0,0';
+    $('div.market-name').text(name + ' EXCHANGE');
+    $('.market-icon img').attr('src', FW.XCHAIN_API + '/icon/' + assets[0] + '.png');
+    $('.market-pair img').attr('src', FW.XCHAIN_API + '/icon/' + assets[1] + '.png');
+    $('.market-pair span').text(o.name);
+    $('#last-price').text(numeral(o.price.last).format(fmt));
+    var pct = numeral(o['24hour'].percent_change).format('0,0.00') + '%',
+        cls = (pct.indexOf('-')==-1) ? 'green' : 'red';
+    if(pct.indexOf('-')==-1)
+        pct = '+' + pct;
+    $('#24h-change').text(pct).removeClass('red green').addClass(cls);
+    $('#24h-high').text(numeral(o['24hour'].high).format(fmt));
+    $('#24h-low').text(numeral(o['24hour'].low).format(fmt));
+    $('#24h-price').text(numeral(o['24hour'].price).format(fmt));
+    var fmt = (volume[0].indexOf('.')!=-1) ? '0,0.00000000' : '0,0';
+    $('#asset1-volume').text(numeral(volume[0]).format(fmt));
+    var fmt = (volume[1].indexOf('.')!=-1) ? '0,0.00000000' : '0,0';
+    $('#asset2-volume').text(numeral(volume[1]).format(fmt));
+    $('.asset1-name').text(assets[0]);
+    $('.asset2-name').text(assets[1]);
+    $('.market-name-short').text(assets[0]);    
+}
+
+// Handle updating market 'Orderbook' view
+function updateMarketOrderbookView( market ){
+    var o = FW.MARKET_DATA[market].orderbook;
+    // Update the market depth chart
+    updateMarketDepthChart(market, o);
+    // Calculate amount and sum for asks
+    var asks  = 0,
+        bids  = 0,
+        total = 0,
+        ask   = '0.00000000',
+        bid   = '0.00000000';
+    $.each(o.asks, function(idx, data){
+        if(idx==0)
+            ask = numeral(parseFloat(data[0])).format('0.00000000');
+        data[2] = numeral(parseFloat(data[0]) * parseFloat(data[1])).format('0.00000000');
+        data[3] = numeral(parseFloat(total) + parseFloat(data[2])).format('0.00000000');
+        asks    = numeral(parseFloat(asks) + parseFloat(data[1])).format('0.00000000');
+        total   = data[3];
+    });
+    // Calculate amount and sum for bids
+    $.each(o.bids, function(idx, data){
+        if(idx==0)
+            bid = numeral(parseFloat(data[0])).format('0.00000000');
+        data[2] = numeral(parseFloat(data[0]) * parseFloat(data[1])).format('0.00000000');
+        data[3] = numeral(parseFloat(bids) + parseFloat(data[2])).format('0.00000000');
+        bids    = data[3];
+    });
+    // Initialize the sell orders table
+    var table = '#orderbook-sells table.tinytable';
+    destroyDataTable(table);
+    $(table).DataTable({
+        data:           o.asks,
+        dom:            't',
+        sortable:       false,
+        searching:      false,
+        ordering:       false,
+        scrollY:        "300px",
+        scrollCollapse: false,
+        paging:         false,
+        language: {
+            emptyTable: "No sell orders found"
+        },
+        drawCallback: function( settings ){
+            // Display total amount 
+            $('#orderbook-sells .total-amount').text(numeral(asks).format('0,0.00000000'));
+            // Set default buy price  (lowest sell order)
+            $('#buy-price').val(ask);
+        },
+        createdRow: function( row, data, idx ){
+            var fmt = '0,0.00000000'
+            $('td', row).eq(0).text(numeral(data[0]).format(fmt));
+            $('td', row).eq(1).text(numeral(data[1]).format(fmt));
+            $('td', row).eq(2).text(numeral(data[2]).format(fmt));
+            $('td', row).eq(3).text(numeral(data[3]).format(fmt));
+        }
+    });
+    // Initialize the buy orders table
+    var table = '#orderbook-buys table.tinytable';
+    destroyDataTable(table);
+    $(table).DataTable({
+        data:           o.bids,
+        dom:            't',
+        sortable:       false,
+        searching:      false,
+        ordering:       false,
+        scrollY:        "300px",
+        scrollCollapse: false,
+        paging:         false,
+        language: {
+            emptyTable: "No buy orders found"
+        },
+        drawCallback: function( settings ){
+            // Display total amount
+            $('#orderbook-buys .total-amount').text(numeral(bids).format('0,0.00000000'));
+            // Set default sell price (highest buy order)
+            $('#sell-price').val(bid);
+        },
+        createdRow: function( row, data, idx ){
+            var fmt = '0,0.00000000'
+            $('td', row).eq(0).text(numeral(data[0]).format(fmt));
+            $('td', row).eq(1).text(numeral(data[1]).format(fmt));
+            $('td', row).eq(2).text(numeral(data[2]).format(fmt));
+            $('td', row).eq(3).text(numeral(data[3]).format(fmt));
+        }
+    });
+}
+
+// Handle updating market history view
+function updateMarketHistoryView(market, address){
+    var info = FW.MARKET_DATA[market],
+        o    = (address) ? info.trades : info.history,
+        data = [];
+    $.each(o.data, function(idx, item){
+        var rec = [item.timestamp, item.type, item.price, item.amount, item.total, item.tx_index];
+        data.push(rec);
+    });
+    var id = (address) ? 'my-trade-history' : 'market-trade-history',
+        txt = 'No'
+    var table = '#' + id + ' table';
+    destroyDataTable(table)
+    $(table).DataTable({
+        data:           data,
+        dom:            't',
+        sortable:       false,
+        searching:      false,
+        ordering:       false,
+        scrollY:        "300px",
+        scrollCollapse: false,
+        paging:         false,
+        columns: [
+            { className: "text-left nowrap" },
+            null,
+            null,
+            null,
+            null
+        ],
+        language: {
+            emptyTable: "No trades found"
+        },
+        createdRow: function( row, data, idx ){
+            var fmt = '0,0.00000000'
+            var cls = (data[1]=='sell') ? 'red' : 'green';
+            $('td', row).eq(0).html('<a href="' + FW.XCHAIN_API + '/tx/' + data[5] + '" target="_blank">' + moment.unix(data[0]).format('MM/DD/YY HH:mm') + '</a>');
+            $('td', row).eq(1).removeClass('red green').addClass(cls);
+            $('td', row).eq(2).text(numeral(data[2]).format(fmt));
+            $('td', row).eq(3).text(numeral(data[3]).format(fmt));
+            $('td', row).eq(4).text(numeral(data[4]).format(fmt));
+        }
+    });
+}
+
+// Handle updating asset information (supply, locked, price, reputation, etc)
+function updateMarketAssetInfo(market){
+    var market = (market) ? market : FW.MARKET_NAME;
+    $.each(String(market).split('/'), function(idx, asset){
+        var sel = '#asset' + (idx+1) + '-info';
+        // Handle requesting asset info
+        getAssetInfo(asset, function(o){
+            if(o.asset){
+                // Set quick reference flag divisibiliy
+                FW.ASSET_DIVISIBLE[o.asset] = o.divisible;
+                // FW['ASSET' + (idx+1) + '_DIVISIBLE'] = o.divisible;
+                var fmt    = (o.divisible) ? '0,0.00000000' : '0,0',
+                    lock   = $(sel + ' .supply-lock'),
+                    icon   = $(sel + ' .asset-icon'),
+                    more   = $(sel + ' .more-info'),
+                    supply = $(sel + ' .supply-total'),
+                    usd    = $(sel + ' .last-price-usd'),
+                    xcp    = $(sel + ' .last-price-xcp');
+                supply.text(numeral(o.supply).format(fmt));
+                if(o.locked){
+                    lock.removeClass('fa-unlock').addClass('fa-lock');
+                } else {
+                    lock.removeClass('fa-lock').addClass('fa-unlock');
+                }
+                xcp.text(numeral(o.estimated_value.xcp).format('0,0.00000000'));
+                usd.text(numeral(o.estimated_value.usd).format('0,0.00'));
+                icon.attr('src',FW.XCHAIN_API + '/icon/' + asset + '.png');
+                more.attr('href',FW.XCHAIN_API + '/asset/' + asset);
+            }
+        });
+        // Handle requesting reputation info from coindaddy.io
+        getAssetReputationInfo(asset, function(o){ 
+            if(!o.error){
+                var rating = o['rating_current'],
+                    text   = (rating>0) ? rating : 'NA',
+                    html   = '<a href="https://reputation.coindaddy.io/xcp/asset/' + asset + '" data-toggle="tooltip" data-placement="bottom" title="View Feedback" target="_blank"><div class="rateit" data-rateit-readonly="true" data-rateit-value="' + rating + '" data-rateit-ispreset="true"></div></a> <span class="rateit-score">' + text + '</span>';
+                html += '<a href="#" class="btn btn-xs btn-success pull-right" data-toggle="tooltip" data-placement="left" title="Leave Feedback" target="_blank"><i class="fa fa-lg fa-bullhorn auto-width"></i></a>'
+                $(sel + ' .reputation').html(html);
+                $('.rateit').rateit();
+                $('[data-toggle="tooltip"]').tooltip({ html: true });
+            }
+        });
+    });
+}
+
+
+// Handle updating 'my open orders' view
+function updateMarketOrdersView(market, address){
+    // console.log('updateMarketOrders market,address=',market,address);
+    var o = FW.MARKET_DATA[market].orders;
+    var data = [];
+    $.each(o.data, function(idx, item){
+        var rec = [item.timestamp, item.type, item.price, item.amount, item.total, item.tx_index, item.expires, item.tx_hash];
+        data.push(rec);
+    });
+    var id = (address) ? 'my-trade-history' : 'market-trade-history',
+        txt = 'No'
+    $('#open-orders table').DataTable({
+        data:           data,
+        dom:            't',
+        sortable:       false,
+        searching:      false,
+        ordering:       false,
+        destroy:        true,  // automatically destroy and re-create this datatable if it has already been initialized
+        scrollY:        "300px",
+        scrollCollapse: false,
+        paging:         false,
+        columns: [
+            { className: "text-left nowrap" },
+            null,
+            null,
+            null,
+            { className: "no-right-border" },
+            { className: "text-right nowrap" }
+        ],
+        language: {
+            emptyTable: "No open orders found"
+        },
+        drawCallback: function(){
+            // Initialize any tooltips
+            $('[data-toggle="tooltip"]').tooltip({ html: true });
+        },
+        createdRow: function( row, data, idx ){
+            var fmt = '0,0.00000000',
+                cls = (data[1]=='sell') ? 'red' : 'green',
+                blk = 
+                txt = '<a data-toggle="tooltip" data-placement="right" title="Order expires at block #' + numeral(data[6]).format('0,0') + '"><i class="fa fa-lg fa-info-circle"></i></a>';
+            txt += '<a href="' + FW.XCHAIN_API + '/tx/' + data[5] + '" target="_blank">' + moment.unix(data[0]).format('MM/DD/YY HH:mm') + '</a>';;
+            $('td', row).eq(0).html(txt);
+            $('td', row).eq(1).removeClass('red green').addClass(cls);
+            $('td', row).eq(2).text(numeral(data[2]).format(fmt));
+            $('td', row).eq(3).text(numeral(data[3]).format(fmt));
+            $('td', row).eq(4).text(numeral(data[4]).format(fmt));
+            $('td', row).eq(5).html('<a href="#" class="red cancel-button" data-toggle="tooltip" data-placement="left" title="Cancel" data-tx="' + data[7] + '"><i class="fa fa-lg fa-times-circle auto-width"></i></a>');
+        }
+    });
+}
+
+// Handle loading market data, saving to memory, and passing to a callback function
+function updateMarketChartData(market, page, full, callback){
+    var page  = (page) ? page : 1,
+        limit = 2500,
+        count = (page==1) ? 0 : ((page-1)*limit),
+        url   = FW.XCHAIN_API + '/api/market/' + market + '/chart';
+    // Reset any stored chart data
+    if(full && page==1)
+        FW.RAW_CHART_DATA = [];
+    $.getJSON(url + '/' + page + '/' + limit, function(o){
+        if(o.data){
+            o.data.forEach(function(data){
+                FW.RAW_CHART_DATA.push(data);
+            });
+            count += o.data.length;
+        }
+        // If a full update was requested, keep updating
+        if(full && count < o.total){
+            updateMarketChartData(market, page+1, true, callback);
+            return;
+        }
+        // Break raw data up into useful arrays 
+        var data    = FW.RAW_CHART_DATA,
+            trades  = [], // Time / Price
+            ohlc    = [], // Time / Open / High / Low / Close
+            volume  = [], // Timestamp / Volume (trades)
+            volume2 = [], // Timestamp / Volume (ohlc)
+            tstamp  = 0,
+            open    = 0,
+            high    = 0,
+            low     = 0,
+            close   = 0,
+            vol     = 0;
+        // Sort the data by date oldest to newest
+        data.sort(function(a,b){
+            if(a[0] < b[0]) return -1;
+            if(a[0] > b[0]) return 1;
+            return 0;            
+        });
+        // Split data into price and volume arrays
+        // Multiply timestamp by 1000 to convert to milliseconds
+        $.each(data,function(idx, item){
+            trades.push([item[0] * 1000,item[1]]);  // Time / Price
+            volume.push([item[0] * 1000,item[2]]); // Time / Volume
+        });
+        // Split data into ohlc and volume arrays
+        $.each(data,function(idx, item){
+            if(item[0]==tstamp){
+                close  = item[1];
+                if(item[1]>high) high = item[1];
+                if(item[1]<low)  low  = item[1];
+                vol = parseFloat(vol) + parseFloat(item[2]);
+            } else {
+                // Add data to the arrays
+                if(tstamp){
+                    var ms = tstamp * 1000; // Multiply timestamp by 1000 to convert to milliseconds
+                    ohlc.push([ms, open, high, low, close]);
+                    volume2.push([ms, vol]);
+                }
+                // Update stats
+                tstamp = item[0];
+                open   = close;
+                high   = item[1];
+                low    = item[1];
+                close  = item[1];
+                vol    = item[2];
+            }
+        });
+        // Save the processed chart data for easy reference
+        FW.CHART_DATA = {
+            trades: {
+                trades: trades,
+                volume: volume
+            },
+            ohlc: {
+                ohlc: ohlc,
+                volume: volume2
+            }
+        }
+        // Call the callback
+        if(typeof callback === 'function')
+            callback(FW.CHART_DATA);
+    });
+}
 

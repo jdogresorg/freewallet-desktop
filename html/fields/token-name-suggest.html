@@ -10,9 +10,6 @@
 <script>
 $(document).ready(function(){
 
-    // Set host name based off a wallet network
-    var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
-
     // Define placeholder for last asset name
     var last_asset = false;
 
@@ -96,7 +93,7 @@ $(document).ready(function(){
             if(name!='' && name!=null && name!=last_asset){
                 last_asset = name;
                 // Lookup if this asset is already registered to another address... send to coindaddy to make purchase offer
-                $.getJSON( 'https://' + host + '/api/asset/' + name, function(o){
+                $.getJSON( FW.XCHAIN_API + '/api/asset/' + name, function(o){
                     var type = getFormType();
                     // An error indicates asset is not registered
                     if(o.error){
@@ -113,7 +110,7 @@ $(document).ready(function(){
                         dialogMessage('Notice', '<center>Before you can ' + action + ' <b><i>' + name + '</i></b>, you must first register the name', true);
                     } else {
                         // If this is a dividend payment, then bail out and DO NOT update FW.ASSET_INFO as it overwrites the dividend asset data
-                        if(type=='dividend')
+                        if(type=='dividend'||type=='add-market')
                             return;
                         FW.ASSET_INFO = o;
                         // Error if asset is owned by another address
@@ -147,7 +144,7 @@ $(document).ready(function(){
                 update = false;
         });
         if(update){
-            $.getJSON('https://' + host + '/api/suggestions/' + query, function(o){
+            $.getJSON(FW.XCHAIN_API + '/api/suggestions/' + query, function(o){
                 if(o.data)
                     setupTokenNameField(o.data);
             });

@@ -1,0 +1,225 @@
+<form class="form-horizontal" id="create-order-form" data-toggle="validator" role="form">
+    <input type="hidden" name="get_asset"   id="get-asset">
+    <input type="hidden" name="get_amount"  id="get-amount">
+    <input type="hidden" name="give_asset"  id="give-asset">
+    <input type="hidden" name="give_amount" id="give-amount">
+    <input type="hidden" name="source"      id="source">
+    <!-- Order Information -->
+    <div class="form-group">
+        <label class="col-sm-3 control-label text-left order-type">
+            Buy 
+        </label>
+        <div class="col-sm-9">
+            <table width="100%">
+            <tr>
+                <td width="180">
+                    <table border=0>
+                    <tr>
+                        <td><img src="images/icons/blank.png" class="margin-right-5" id="assetA-icon"></td>
+                        <td id="infoA" class="bold"></td>
+                    </tr>
+                    </table>                
+                </td>
+                <td width="*%" class="text-center">for</td>
+                <td width="180">
+                    <table border=0>
+                    <tr>
+                        <td><img src="images/icons/blank.png" class="margin-right-5" id="assetB-icon" ></td>
+                        <td id="infoB" class="bold"></td>
+                    </tr>
+                    </table>
+                </td>
+            </tr>
+            </table>
+        </div>
+    </div>
+    <div class="form-group" id="expires-field">
+        <!-- Order Expires Field -->
+    </div>
+    <div class="form-group" id="tx-fee-field">
+        <!-- Transaction Fee Field -->
+    </div>
+    <!-- Auto-Sign BTCPay Information -->
+    <div class="form-group" id="btcpay" style="display: none">
+        <label class="col-sm-3 control-label text-left">
+            Auto-BTCPay 
+            <a href="#" data-toggle="tooltip" title='This indicates if you would like to automatically sign and broadcast BTCPay transactions when matches for this order are detected' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5"></i></a>
+        </label>
+        <div class="col-sm-9">
+            <select id="autopay" class="selectpicker" name="autopay" data-width="100%">
+                <option value="Y">Yes - Automatically sign &amp; broadcast BTCpay transactions</option>
+                <option value="N">No - Manually sign &amp; broadcast BTCpay transactions</option>
+            </select>
+        </div>
+        <div class="col-xs-12" class="dialog-autobtcpay">
+            <div class="checkbox dialog-autobtcpay-confirm" style="display: none" id="dialog-autobtcpay-yes">
+                <label>
+                    <input type="checkbox" name="autopay-confirm" value="Y"> 
+                    I understand that I need to  <u><i><b>keep FreeWallet open</b></i></u> in order for Auto-BTCPay to work.
+                </label>
+            </div>
+            <div class="checkbox dialog-autobtcpay-confirm" style="display: none" id="dialog-autobtcpay-no">
+                <label>
+                    <input type="checkbox" name="autopay-confirm" value="Y"> 
+                    I understand that I need to <u><i><b>pay within 20 blocks of a match</b></i></u> or the match will fail.
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="text-right">
+        <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-thumbs-down"></i> No</div>
+        <div id="btn-submit" class="btn btn-success"><i class="fa fa-lg fa-fw fa-thumbs-up"></i> Yes</div>
+    </div>
+</form>
+
+<script>
+
+// Handle updating the confirmation text based off selected value
+var updateAutopayConfirm = function(){
+    var val = $('#autopay').val(),
+        yes = $('#dialog-autobtcpay-yes'),
+        no  = $('#dialog-autobtcpay-no');
+    if(val=='Y'){
+        yes.show();
+        no.hide();
+    } else {
+        no.show();
+        yes.hide();
+    }
+}
+
+$(document).ready(function(){
+
+    var ls = localStorage;
+
+    // Load any field content
+    $('#expires-field').load('html/fields/expires.html');
+    $('#tx-fee-field').load('html/fields/tx-fee.html');
+    // Make priority a dropdown
+    $('.selectpicker').selectpicker();
+
+    // Delay initializing some fields to give things a chance to load
+    setTimeout(function(){
+
+        // Handle loading any data from FW.DIALOG_DATA
+        var data = FW.DIALOG_DATA;
+        if(data){
+            // Set hidden form values to exactly what was passed
+            $('#get-asset').val(data.get_asset);
+            $('#give-asset').val(data.give_asset);
+            $('#give-amount').val(data.give_amount);
+            $('#get-amount').val(data.get_amount);
+            $('#source').val(FW.WALLET_ADDRESS);
+            // Handle displaying the order information in a way that makes sense
+            var assetA  = (data.type=='buy') ? data.get_asset : data.give_asset,
+                assetB  = (data.type=='buy') ? data.give_asset : data.get_asset,
+                formatA = (FW.ASSET_DIVISIBLE[assetA]) ? '0,0.00000000' : '0,0',
+                formatB = (FW.ASSET_DIVISIBLE[assetB]) ? '0,0.00000000' : '0,0',
+                amountA = (data.type=='buy') ? numeral(data.get_amount).format(formatA) : numeral(data.give_amount).format(formatA),
+                amountB = (data.type=='buy') ? numeral(data.give_amount).format(formatB) : numeral(data.get_amount).format(formatB);
+            $('#infoA').html(amountA + '<br>' + assetA);
+            $('#infoB').html(amountB + '<br>' + assetB);
+            $('#assetA-icon').attr('src', FW.XCHAIN_API + '/icon/' + assetA + '.png');
+            $('#assetB-icon').attr('src', FW.XCHAIN_API + '/icon/' + assetB + '.png');
+            $('.order-type').html(data.type.charAt(0).toUpperCase() + data.type.slice(1));
+            // Display additional options for auto-signing the BTCpay transaction
+            if(data.give_asset=='BTC')
+                $('#btcpay').show();
+        }
+
+        // Reset dialog data so we don't reuse data on form in the future
+        FW.DIALOG_DATA = {};
+
+        // Initialize any tooltips
+        $('[data-toggle="tooltip"]').tooltip({ 
+            html: true,
+            placement: 'bottom'
+        }); 
+
+    },100);
+
+    // Display the correct confirmation option
+    updateAutopayConfirm();
+
+    // Update confirmation option if user changes auto-btcpay option
+    $('#autopay').change(function(){
+        updateAutopayConfirm();
+    });
+
+    // Submit form if user clicks 'Submit' button
+    $('#btn-submit').click($.debounce(100,function(e){
+        $('#create-order-form').submit();
+    }));
+
+    // Hide the form if users clicks 'Cancel' button
+    $('#btn-cancel').click($.debounce(100,function(e){
+        dialogClose('dialog-create-order');
+    }));
+
+    // Handle form validation and displaying any errors
+    $('#create-order-form').validator().on('submit', function(e){
+        // prevent form submission
+        e.preventDefault(); 
+        // Get object with form values
+        var vals   = array2Object($(this).serializeArray()),
+            errors = [];
+        console.log('vals=',vals);
+        // Remove error indicators from any fields 
+        $('.form-group').removeClass('has-error has-danger');
+        // Verify we have valid fee amount 
+        if(numeral(vals['fee-amount']).value()==0){
+            errors.push('You must enter a fee which is greater than 0.00000000!');
+            $('#fee-amount').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Verify we have valid expiration number
+        var expire = numeral(vals['expires']).value();
+        if(expire<=0||expire>8064){
+            errors.push('You must enter a expiration number between 1 and 8064!');
+            $('#expires').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Handle BTCpay valdidation
+        if(vals.give_asset=='BTC' && vals['autopay-confirm']!='Y'){
+            errors.push('You must confirm that you understand the BTCPay requirements!');
+            $('.dialog-autobtcpay-confirm').effect( "shake", { times: 3, direction: 'up' }, 1000);
+        }
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+        } else {
+            var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                fee_sat  = getSatoshis(vals['fee-amount']),
+                get_sat  = getSatoshis(vals.get_amount),
+                give_sat = getSatoshis(vals.give_amount);
+                expires  = numeral(vals.expires).value(),
+                autopay  = (vals.autopay=='Y') ? 1 : 0;
+            // Callback to run after broadcasting tx
+            var doneCb = function(tx){
+                if(tx){
+                    dialogClose('dialog-create-order');
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Order Creation Successful', '<center>Your order has been broadcast to the network and should be placed shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                    // Add transaction to BTCpay monitoring list
+                    if(vals.give_asset=='BTC'){
+                        if(!FW.BTCPAY_ORDERS[network])
+                            FW.BTCPAY_ORDERS[network] = {};
+                        if(!FW.BTCPAY_ORDERS[network][vals.source])
+                            FW.BTCPAY_ORDERS[network][vals.source] = {};
+                        // Save transaction hash and autopay preference 
+                        FW.BTCPAY_ORDERS[network][vals.source][tx] = autopay;
+                        // Save data to disk
+                        ls.setItem('btcpayOrders',JSON.stringify(FW.BTCPAY_ORDERS));
+                        // Save wallet to btcpayWallet (if user locks wallet, we can still sign transactions)
+                        var a = ss.getItem('wallet'),
+                            b = ss.getItem('btcpayWallet');
+                        if(b==null)
+                            ss.setItem('btcpayWallet',a);
+                    }
+                }
+            }
+            cpOrder(network, vals.source, vals.get_asset, vals.give_asset, get_sat, give_sat, expires, fee_sat, doneCb);
+        }
+    })
+
+
+});
+</script>

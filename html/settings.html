@@ -1,214 +1,266 @@
+
+<style>
+.settings-content .tab-content {
+    background-color: #fff;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+.settings-content .nav-tabs>li.active>a {
+    border: 1px solid #ccc;
+    border-bottom-color: transparent;
+}
+.settings-content fieldset {
+    max-width: 600px;
+}
+</style>
+
 <!-- Settings Form -->
 <div class="settings-content">
     <form class="form-horizontal" id="settings-form" data-toggle="validator" role="form">
     <div class="row">
-
-        <!-- Wallet Information -->
-        <div class="col-xs-12 col-sm-6">
-            <fieldset>
-                <legend><i class="fa fa-bitcoin"></i> Wallet Information</legend>
-                <div class="form-group">
-                    <label for="passphrase" class="col-sm-3 control-label no-right-padding">
-                        Passphrase
-                        <a href="#" data-toggle="tooltip" title='This is the 12-word passphrase that enables you to access all your funds' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <div class="col-sm-9">
-                        <div class="input-group">
-                            <input type="password" class="form-control" name="passphrase" id="passphrase" placeholder="Current Passphrase" value="word word word word word word word word word word word word" readonly>
-                            <a href="#" class="input-group-addon" id="settings-passphrase"><i class="fa fa-eye"></i></a>
+        <div class="col-xs-12">
+            <ul class="nav nav-tabs">
+                <li class="active">
+                    <a data-toggle="tab" href="#wallet"><i class="fa fa-bitcoin"></i> Wallet</a></li>
+                <li><a data-toggle="tab" href="#preferences"><i class="fa fa-cog"></i> Preferences</a></li>
+                <li><a data-toggle="tab" href="#servers"><i class="fa fa-server"></i> Server Settings</a></li>
+            </ul>
+            <div class="tab-content" style="border: 1px solid #ccc; border-top: 0px !important;padding: 10px">
+                <!-- Wallet Settings -->
+                <div id="wallet" class="tab-pane active">
+                    <fieldset>
+                        <div class="form-group">
+                            <label for="passphrase" class="col-sm-3 control-label no-right-padding">
+                                Passphrase
+                                <a href="#" data-toggle="tooltip" title='This is the 12-word passphrase that enables you to access all your funds' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <input type="password" class="form-control" name="passphrase" id="passphrase" placeholder="Current Passphrase" value="word word word word word word word word word word word word" readonly>
+                                    <a href="#" class="input-group-addon" id="settings-passphrase"><i class="fa fa-eye"></i></a>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="address" class="col-sm-3 control-label no-right-padding">
-                        Address
-                        <a href="#" data-toggle="tooltip" title='This is the current wallet address' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <div class="col-sm-9">
-                        <div class="input-group">
-                            <input type="text" class="form-control" name="address"  id="settings-address" placeholder="Current Address" readonly>
-                            <a class="input-group-addon" id="settings-address-icon"><i class="fa fa-edit"></i></a>
+                        <div class="form-group">
+                            <label for="address" class="col-sm-3 control-label no-right-padding">
+                                Address
+                                <a href="#" data-toggle="tooltip" title='This is the current wallet address' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" name="address"  id="settings-address" placeholder="Current Address" readonly>
+                                    <a class="input-group-addon" id="settings-address-icon"><i class="fa fa-edit"></i></a>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                        <div class="form-group">
+                            <label for="settings-address-label" class="col-sm-3 control-label no-right-padding">
+                                Label
+                                <a href="#" data-toggle="tooltip" title='This is the name or label you would like to use for the current address' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" name="settings-address-label"  id="settings-address-label" placeholder="Address Label">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="network" class="col-sm-3 control-label no-right-padding">
+                                Network
+                                <a href="#" data-toggle="tooltip" title='This determines which bitcoin network you would prefer to use' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <select class="col-sm-9 selectpicker" name="network" id="settings-network">
+                                <option value="1">Bitcoin Core (Mainnet)</option>
+                                <option value="2">Bitcoin Core (Testnet)</option>
+                            </select>
+                        </div>
+                    </fieldset>
                 </div>
-                <div class="form-group">
-                    <label for="settings-address-label" class="col-sm-3 control-label no-right-padding">
-                        Label
-                        <a href="#" data-toggle="tooltip" title='This is the name or label you would like to use for the current address' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <div class="col-sm-9">
-                        <input type="text" class="form-control" name="settings-address-label"  id="settings-address-label" placeholder="Address Label">
-                    </div>
+                <!-- General Preferences -->
+                <div id="preferences" class="tab-pane">
+                    <fieldset>
+                        <div class="form-group">
+                            <label for="current-theme" class="col-sm-3 control-label no-right-padding">
+                                Theme
+                                <a href="#" data-toggle="tooltip" title='This is the current theme being used' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <select class="col-sm-9 selectpicker" name="current-theme"  id="current-theme">
+                                <option>Default</option>
+                                <option>Coming soon...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="current-currency" class="col-sm-3 control-label no-right-padding">
+                                Currency
+                                <a href="#" data-toggle="tooltip" title='This is the current currency being used to display fiat values' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <select class="col-sm-9 selectpicker" name="current-currency"  id="current-currency">
+                                <option data-icon="fa fa-usd">US Dollar</option>
+                                <option>Coming soon...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="current-language" class="col-sm-3 control-label no-right-padding">
+                                Language
+                                <a href="#" data-toggle="tooltip" title='This is the current language being used in the wallet' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <select class="col-sm-9 selectpicker"  name="current-language" id="current-language">
+                                <option>English</option>
+                                <option>Coming soon...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="current-priority" class="col-sm-3 control-label no-right-padding">
+                                Fee Priority
+                                <a href="#" data-toggle="tooltip" title='This is the default fee priority that you would like to use' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <select class="col-sm-9 selectpicker" name="current-priority" id="current-priority">
+                                <option>High</option>
+                                <option>Medium</option>
+                                <option>Low</option>
+                                <option>Custom</option>
+                            </select>
+                        </div>                
+                    </fieldset>            
                 </div>
-                <div class="form-group">
-                    <label for="network" class="col-sm-3 control-label no-right-padding">
-                        Network
-                        <a href="#" data-toggle="tooltip" title='This determines which bitcoin network you would prefer to use' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                </label>
-                    <select class="col-sm-9 selectpicker" name="network" id="settings-network">
-                        <option value="1">Bitcoin Core (Mainnet)</option>
-                        <option value="2">Bitcoin Core (Testnet)</option>
-                    </select>
-                </div>                
-            </fieldset>
-        </div>
-
-        <!-- General Information -->
-        <div class="col-xs-12 col-sm-6">
-            <fieldset>
-                <legend><i class="fa fa-gears"></i> General Information</legend>
-                <div class="form-group">
-                    <label for="current-theme" class="col-sm-3 control-label no-right-padding">
-                        Theme
-                        <a href="#" data-toggle="tooltip" title='This is the current theme being used' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <select class="col-sm-9 selectpicker" name="current-theme"  id="current-theme">
-                        <option>Default</option>
-                        <option>Coming soon...</option>
-                    </select>
+                <!-- Server Settings -->
+                <div id="servers" class="tab-pane">
+                    <fieldset>
+                        <legend>Mainnet</legend>
+                        <div class="form-group">
+                            <label for="mainnet-api-host" class="col-sm-3 control-label no-right-padding">
+                                API Host
+                                <a href="#" data-toggle="tooltip" title='This is the hostname where the XChain API can be accessed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" name="mainnet-api-host" id="mainnet-api-host" placeholder="xchain.io" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="mainnet-api-ssl" class="col-sm-3 control-label no-right-padding">
+                                API SSL
+                                <a href="#" data-toggle="tooltip" title='This determines if requests to the XChain API use http or https (ssl)' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <select class="col-sm-9 selectpicker" name="mainnet-api-ssl" id="mainnet-api-ssl">
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mainnet-cp-host" class="col-sm-3 control-label no-right-padding">
+                                CP Host
+                                <a href="#" data-toggle="tooltip" title='This is the hostname where the Counterparty API can be accessed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" name="mainnet-cp-host" id="mainnet-cp-host" placeholder="public.coindaddy.io" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="mainnet-cp-port" class="col-sm-3 control-label no-right-padding">
+                                CP Port
+                                <a href="#" data-toggle="tooltip" title='This is the port to use when communicating with the Counterparty API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" name="mainnet-cp-port" id="mainnet-cp-port" placeholder="4000" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="mainnet-cp-user" class="col-sm-3 control-label no-right-padding">
+                                CP User
+                                <a href="#" data-toggle="tooltip" title='This is the username used to authenticate to the Counterparty API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" name="mainnet-cp-user" id="mainnet-cp-user" placeholder="rpc" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="mainnet-cp-pass" class="col-sm-3 control-label no-right-padding">
+                                CP Pass
+                                <a href="#" data-toggle="tooltip" title='This is the password used to authenticate to the Counterparty API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" name="mainnet-cp-pass" id="mainnet-cp-pass" placeholder="1234" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="mainnet-cp-ssl" class="col-sm-3 control-label no-right-padding">
+                                CP SSL
+                                <a href="#" data-toggle="tooltip" title='This determines if requests to the Counterparty API use http or https (ssl)' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <select class="col-sm-9 selectpicker" name="mainnet-cp-ssl" id="mainnet-cp-ssl">
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Testnet</legend>
+                        <div class="form-group">
+                            <label for="testnet-api-host" class="col-sm-3 control-label no-right-padding">
+                                API Host
+                                <a href="#" data-toggle="tooltip" title='This is the hostname where the XChain API can be accessed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" name="testnet-api-host" id="testnet-api-host" placeholder="testnet.xchain.io" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="mainnet-api-ssl" class="col-sm-3 control-label no-right-padding">
+                                API SSL
+                                <a href="#" data-toggle="tooltip" title='This determines if requests to the XChain API use http or https (ssl)' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <select class="col-sm-9 selectpicker" name="testnet-api-ssl" id="testnet-api-ssl">
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="testnet-cp-host" class="col-sm-3 control-label no-right-padding">
+                                CP Host
+                                <a href="#" data-toggle="tooltip" title='This is the hostname where the Counterparty API can be accessed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                              <input type="text" class="form-control" name="testnet-cp-host" id="testnet-cp-host" placeholder="public.coindaddy.io" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="testnet-cp-port" class="col-sm-3 control-label no-right-padding">
+                                CP Port
+                                <a href="#" data-toggle="tooltip" title='This is the port to use when communicating with the Counterparty API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                              <input type="text" class="form-control" name="testnet-cp-port" id="testnet-cp-port" placeholder="14000" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="testnet-cp-user" class="col-sm-3 control-label no-right-padding">
+                                CP User
+                                <a href="#" data-toggle="tooltip" title='This is the username used to authenticate to the Counterparty API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                              <input type="text" class="form-control" name="testnet-cp-user" id="testnet-cp-user" placeholder="rpc" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="testnet-cp-pass" class="col-sm-3 control-label no-right-padding">
+                                CP Pass
+                                <a href="#" data-toggle="tooltip" title='This is the password used to authenticate to the Counterparty API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                              <input type="text" class="form-control" name="testnet-cp-pass" id="testnet-cp-pass" placeholder="1234" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="testnet-cp-ssl" class="col-sm-3 control-label no-right-padding">
+                                Use SSL
+                                <a href="#" data-toggle="tooltip" title='This determines if requests to the Counterparty API use http or https (ssl)' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <select class="col-sm-9 selectpicker" name="testnet-cp-ssl" id="testnet-cp-ssl">
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+                    </fieldset>
                 </div>
-                <div class="form-group">
-                    <label for="current-currency" class="col-sm-3 control-label no-right-padding">
-                        Currency
-                        <a href="#" data-toggle="tooltip" title='This is the current currency being used to display fiat values' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <select class="col-sm-9 selectpicker" name="current-currency"  id="current-currency">
-                        <option data-icon="fa fa-usd">US Dollar</option>
-                        <option>Coming soon...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="current-language" class="col-sm-3 control-label no-right-padding">
-                        Language
-                        <a href="#" data-toggle="tooltip" title='This is the current language being used in the wallet' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <select class="col-sm-9 selectpicker"  name="current-language" id="current-language">
-                        <option>English</option>
-                        <option>Coming soon...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="current-priority" class="col-sm-3 control-label no-right-padding">
-                        Fee Priority
-                        <a href="#" data-toggle="tooltip" title='This is the default fee priority that you would like to use' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <select class="col-sm-9 selectpicker" name="current-priority" id="current-priority">
-                        <option>High</option>
-                        <option>Medium</option>
-                        <option>Low</option>
-                        <option>Custom</option>
-                    </select>
-                </div>                
-            </fieldset>            
-        </div>
-
-    </div>
-
-    <div class="row" id="server-settings-wrapper" style="margin-top: 15px">
-        <!-- Server Settings (Mainnet) -->
-        <div class="col-xs-12 col-sm-6">
-            <fieldset>
-                <legend><i class="fa fa-server"></i> Mainnet Server Information</legend>
-                <div class="form-group">
-                    <label for="mainnet-cp-host" class="col-sm-3 control-label no-right-padding">
-                        CP Host
-                        <a href="#" data-toggle="tooltip" title='This is the hostname where the Counterparty API can be accessed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <div class="col-sm-9">
-                      <input type="text" class="form-control" name="mainnet-cp-host" id="mainnet-cp-host" placeholder="public.coindaddy.io" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="mainnet-cp-port" class="col-sm-3 control-label no-right-padding">
-                        CP Port
-                        <a href="#" data-toggle="tooltip" title='This is the port to use when communicating with the Counterparty API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <div class="col-sm-9">
-                      <input type="text" class="form-control" name="mainnet-cp-port" id="mainnet-cp-port" placeholder="4000" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="mainnet-cp-user" class="col-sm-3 control-label no-right-padding">
-                        CP User
-                        <a href="#" data-toggle="tooltip" title='This is the username used to authenticate to the Counterparty API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <div class="col-sm-9">
-                      <input type="text" class="form-control" name="mainnet-cp-user" id="mainnet-cp-user" placeholder="rpc" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="mainnet-cp-pass" class="col-sm-3 control-label no-right-padding">
-                        CP Pass
-                        <a href="#" data-toggle="tooltip" title='This is the password used to authenticate to the Counterparty API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <div class="col-sm-9">
-                      <input type="text" class="form-control" name="mainnet-cp-pass" id="mainnet-cp-pass" placeholder="1234" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="mainnet-cp-ssl" class="col-sm-3 control-label no-right-padding">
-                        Use SSL
-                        <a href="#" data-toggle="tooltip" title='This determines if requests to the Counterparty API use http or https (ssl)' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <select class="col-sm-9 selectpicker" name="mainnet-cp-ssl" id="mainnet-cp-ssl">
-                        <option value="1">Yes</option>
-                        <option value="0">No</option>
-                    </select>
-                </div>
-            </fieldset>
-        </div>
-
-        <!-- Server Settings (testnet) -->
-        <div class="col-xs-12 col-sm-6">
-            <fieldset>
-                <legend><i class="fa fa-server"></i> Testnet Server Information</legend>
-                <div class="form-group">
-                    <label for="testnet-cp-host" class="col-sm-3 control-label no-right-padding">
-                        CP Host
-                        <a href="#" data-toggle="tooltip" title='This is the hostname where the Counterparty API can be accessed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <div class="col-sm-9">
-                      <input type="text" class="form-control" name="testnet-cp-host" id="testnet-cp-host" placeholder="public.coindaddy.io" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="testnet-cp-port" class="col-sm-3 control-label no-right-padding">
-                        CP Port
-                        <a href="#" data-toggle="tooltip" title='This is the port to use when communicating with the Counterparty API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <div class="col-sm-9">
-                      <input type="text" class="form-control" name="testnet-cp-port" id="testnet-cp-port" placeholder="14000" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="testnet-cp-user" class="col-sm-3 control-label no-right-padding">
-                        CP User
-                        <a href="#" data-toggle="tooltip" title='This is the username used to authenticate to the Counterparty API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <div class="col-sm-9">
-                      <input type="text" class="form-control" name="testnet-cp-user" id="testnet-cp-user" placeholder="rpc" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="testnet-cp-pass" class="col-sm-3 control-label no-right-padding">
-                        CP Pass
-                        <a href="#" data-toggle="tooltip" title='This is the password used to authenticate to the Counterparty API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <div class="col-sm-9">
-                      <input type="text" class="form-control" name="testnet-cp-pass" id="testnet-cp-pass" placeholder="1234" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="testnet-cp-ssl" class="col-sm-3 control-label no-right-padding">
-                        Use SSL
-                        <a href="#" data-toggle="tooltip" title='This determines if requests to the Counterparty API use http or https (ssl)' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-                    </label>
-                    <select class="col-sm-9 selectpicker" name="testnet-cp-ssl" id="testnet-cp-ssl">
-                        <option value="1">Yes</option>
-                        <option value="0">No</option>
-                    </select>
-                </div>
-            </fieldset>
+            </div>            
         </div>
     </div>
     </form>
@@ -225,19 +277,20 @@ $(document).ready(function(){
     $('#settings-network').val(FW.WALLET_NETWORK);
     $('#settings-address-label').val(FW.WALLET_ADDRESS_LABEL);
 
+    // Define possible networks
+    var networks = ['mainnet','testnet'];
+
     // Populate the server info fields
-    var o = FW.WALLET_SERVER_INFO.mainnet;
-    $('#mainnet-cp-host').val(o.host);
-    $('#mainnet-cp-port').val(o.port);
-    $('#mainnet-cp-user').val(o.user);
-    $('#mainnet-cp-pass').val(o.pass);
-    $('#mainnet-cp-ssl').val((o.ssl) ? 1 : 0);
-    var o = FW.WALLET_SERVER_INFO.testnet;
-    $('#testnet-cp-host').val(o.host);
-    $('#testnet-cp-port').val(o.port);
-    $('#testnet-cp-user').val(o.user);
-    $('#testnet-cp-pass').val(o.pass);
-    $('#testnet-cp-ssl').val((o.ssl) ? 1 : 0);
+    $.each(networks,function(idx, name){
+        var o = FW.WALLET_SERVER_INFO[name];
+        $('#' + name + '-cp-host').val(o.host);
+        $('#' + name + '-cp-port').val(o.port);
+        $('#' + name + '-cp-user').val(o.user);
+        $('#' + name + '-cp-pass').val(o.pass);
+        $('#' + name + '-cp-ssl').val((o.ssl) ? 1 : 0);
+        $('#' + name + '-api-host').val(o.api_host);
+        $('#' + name + '-api-ssl').val((o.api_ssl) ? 1 : 0);
+    });
 
     // Initialize any tooltips
     $('[data-toggle="tooltip"]').tooltip({ 
@@ -246,7 +299,7 @@ $(document).ready(function(){
     }); 
 
     // Detect any server settings changes and treat as if user submited form
-    $('#server-settings-wrapper input').change(function(){
+    $('#servers input, #servers select').change(function(){
         $('#settings-form').submit();
     });
 
@@ -268,7 +321,7 @@ $(document).ready(function(){
 
     // Handle form validation
     $('#settings-form').validator().on('submit', function(e){
-        // handle the invalid form...
+        // handle the invalid form
         if(e.isDefaultPrevented()){
             dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Error', 'Please fill out all required fields indicated in red.');
         } else {
@@ -279,28 +332,24 @@ $(document).ready(function(){
             $(arr).each(function(index, obj){
                 data[obj.name] = obj.value;
             });
-            // Update server information
-            var o = {
-                mainnet: {
-                    host: data['mainnet-cp-host'],
-                    port: data['mainnet-cp-port'],
-                    user: data['mainnet-cp-user'],
-                    pass: data['mainnet-cp-pass'],
-                    pass: data['mainnet-cp-pass'],
-                    ssl: (data['mainnet-cp-ssl']=='1') ? true : false                   
-                },
-                testnet: {
-                    host: data['testnet-cp-host'],
-                    port: data['testnet-cp-port'],
-                    user: data['testnet-cp-user'],
-                    pass: data['testnet-cp-pass'],
-                    pass: data['testnet-cp-pass'],
-                    ssl: (data['testnet-cp-ssl']=='1') ? true : false                   
-                }
-            }
+            // Build out the server data object
+            var o = {};
+            $.each(networks,function(idx, name){
+                o[name] = {
+                    host: data[name + '-cp-host'],
+                    port: data[name + '-cp-port'],
+                    user: data[name + '-cp-user'],
+                    pass: data[name + '-cp-pass'],
+                    ssl: (data[name + '-cp-ssl']=='1') ? true : false,
+                    api_host: data[name + '-api-host'],
+                    api_ssl: (data[name + '-api-ssl']=='1') ? true : false,
+                };
+            });
             // Save updated server information
             FW.WALLET_SERVER_INFO = o;
             ls.setItem('serverInfo',JSON.stringify(o));
+            // Handle setting the xchain URL
+            setXChainAPI();
             // dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Information Saved', 'Your server information has been successfully saved.');
         }
     });

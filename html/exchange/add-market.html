@@ -1,0 +1,90 @@
+<form class="form-horizontal" id="add-market-form" data-toggle="validator" role="form">
+    <div class="form-group" id="token-name-field">
+        <!-- Token Name Field -->
+    </div>
+    <div class="text-right">
+        <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
+        <div id="btn-submit" class="btn btn-success "><i class="fa fa-lg fa-fw fa-plus-circle"></i> Add Market</div>
+    </div>
+</form>
+
+
+<script>
+$(document).ready(function(){
+
+    // Load any field content
+    $('#token-name-field').load('html/fields/token-name-suggest.html');
+
+    // Delay initializing some fields to give things a chance to load
+    setTimeout(function(){
+
+        // Initialize any tooltips
+        $('[data-toggle="tooltip"]').tooltip({ 
+            html: true,
+            placement: 'bottom'
+        }); 
+
+    },100);
+
+    // Submit form if user clicks 'Submit' button
+    $('#btn-submit').click($.debounce(100,function(e){
+        $('#add-market-form').submit();
+    }));
+
+    // Hide the form if users clicks 'Cancel' button
+    $('#btn-cancel').click($.debounce(100,function(e){
+        dialogClose('dialog-add-market');
+    }));
+
+    // Handle form validation and displaying any errors
+    $('#add-market-form').validator().on('submit', function(e){
+        // prevent form submission
+        e.preventDefault(); 
+        // Get object with form values
+        var vals   = array2Object($(this).serializeArray()),
+            errors = [];
+        // Remove error indicators from any fields 
+        $('.form-group').removeClass('has-error has-danger');
+        // Verify we have a token name
+        if(String(vals.name).length==0){
+            errors.push('You must enter a token name to pay dividends on!');
+            $('#token-name').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+        } else {
+            var market = vals.name,
+                found  = false;
+            FW.BASE_MARKETS.forEach(function(item){
+                if(item==market)
+                    found = true;
+            });
+
+            // Only add the market if it does not already exist
+            if(!found){
+                // Add the market to the view
+                addMarket(market);
+
+                // Set the new tab to active
+                $('#tabs a[href="#' + market + '"]').tab('show');
+
+                // Re-adjust the tabs
+                autoCollapseTabs();
+
+                // Update the market data and view
+                updateMarkets(market, 1, true, function(o){ updateMarketsView(market); });
+
+                // Add the market to the base markets array and save to disk
+                FW.BASE_MARKETS.push(market);
+                ls.setItem('walletMarkets', JSON.stringify(FW.BASE_MARKETS));
+            }
+
+            // Close the dialog box
+            dialogClose('dialog-add-market');
+        }
+    })
+
+
+});
+</script>

@@ -1,0 +1,228 @@
+<!-- Markets List (Small) -->
+<div class="container-fluid" id="markets-small">
+
+    <!-- Markets Header/ filter / Options-->
+    <div class="row">
+        <div class="panel panel-default no-bottom-margin no-top-border">
+            <div class="panel-heading panel-middle panel-heading-lg no-bottom-border">
+                <i class="fa fa-lg fa-exchange"></i>  Markets
+                <div class="input-group add-on pull-right" id="markets-searchbox">
+                    <input class="form-control" placeholder="Filter Markets" name="query" id="markets-filter" type="text">
+                    <div class="input-group-btn dropdown right-dropdown-menu" id="markets-settings">
+                        <button class="btn btn-success btn-xs dropdown-toggle" type="button" data-toggle="dropdown">
+                            <i class="fa fa-lg fa-cog"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-right">
+                            <div class="dropdown-menu-header">Actions</div>
+                            <li><a href="#" id="btn-add"><i class="fa fa-lg fa-plus-circle"></i> Add Market</a></li>
+                            <li><a href="#" id="btn-refresh"><i class="fa fa-lg fa-refresh"></i> Refresh Markets</a></li>
+                            <div class="dropdown-menu-header">View Options</div>
+                            <div class="dropdown-checkboxes">
+                                <li class="checkbox">
+                                    <label><input type="checkbox" name="options-named" value="1"><i class="fa fa-lg fa-sort-alpha-asc"></i> Named</label>
+                                </li>
+                                <div class="checkbox">
+                                    <label><input type="checkbox" name="options-subassets" value="2"><i class="fa fa-lg fa-sitemap"></i> Subassets</label>
+                                </div>
+                                <div class="checkbox">
+                                    <label><input type="checkbox" name="options-numeric" value="3"><i class="fa fa-lg fa-sort-numeric-asc"></i> Numeric</label>
+                                </div>
+                            </div>
+                        </ul>
+                    </div>
+                </div>
+            </div>     
+        </div>
+    </div>
+
+    <div class="row small-text">
+        <ul class="nav nav-tabs nav-left nav-tabs-theme" id="markets-tabs">
+            <li id="markets-last-tab" class="pull-right">
+                <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu" id="markets-tabs-more">
+                    <!-- Tabs get inserted here -->
+                </ul>
+            </li>
+        </ul>
+        <div class="tab-content clear-both" id="markets-tabs-content">
+            <!-- Tab content get inserted here -->
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+// Handle calculating the number of rows we can fit on screen
+function getMarketsRowCount(){
+    var height = $('#market-sidemenu-container').height(),
+        offset = 380, // offset for header/footer
+        row    = 25,  // height of 1 row in data
+        rows   = parseInt((height - offset) / row);
+    return rows;
+}
+
+// Handle adding a market tab and content table
+function addMarket(market){
+    var tab     = '<li class="tab" data-market="' + market +'"><a href="#' + market + '" data-toggle="tab"><img src="' + FW.XCHAIN_API + '/icon/' + market + '.png" class="fw-icon-20"></a></li>',
+        content = '<div class="tab-pane active" id="' + market + '">' +
+                  '    <div class="panel panel-default table-responsive">' +
+                  '        <table class="datatable table table-striped cell-border table-hover table-condensed text-right" width="100%">' +
+                  '        <thead>' +
+                  '            <tr class="info text-right">' +
+                  '                <th>Market</th>' +
+                  '                <th>Price</th>' +
+                  '                <th>Volume</th>' +
+                  '                <th>%</th>' +
+                  '            </tr>' +
+                  '        </thead>' +
+                  '        <tbody>' +
+                  '        </tbody>' +
+                  '        </table>' +
+                  '    </div>' +
+                  '</div>';
+    $('#markets-tabs').append(tab);
+    // $( '' + content + '').insertBefore('#last-tab');
+    $('#markets-tabs-content').append(content);
+    $('#markets-tabs').append($('#last-tab'));
+}
+
+// Define datatables config used on this page
+FW.MARKETS_DATATABLE_CONFIG = {
+    dom: '<"datatable-options text-center"p>t',
+    destroy: true, // automatically destroy and re-create this datatable if it has already been initialized
+    deferRender: true,
+    pageLength: getMarketsRowCount(),
+    pagingType: "full",
+    autoWidth: false,
+    language: {
+        lengthMenu: "_MENU_ per page",
+        zeroRecords: "No records found",
+        info: "_TOTAL_ results",
+        info: "Displaying _START_ - _END_ of _TOTAL_",
+        infoEmpty: "No records available",
+        paginate: {
+            first: "<i class='fa fa-chevron-left'></i><i class='fa fa-chevron-left'></i>",
+            previous: "<i class='fa fa-chevron-left'></i>",
+            next: "<i class='fa fa-chevron-right'></i>",
+            last: "<i class='fa fa-chevron-right'></i><i class='fa fa-chevron-right'></i>"
+        }
+    },
+    columns: [
+        { className: "market-name text-left nowrap ellipsis" },
+        null,
+        null,
+        { className: "percent-change" },
+    ],
+    // Callback called whenever the screen is table drawn
+    drawCallback: function( settings ){
+        var table  = $(this).DataTable(),
+            o      = table.page.info(),
+            total  = o.recordsDisplay,
+            length = o.length,
+            stop   = o.start + length,
+            page   = stop / length,
+            pages  = total / length;
+        if(pages > parseInt(pages))
+            pages = parseInt(pages) + 1;
+        // Add 'Page X of Y' in between previous/next buttons
+        var txt = '&nbsp;&nbsp;Page ' + numeral(page).format('0,0') + ' of ' + numeral(pages).format('0,0') + '&nbsp;&nbsp;';
+        $(this).closest('.panel').find('.datatable-options .paginate_button.previous').after(txt);
+
+    },
+    // Callback called whenever a row is created
+    createdRow: function( row, data, idx ){
+        var name   = data[0],
+            asset  = data[0],
+            asset2 = $(this).closest('.tab-pane')[0].id;
+        if(asset.indexOf('|')!=-1){
+            var x = asset.split('|');
+            name  = x[0];
+            asset = x[1];
+        }
+        $(row).attr('data-market', asset + '/' + asset2);
+        if(String(asset).substr(0,4)!='<img')
+            $('td', row).eq(0).html('<img src="' + FW.XCHAIN_API + '/icon/' + asset + '.png" class="fw-icon-20 pull-left">&nbsp;<a href="#" class="market-link">' + name + '</a>');
+        var fmtA = '0,0.00000000',
+            fmtB = '0,0.00';
+        $('td', row).eq(1).text(numeral(data[1]).format(fmtA));
+        $('td', row).eq(2).text(numeral(data[2]).format(fmtA));
+        // $('td', row).eq(3).text(numeral(data[3]).format(fmtA));
+        // $('td', row).eq(4).text(numeral(data[4]).format(fmtA));
+        var cls = (data[3].indexOf('-')==-1) ? 'green' : 'red';
+        $('td', row).eq(3).html('<span class="' + cls + '">' + numeral(data[3]).format(fmtB) + '%</span>');
+        // $('td', row).eq(0).html('<a href="#">' + market + '</a>');
+    }
+};
+
+$(document).ready(function(){
+
+    // Set last row count
+    var last = getMarketsRowCount();
+
+    // Populate base market tables/tabs
+    FW.BASE_MARKETS.forEach(function(market){ addMarket(market, true); });
+
+    // Set BTC as the active tab (also hides all the non-active tab content panels we added)
+    $('#markets-tabs a[href="#BTC"]').tab('show');
+
+    // Handle updating the base market pairs info in memory
+    updateBaseMarkets(false);
+
+    // Size the tabs to fit on screen and move any extras to the 'more' menu
+    autoCollapseTabs();
+
+    // When user clicks market link, open market in main window
+    $('#markets-small').on('click', 'a.market-link', $.debounce(100,function(e){ 
+        var market = $(e.target).closest('tr').attr('data-market');
+        // console.log('caught click market=',market);
+        FW.MARKET_NAME = market;
+        updateMarket(market);
+    }));
+
+    // Make sure only one tab is active at a time (fixes issue where multiple items in the 'More' menu can appear as active)
+    $('#markets-small').on('click', 'li.tab', $.debounce(100,function(e){ 
+        $('#markets-small li.tab').removeClass('active');
+        $(e.target).closest('li.tab').addClass('active');
+    }));
+
+    // Initialize the 'View Options'
+    if(FW.MARKET_OPTIONS.indexOf(1)!=-1) $(".checkbox [name='options-named']").prop('checked', true);
+    if(FW.MARKET_OPTIONS.indexOf(2)!=-1) $(".checkbox [name='options-subassets']").prop('checked', true);
+    if(FW.MARKET_OPTIONS.indexOf(3)!=-1) $(".checkbox [name='options-numeric']").prop('checked', true);
+
+    // Handle updating view when user changes the viewing options
+    $('.dropdown-checkboxes .checkbox input').change($.debounce(100,function(e){ 
+        var arr = [];
+        if($(".checkbox [name='options-named']").is(':checked')) arr.push(1);
+        if($(".checkbox [name='options-subassets']").is(':checked')) arr.push(2);
+        if($(".checkbox [name='options-numeric']").is(':checked')) arr.push(3);
+        FW.MARKET_OPTIONS = arr;
+        ls.setItem('walletMarketOptions',JSON.stringify(FW.MARKET_OPTIONS));
+        FW.BASE_MARKETS.forEach(function(market){ updateMarketsView(market); });
+    }));
+
+    // Handle refreshing market data and redrawing screen when user clicks 'Refresh' button
+    $('#btn-refresh').click($.debounce(100,function(e){ updateBaseMarkets(true); }));
+
+    // Handle displaying 'Add Market' dialog box when user clicks 'Add' button
+    $('#btn-add').click($.debounce(100,function(e){ dialogAddMarket(); }));
+
+    // Prevent settings dropdown from collapsing while toggling viewing options
+    $('#markets-settings .dropdown-menu').click(function(e){
+        if(!$('li > a').is(e.target))
+           e.stopPropagation();
+    });
+    // Filter datatable results as user types search string
+    $('#markets-filter').keyup($.debounce(100,function(e){ 
+        var query = $(this).val();
+        FW.BASE_MARKETS.forEach(function(market){
+            var table = $('#' + market + ' table.datatable').DataTable();
+            table.search( query ).draw();
+        });
+    }));
+
+});
+</script>

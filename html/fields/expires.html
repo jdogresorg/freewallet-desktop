@@ -1,0 +1,40 @@
+<!-- Expiration Field -->
+<label class="col-sm-3 control-label text-left" for="expires">
+    Expires 
+    <a href="#" data-toggle="tooltip" title='This is the number of blocks for which the order should be valid.' class="pull-right" id="available-tooltip"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>
+<div class="col-sm-9">
+    <div class="input-group pull-right" style="width:295px" id="available-value-wrapper">
+        <span class="input-group-addon">Estimated Expiration Block #</span>
+        <input type="text" class="form-control" name="expires_block" id="expires_block" placeholder="" readonly>
+    </div>
+    <input type="text" class="form-control" name="expires" id="expires" placeholder="5000" style="width:110px" value="8064">
+</div>
+
+<script>
+// Function to handle updating the 'Available' information
+function updateExpirationBlock(){
+    var expires = $('#expires').val().replace(',',''),
+        network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+        current = FW.NETWORK_INFO.network_info[network].block_height;
+        block   = parseInt(current) + parseInt(expires) + 1;
+    $('#expires_block').val(numeral(block).format('0,0'));
+}
+
+$(document).ready(function(){
+
+    // Update the expiration block
+    updateExpirationBlock();
+
+    // As user types, updated expiration block and remove any error indicator
+    $('#expires').keyup(function(){ 
+        updateExpirationBlock(); 
+        $(this).closest('.form-group').removeClass('has-error has-danger');
+    });
+
+    $('#expires').blur(function(){
+        $(this).val(numeral($(this).val().replace(',','')).format('0,0'));
+    });
+
+});
+</script>

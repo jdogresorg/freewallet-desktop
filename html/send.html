@@ -67,9 +67,6 @@ $(document).ready(function(){
     $('#memo-field').load('html/fields/memo.html');
     $('#tx-fee-field').load('html/fields/tx-fee.html');
 
-    // Set host name based off a wallet network
-    var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
-
     // Delay initializing some fields to give things a chance to load
     setTimeout(function(){
 
@@ -151,18 +148,18 @@ $(document).ready(function(){
                 if(tx){
                     dialogClose('dialog-send');
                     dialogMessage('<i class="fa fa-lg fa-check"></i> Send Successfull', '<center>Your send has been broadcast to the network and should complete shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="https://' + host +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
             // Callback to run if user confirms action
             var confirmCb = function(){
                 var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                    amt_sat = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
+                    amt_sat = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).format('0') : numeral(vals.amount).format('0'),
                     fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value());
                 cpSend(network, vals.source, vals.destination, vals.memo, vals.name, amt_sat, fee_sat, doneCb);
             }
             // Confirm the action with the user
-            var title = '<img src="https://xchain.io/icon/' + FW.ASSET_INFO.asset + '.png" class="fw-icon-20 margin-right-5"> Confirm ' + vals.name + ' Send?';
+            var title = '<img src="' + FW.XCHAIN_API + '/icon/' + FW.ASSET_INFO.asset + '.png" class="fw-icon-20 margin-right-5"> Confirm ' + vals.name + ' Send?';
             var msg  = 'Send <b>' + vals.amount + ' ' + vals.name + '</b>';
                 msg += ' <br/>to <b>' + vals.destination + '</b>';
             dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);

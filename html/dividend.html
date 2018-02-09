@@ -27,9 +27,6 @@
 <script>
 $(document).ready(function(){
 
-    // Set host name based off a wallet network
-    var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
-
     // Load any field content
     $('#source-address-field').load('html/fields/source-address.html');
     $('#token-name-field').load('html/fields/token-name-suggest.html');
@@ -108,7 +105,7 @@ $(document).ready(function(){
                 if(tx){
                     dialogClose('dialog-pay-dividend');
                     dialogMessage('<i class="fa fa-lg fa-check"></i> Dividend Successfull', '<center>Your dividend transaction has been broadcast to the network and your dividends should be paid out updated shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="https://' + host +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
             // Callback to run if user confirms action

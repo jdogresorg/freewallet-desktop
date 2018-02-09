@@ -53,7 +53,6 @@
 <!-- Code to load/update data -->
 <script type="text/javascript">
     var testnet = (FW.WALLET_NETWORK==2) ? true : false,
-        host    = (testnet) ? 'testnet.xchain.io' : 'xchain.io';
         net     = (testnet) ? 'tBTC' : 'BTC',
         tx      = FW.CURRENT_TRANSACTION.tx;
 
@@ -79,10 +78,10 @@
             });             
         } else {
             // Update 'more info' link to point to transaction url
-            $('#history-info-more').attr('href','https://' + host + '/tx/' + tx);
+            $('#history-info-more').attr('href', FW.XCHAIN_API + '/tx/' + tx);
 
             // Request transaction information from xchain.io
-            $.getJSON('https://' + host + '/api/tx/' + tx, function( o ){
+            $.getJSON(FW.XCHAIN_API + '/api/tx/' + tx, function( o ){
                 if(!o.error){
                     var asset = (o.asset_longname && o.asset_longname!='') ? o.asset_longname : o.asset;
                     $('#source').html(o.source);

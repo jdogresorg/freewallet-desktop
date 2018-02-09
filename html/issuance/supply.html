@@ -22,9 +22,6 @@
 <script>
 $(document).ready(function(){
 
-    // Set host name based off a wallet network
-    var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
-
     // Load any field content
     $('#source-address-field').load('html/fields/source-address.html');
     $('#token-name-field').load('html/fields/token-name-suggest.html');
@@ -96,6 +93,7 @@ $(document).ready(function(){
             errors.push('You must enter an amount which is greater than 0!');
             $('#amount').closest('.form-group').addClass('has-error has-danger');
         }
+        console.log('FW.ASSET_INFO=',FW.ASSET_INFO);
         // Display any error message
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
@@ -105,16 +103,16 @@ $(document).ready(function(){
                 if(tx){
                     dialogClose('dialog-issue-supply');
                     dialogMessage('<i class="fa fa-lg fa-check"></i> Issue Supply Successfull', '<center>Your issuance has been broadcast to the network and your additional supply should be available shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="https://' + host +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
             // Callback to run if user confirms action
             var confirmCb = function(){
-                var network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                    amt_sat   = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
-                    fee_sat   = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
-                    divisible = FW.ASSET_INFO.divisible;
-                cpIssuance(network, vals.source, vals.name, amt_sat, divisible, vals.description, null, fee_sat, doneCb);
+                var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                    amt_sat = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
+                    fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
+                    info    = FW.ASSET_INFO;
+                cpIssuance(network, vals.source, vals.name, amt_sat, info.divisible, info.description, null, fee_sat, doneCb);
             }
             // Confirm the action with the user
             var title = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Issuance?',

@@ -24,9 +24,6 @@
 <script>
 $(document).ready(function(){
 
-    // Set host name based off a wallet network
-    var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
-
     // Load any field content
     $('#source-address-field').load('html/fields/source-address.html');
     $('#token-name-field').load('html/fields/token-name-suggest.html');
@@ -100,15 +97,15 @@ $(document).ready(function(){
                 if(tx){
                     dialogClose('dialog-lock-supply');
                     dialogMessage('<i class="fa fa-lg fa-check"></i> Lock Successfull', '<center>Your transaction has been broadcast to the network and the token supply should be locked shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="https://' + host +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
             // Callback to run if user confirms action
             var confirmCb = function(){
-                var network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                    fee_sat   = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
-                    divisible = FW.ASSET_INFO.divisible;
-                cpIssuance(network, vals.source, vals.name, 0, divisible, 'LOCK', null, fee_sat, doneCb);
+                var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                    fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
+                    info    = FW.ASSET_INFO;
+                cpIssuance(network, vals.source, vals.name, 0, info.divisible, 'LOCK', null, fee_sat, doneCb);
             }
             // Confirm the action with the user
             var title = '<i class="fa fa-lg fa-fw fa-exchange"></i> Confirm Lock Supply?',

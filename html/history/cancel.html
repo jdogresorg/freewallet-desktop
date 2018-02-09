@@ -44,17 +44,15 @@
 
 <!-- Code to load/update data -->
 <script type="text/javascript">
-    var testnet = (FW.WALLET_NETWORK==2) ? true : false,
-        host    = (testnet) ? 'testnet.xchain.io' : 'xchain.io',
-        tx      = FW.CURRENT_TRANSACTION.tx;
+    var tx = FW.CURRENT_TRANSACTION.tx;
 
     $(document).ready(function(){
 
         // Update 'more info' link to point to transaction url
-        $('#history-info-more').attr('href','https://' + host + '/tx/' + tx);
+        $('#history-info-more').attr('href',FW.XCHAIN_API + '/tx/' + tx);
 
         // Request transaction information
-        $.getJSON('https://' + host + '/api/tx/' + tx, function( o ){
+        $.getJSON(FW.XCHAIN_API + '/api/tx/' + tx, function( o ){
             if(!o.error){
                 $('#source').html(o.source);
                 $('#tx-hash').html(o.tx_hash);

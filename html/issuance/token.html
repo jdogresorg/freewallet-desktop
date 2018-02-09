@@ -57,9 +57,6 @@
 <script>
 $(document).ready(function(){
 
-    // Set host name based off a wallet network
-    var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
-
     // Load any field content
     $('#tx-fee-field').load('html/fields/tx-fee.html');
     $('#source-address-field').load('html/fields/source-address.html');
@@ -134,8 +131,6 @@ $(document).ready(function(){
     $('#token-name').change(function(e){
         var type = $('#token-type').val();
             val = $(this).val();
-        // Set host name based off a wallet network
-        var host = (FW.WALLET_NETWORK==2) ? 'testnet.xchain.io' : 'xchain.io';
         if(type=='Named')
             name = val.toUpperCase();
         if(type=='Numeric' && val.toUpperCase().substr(0,1)!='A')
@@ -148,13 +143,13 @@ $(document).ready(function(){
         if(name && name!=val)
             $(this).val(name);
         if(val!='' && val!=null){
-            $.getJSON( 'https://' + host + '/api/asset/' + name, function(o){
+            $.getJSON( FW.XCHAIN_API + '/api/asset/' + name, function(o){
                 // An error indicates asset is not registered
                 if(o.error){
                     // Verify parent asset is owned by current address
                     if(type=='Subasset'){
                         // Lookup if this asset is already registered to another address... send to coindaddy to make purchase offer
-                        $.getJSON( 'https://' + host + '/api/asset/' + parent, function(data){
+                        $.getJSON( FW.XCHAIN_API + '/api/asset/' + parent, function(data){
                             // Parent asset does not exist yet, notify user they must first register named asset before child
                             if(data.error){
                                 dialogMessage('Notice', '<center>Before you can create <b><i>' + name + '</i></b>, you must first create the parent token <b><i>' + parent +'</i></b></center>', true);
@@ -274,7 +269,7 @@ $(document).ready(function(){
                 if(tx){
                     dialogClose('dialog-create-token');
                     dialogMessage('<i class="fa fa-lg fa-check"></i> Issuance Successfull', '<center>Your issuance has been broadcast to the network and your token should be create shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="https://' + host +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
             // Callback to run if user confirms action
@@ -283,7 +278,6 @@ $(document).ready(function(){
                     amt_sat   = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
                     fee_sat   = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
                     divisible = (vals.divisible=='Yes') ? true : false;
-                console.log('divisible=',divisible);
                 cpIssuance(network, vals.source, vals.name, amt_sat, divisible, vals.description, null, fee_sat, doneCb);
             }
             // Confirm the action with the user

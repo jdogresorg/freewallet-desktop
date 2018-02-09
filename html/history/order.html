@@ -75,17 +75,15 @@
 
 <!-- Code to load/update data -->
 <script type="text/javascript">
-    var testnet = (FW.WALLET_NETWORK==2) ? true : false,
-        host    = (testnet) ? 'testnet.xchain.io' : 'xchain.io',
-        tx      = FW.CURRENT_TRANSACTION.tx;
+    var tx = FW.CURRENT_TRANSACTION.tx;
 
     $(document).ready(function(){
 
         // Update 'more info' link to point to transaction url
-        $('#history-info-more').attr('href','https://' + host + '/tx/' + tx);
+        $('#history-info-more').attr('href',FW.XCHAIN_API + '/tx/' + tx);
 
         // Request transaction information
-        $.getJSON('https://' + host + '/api/tx/' + tx, function( o ){
+        $.getJSON(FW.XCHAIN_API + '/api/tx/' + tx, function( o ){
             if(!o.error){
                 $('#source').html(o.source);
                 $('#feed-address').html(o.feed_address);
@@ -94,8 +92,8 @@
                 $('#fee').text(o.fee + ' ('+ numeral(o.fee * 100).format('0,0.00')+ '%)');
                 $('#status').text(o.status);
                 $('#timestamp').html('<span data-livestamp='  + o.timestamp + ' class="nowrap"></span>');
-                var give_asset  = '&nbsp;<img src="https://xchain.io/icon/' + o.give_asset + '.png" class="asset-icon-sm pull-left">' + o.give_asset,
-                    get_asset   = '&nbsp;<img src="https://xchain.io/icon/' + o.get_asset  + '.png" class="asset-icon-sm pull-left">' + o.get_asset,
+                var give_asset  = '&nbsp;<img src="' + FW.XCHAIN_API + '/icon/' + o.give_asset + '.png" class="asset-icon-sm pull-left">' + o.give_asset,
+                    get_asset   = '&nbsp;<img src="' + FW.XCHAIN_API + '/icon/' + o.get_asset  + '.png" class="asset-icon-sm pull-left">' + o.get_asset,
                     give_format = (String(o.give_quantity).indexOf('.')==-1) ? '0,0' : '0,0.00000000',
                     get_format  = (String(o.get_quantity).indexOf('.')==-1) ? '0,0' : '0,0.00000000';
                 $('#give-quantity').html(numeral(o.give_quantity).format(give_format) + give_asset);

@@ -4,7 +4,12 @@
 
 html {
   position: relative;
-  min-height: 100%;
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+}
+html { 
+  overflow: hidden;
 }
 
 body {
@@ -83,7 +88,8 @@ body:before {
     padding-bottom: 0px !important;
     padding-left: 0px !important;
     padding-right: 0px !important;
-}.no-top-padding {
+}
+.no-top-padding {
     padding-top: 0px !important;
 }
 .no-bottom-padding {
@@ -101,6 +107,12 @@ body:before {
 }
 .margin-right-5 {
     margin-right: 5px;
+}
+.margin-top-5 {
+    margin-top: 5px;
+}
+.margin-bottom-5 {
+    margin-bottom: 5px;
 }
 .navbar-brand {
     padding-left: 0px;
@@ -124,8 +136,9 @@ body:before {
 .header li > a:hover {
     padding-bottom: 10px;
 }
-.header .dropdown-menu li > a:hover,
-.modal  .dropdown-menu li > a:hover {
+.header  .dropdown-menu li > a:hover,
+.modal   .dropdown-menu li > a:hover,
+.left-dropdown-menu .dropdown-menu li > a:hover {
     padding-bottom: 0px;
     border-bottom: 0px;
 }
@@ -136,12 +149,14 @@ body:before {
     padding-left: 10px;
     padding-right: 5px;
 }
-.header ul.dropdown-menu, 
-.modal ul.dropdown-menu {
+.header  ul.dropdown-menu, 
+.modal   ul.dropdown-menu,
+.left-dropdown-menu ul.dropdown-menu {
     padding: 0px 0px;
 }
-.header .dropdown-menu > li > a,
-.modal  .dropdown-menu > li > a {
+.header  .dropdown-menu > li > a,
+.modal   .dropdown-menu > li > a,
+.left-dropdown-menu .dropdown-menu > li > a {
     padding: 5px 10px;
 }
 .center {
@@ -161,6 +176,9 @@ body:before {
 }
 .clear-both {
     clear: both;
+}
+.inline-block {
+    display: inline-block;
 }
 .fa-lg {
     width: 20px;
@@ -518,7 +536,7 @@ li.history-list-received .history-list-amount {
 .normal-page-content {
     height: calc(100vh - 82px);
     overflow-y: auto;
-    padding: 15px 15px;
+    padding: 10px;
 }
 
 
@@ -658,5 +676,402 @@ form .tooltip {
 /* Prevent bottom border when hovering on send tabs */
 #send-form .nav-tabs li a:hover {
     border-bottom: 0px !important;
+}
 
+/* Force visible difference between stripped rows */
+.table-striped>tbody>tr:nth-of-type(odd) {
+    background-color: #eee;
+}
+
+.table-hover > tbody > tr:hover {
+  background-color: #ddd;
+}
+
+.nav-tabs-theme {
+    border-bottom: 0px;
+}
+
+.nav-tabs-theme > li > a:hover {
+    border-bottom: 0px;
+    background-color: #ddd;
+}
+
+.nav-tabs-theme > li.active > a,
+.nav-tabs-theme > li.active > a:hover,
+.nav-tabs-theme > li.active > a:focus {
+    color: #fff;
+    background-color: #428bca;
+}
+
+
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0em 0.5em;
+}
+
+.dataTables_wrapper .dataTables_paginate {
+    display: block !important;
+    float: none !important;
+    text-align: center;
+    padding-top: 0px !important;
+}
+
+.dataTables_wrapper .dataTables_paginate, 
+.dataTables_wrapper .dataTables_paginate .paginate_button, 
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover, 
+.dataTables_wrapper .dataTables_paginate .paginate_button:active, 
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled, 
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover, 
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:active {
+    color: #fff !important;
+}
+
+table.dataTable tbody th, table.dataTable tbody td {
+    padding: 5px 5px;
+}
+
+#BTC.active .panel,
+#BTC.active .panel-heading {
+    border-top-left-radius: 0px !important;
+}
+
+#markets {
+    padding: 10px;
+    height: 100%;
+}
+#markets-searchbox {
+    width: 100%;
+}
+
+.market-name {
+    min-width: 200px;
+    border-left: 0px !important;
+}
+.percent-change {
+    border-right: 0px !important;
+}
+
+tr.text-right th {
+    text-align: right;
+}
+
+/* Datatable options bar (paging, info, etc) */
+.datatable-options .market-name {
+    float: left;
+    text-align: left;
+}
+.datatable-options .market-volume {
+    float: right;  
+    text-align: right;
+}
+.datatable-options {
+  color: #fff;
+  background: #428bca;
+  padding: 5px;
+}
+.datatable-options label {
+  margin-bottom: 0px;
+}
+
+#markets table.datatable thead th {
+    border-bottom: 1px solid #ddd;
+}
+#markets table.dataTable.no-footer {
+    border-bottom: 0px !important;
+}
+
+.dropdown-checkboxes {
+    padding: 0px 10px;
+}
+
+#markets .datatable thead th {
+    white-space: nowrap
+}
+
+
+/* Force rate-it to use gold stars */
+.rateit .rateit-preset {
+    background: url(../images/star.gif) left -32px;
+    color: rgb(239, 107, 34);
+}
+
+
+/*
+ * Market CSS (market.html)
+ */
+.tx-fee .input-group-btn {
+    width: 120px;
+}
+#market-sidemenu-container {
+    height: calc(100vh - 100px);
+}
+
+.section-title {
+    font-size: 1.3em;
+    font-weight: bold;
+}
+.market-header {
+    border-left: 5px solid #428bca;
+    padding-left: 5px;
+}
+.market-header .market-name {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    line-height: 1.0em;
+}
+.market-header .market-pair {
+}
+.market-stats-header {
+    font-style: italic;
+}
+.market-header .market-icon {
+    float: left;
+    width: 48px;
+    height: 48px;
+    margin-right: 5px;
+}
+a#market-swap-button:hover {
+    text-decoration: none;
+}
+table.tinytable {
+    font-size: 12px;
+    /*border: 1px solid #ccc;*/
+}
+table.tinytable tbody td {
+    padding: 3px;
+}
+
+table.tinytable thead th {
+    padding: 5px 10px;
+    border-bottom: 1px solid #ccc;
+}
+table.tinytable tbody tr td:first-child {
+    border-left: 0px !important;
+}
+table.tinytable tbody tr td:last-child {
+    border-right: 0px !important;
+}
+table.tinytable tbody tr:last-child td {
+    border-bottom: 1px solid #ddd !important;
+}
+#market-container {
+    display: flex;
+    height: 100%;
+    flex-direction: row;
+    overflow: hidden;
+    padding: 0px !important;
+    /* avoid browser level touch actions */
+    xtouch-action: none;
+}
+#market {
+    flex: 1 1 auto;
+    padding: 10px;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;    
+    display: block;
+    position: relative;
+}
+#market-sidemenu {
+    padding-left: 0px;
+}
+#market-sidemenu .panel table.table {
+    border-bottom: 1px solid #ccc;
+}
+#market-sidemenu .panel-heading {
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+}
+
+#tools-buy  .input-group[class*=col-],
+#tools-sell .input-group[class*=col-] {
+    padding-right: 15px;
+}
+#tools-buy  .panel,
+#tools-sell .panel {
+    border: 1px solid #ccc;
+    border-radius: 0px;
+    padding-top: 15px;
+}
+#tools-buy  .input-group-addon,
+#tools-sell .input-group-addon {
+    width: 120px;
+    max-width: 120px;
+}
+
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#orderbook-sells .dataTables_wrapper,
+#orderbook-buys  .dataTables_wrapper,
+#trade-history   .dataTables_wrapper,
+#open-orders     .dataTables_wrapper {
+    background-color: #eee;
+    border: 1px solid #ccc;
+    margin-bottom: 20px;
+}
+
+#orderbook-sells .dataTables_scrollBody,
+#orderbook-buys  .dataTables_scrollBody,
+#trade-history   .dataTables_scrollBody,
+#open-orders     .dataTables_scrollBody {
+    border-bottom: 0px !important;
+}
+
+#trade-history .btn {
+    padding: 2px 5px;
+}
+
+form .asset-name {
+    max-width: 100px;
+
+}
+
+#market-chart {
+    height: 400px; 
+    width: 100%;
+    margin-bottom: 15px;
+    clear: both;
+    top: -15px;
+}
+#chart-list {
+    top: 27px;
+    left: 5px;
+    width: 20px;
+    z-index: 9;
+}
+#chart-list .fa-lg {
+    width: auto !important;
+}
+#chart-options {
+    top: 27px;
+    left: 20px;
+    width: 20px;
+    z-index: 9;
+}
+#chart-options .fa-lg {
+    width: auto !important;
+}
+
+.chart-options {
+    width: 250px;
+    height: 250px;
+}
+#market-depth-chart {
+    height: 200px; 
+    width: 100%;
+    margin-bottom: 15px;
+    clear: both;
+}
+.highcharts-tooltip-table tr.first td {
+    border-top: 1px solid #ccc;
+}
+.highcharts-tooltip-table td.separator {
+    padding-right: 5px;
+    padding-left: 2px;
+}
+.highcharts-tooltip-table td:first-child {
+    font-weight: bold;
+}
+.highcharts-tooltip-table td:last-child {
+    font-weight: bold;
+    padding-left: 5px;
+}
+.highcharts-menu hr {
+    margin-top: 0px;
+    margin-bottom: 0px;
+    border-top: 1px solid #ccc;
+}
+td div.tooltip-header {
+    left: -20px;
+}
+
+.highcharts-point {
+    stroke: #000000;
+}
+.highcharts-candlestick-series .highcharts-point-up {
+    fill: green !important;
+}
+.highcharts-candlestick-series .highcharts-point-down {
+    fill: red !important;
+}
+/* MACD indicator */
+.highcharts-macd-series .highcharts-negative {
+    fill: red !important;
+}
+.highcharts-macd-series .highcharts-color-2 {
+    fill: green;
+}
+.auto-width {
+    width: auto !important;
+}
+a.red:hover {
+    color: red;
+}
+
+
+/*
+ * Small Markets CSS (markets-small.html)
+ */
+#markets-small .nav-tabs {
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+}
+#markets-small .nav-tabs>li>a {
+    padding: 5px 5px;
+}
+#markets-small .dropdown-menu>li>a {
+    padding: 5px 5px;
+}
+#markets-small .dropdown-menu {
+    min-width: 40px;
+}
+#markets-small .market-name {
+    min-width: auto;
+}
+#markets-filter {
+    height: 22px;
+}
+.small-text {
+    font-size: 0.8em;
+}
+#markets-small table.dataTable tbody td {
+    padding: 2px 2px;
+    vertical-align: middle;
+}
+#markets-small table.dataTable thead th {
+    padding: 5px 15px 5px;
+}
+#markets-small #markets-searchbox {
+    top: -1px;
+    width: 120px;
+
+}
+
+.ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#markets-tabs-content .panel {
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+}
+#markets-tabs {
+    padding-top: 5px;
+}
+#markets-filter {
+    font-size: 11px;
+    padding: 3px 6px;
+}
+.dropdown-checkboxes {
+    color: #000;
+}
+#markets-small .dropdown-menu {
+    padding: 0px 0px;
 }

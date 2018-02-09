@@ -1,4 +1,4 @@
-
+/*
  * Theme CSS for FreeWallet Desktop
  */
 
@@ -83,8 +83,9 @@
     background-color: #ddd;
     border-bottom: 5px solid #ccc;
 }
-.theme-blue .header .dropdown-menu li > a:hover,
-.theme-blue .modal  .dropdown-menu li > a:hover {
+.theme-blue .header  .dropdown-menu li > a:hover,
+.theme-blue .modal   .dropdown-menu li > a:hover,
+.theme-blue .left-dropdown-menu .dropdown-menu li > a:hover {
     background-color: #ddd;
     padding-left: 5px;
     border-left: 5px solid #ccc;
@@ -95,6 +96,12 @@
 .theme-blue .history-list li.active {
     border-right: 5px solid #428bca;
     padding-right: 11px;
+}
+.theme-blue .left-dropdown-menu .dropdown-menu>.active>a {
+    color: #000;
+    border-left: 5px solid #337ab7;
+    background-color: transparent;
+    padding-left: 5px;
 }
 .theme-blue .balances-list li:hover,
 .theme-blue .history-list li:hover {

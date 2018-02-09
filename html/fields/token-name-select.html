@@ -23,7 +23,7 @@ $(document).ready(function(){
     if(balances && balances.data){
         balances.data.forEach(function(item){
             var asset = (item.asset_longname && item.asset_longname!='') ? item.asset_longname : item.asset;
-            html += '<option data-content="<img src=\'https://xchain.io/icon/' + item.asset + '.png\' class=\'fw-icon-20 margin-right-5\'>' + asset + '">' + asset + '</option>';
+            html += '<option data-content="<img src=\'' + FW.XCHAIN_API + '/icon/' + item.asset + '.png\' class=\'fw-icon-20 margin-right-5\'>' + asset + '">' + asset + '</option>';
         });
     }
     el.html(html);

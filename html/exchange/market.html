@@ -1,0 +1,795 @@
+<!-- Decentralized Market -->
+<div class="container-fluid" id="market-container">
+    <div id="market">
+        <div class="row">
+            <div class="col-md-12 col-lg-9" id="market-info">
+                <!-- Price / 24h Change / High / Low -->
+                <div class="pull-right">
+                    <table class="table table-bordered cell-border table-condensed text-center no-bottom-margin">
+                    <tr>
+                        <td>
+                            <div class="market-stats-header">Last Price</div>
+                            <div id="last-price" class="bold">0.00000000</div>
+                        </td>
+                        <td>
+                            <div class="market-stats-header">24h Price</div>
+                            <div id="24h-price" class="bold">0.00000000</div>
+                        </td>
+                        <td>
+                            <div class="market-stats-header">24h Change</div>
+                            <div id="24h-change" class="bold">0.00%</div>
+                        </td>
+                        <td>
+                            <div class="market-stats-header">24h High</div>
+                            <div id="24h-high" class="bold">0.00000000</div>
+                        </td>
+                        <td>
+                            <div class="market-stats-header">24h Low</div>
+                            <div id="24h-low" class="bold">0.00000000</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="5">
+                            24h Vol: 
+                            <span id="asset1-volume" class="bold"></span> <span class="asset1-name"></span> / 
+                            <span id="asset2-volume" class="bold"></span> <span class="asset2-name"></span>
+                        </td>
+                    </tr>
+                    </tbody>
+                    </table>
+                </div>
+                <div class="market-header">
+                    <div class="market-icon"><img src="images/icons/btc.png"></div>
+                    <div class="market-name"></div>
+                    <div class="market-pair">
+                        <img src="images/icons/btc.png" class="fw-icon-20"> <span></span> 
+                        <a href="#" class="fa fa-lg fa-exchange" data-toggle="tooltip" data-placement="bottom" title="Reverse" id="market-swap-button"></a>
+                        <a href="#" class="fa fa-lg fa-refresh"  data-toggle="tooltip" data-placement="bottom" title="Refresh" id="market-refresh-button"></a>
+                    </div>
+                </div>
+                <div class="clear-both">
+                    <!-- Chart List Dropdown -->
+                    <div class="dropdown left-dropdown-menu pull-left" id="chart-list">
+                        <button class="btn btn-default btn-xs dropdown-toggle" type="button" data-toggle="dropdown">
+                            <i class="fa fa-lg fa-line-chart"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <div class="dropdown-menu-header">Chart Types</div>
+                            <li><a href="#" data-chart="line">Simple Line</a></li>
+                            <li><a href="#" data-chart="candlestick">Candlestick</a></li>
+                            <li><a href="#" data-chart="accumulation-distribution">A/D (Accumulation/Distribution)</a></li>
+                            <li><a href="#" data-chart="average-true-range">ATR (Average True Range)</a></li>
+                            <li><a href="#" data-chart="bollinger-bands">Bollinger Bands</a></li>
+                            <li><a href="#" data-chart="commodity-channel-index">CCI (Commodity Channel Index)</a></li>
+                            <!-- Comment out CMF for now... lines are not showing up 
+                                <li><a href="#" data-chart="chaikin-money-flow">CMF (Chaikin Money Flow)</a></li>
+                            -->
+                            <li><a href="#" data-chart="exponential-moving-average">EMA (Exponential Moving Average)</a></li>
+                            <li><a href="#" data-chart="ichimoku-kinko-hyo">Ichimoku Kinko Hyo</a></li>
+                            <li><a href="#" data-chart="moving-average-convergence-divergence">MACD (Moving Average Convergence Divergence)</a></li>
+                            <li><a href="#" data-chart="money-flow-index">MFI (Money Flow Index)</a></li>
+                            <li><a href="#" data-chart="momentum">Momentum</a></li>
+                            <li><a href="#" data-chart="pivot-points">Pivot Points</a></li>
+                            <li><a href="#" data-chart="price-envelopes">Price Envelopes</a></li>
+                            <li><a href="#" data-chart="parabolic-sar">PSAR (Parabolic SAR)</a></li>
+                            <li><a href="#" data-chart="rate-of-change">RoC (Rate of Change)</a></li>
+                            <li><a href="#" data-chart="relative-strength-index">RSI (Relative Strength Index)</a></li>
+                            <li><a href="#" data-chart="simple-moving-average">SMA (Simple Moving Average)</a></li>
+                            <li><a href="#" data-chart="stochastic">Stochastic</a></li>
+                            <li><a href="#" data-chart="volume-by-price">VbP (Volume by Price)</a></li>
+                            <li><a href="#" data-chart="volume-weighted-average-price">VWAP (Volume Weighted Average Price)</a></li>
+                            <li><a href="#" data-chart="weighted-moving-average">WMA (Weighted Moving Average)</a></li>
+                            <li><a href="#" data-chart="zig-zag">Zig Zag</a></li>
+                        </ul>
+                    </div>
+                    <div id="market-chart-container"></div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6" id="tools-buy">
+                        <form class="form-vertical" role="form" id="market-buy-form">
+                            <div class="section-title">Buy <span class="market-name-short"></span></div>
+                            <div class="panel panel-default">
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label text-left" for="buy-price">
+                                        Balance
+                                    </label>
+                                    <div class="input-group col-sm-9">
+                                        <input type="text" class="form-control text-right" name="buy-balance" id="buy-balance" placeholder="0.00000000"  data-minlength="1"  readonly>
+                                        <span class="input-group-addon text-ellipsis text-left asset2-name"></span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label text-left" for="buy-price">
+                                        Price 
+                                    </label>
+                                    <div class="input-group col-sm-9">
+                                        <input type="text" class="form-control text-right" name="buy-price" id="buy-price" placeholder="0.00000000"  data-minlength="1"  required>
+                                        <span class="input-group-addon text-ellipsis text-left asset2-name"></span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label text-left" for="buy-amount">
+                                        Amount
+                                    </label>
+                                    <div class="input-group col-sm-9">
+                                        <input type="text" class="form-control text-right" name="buy-amount" id="buy-amount" placeholder="0.00000000"  data-minlength="1"  required>
+                                        <span class="input-group-addon text-ellipsis text-left asset1-name"></span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label text-left" for="buy-total">
+                                        Total
+                                    </label>
+                                    <div class="input-group col-sm-9">
+                                        <input type="text" class="form-control text-right" name="buy-total" id="buy-total" placeholder="0.00000000"  data-minlength="1"  required>
+                                        <span class="input-group-addon text-ellipsis  text-left asset2-name"></span>
+                                    </div>
+                                </div>
+                                <div class="panel-body no-top-padding">
+                                    <button type="submit" class="btn btn-primary pull-right">Buy</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-sm-6" id="tools-sell">
+                        <form class="form-vertical" role="form" id="market-sell-form">
+                            <div class="section-title">Sell <span class="market-name-short"></span></div>
+                            <div class="panel panel-default">
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label text-left" for="sell-balance">
+                                        Balance
+                                    </label>
+                                    <div class="input-group col-sm-9">
+                                        <input type="text" class="form-control text-right" name="sell-balance" id="sell-balance" placeholder="0.00000000"  data-minlength="1"  readonly>
+                                        <span class="input-group-addon text-ellipsis text-left asset1-name"></span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label text-left" for="buy-price">
+                                        Price
+                                    </label>
+                                    <div class="input-group col-sm-9">
+                                        <input type="text" class="form-control text-right" name="sell-price" id="sell-price" placeholder="0.00000000"  data-minlength="1"  required>
+                                        <span class="input-group-addon text-ellipsis text-left asset2-name"></span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label text-left" for="buy-amount">
+                                        Amount
+                                    </label>
+                                    <div class="input-group col-sm-9">
+                                        <input type="text" class="form-control text-right" name="sell-amount" id="sell-amount" placeholder="0.00000000"  data-minlength="1"  required>
+                                        <span class="input-group-addon text-ellipsis text-left asset1-name"></span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label text-left" for="buy-total">
+                                        Total
+                                    </label>
+                                    <div class="input-group col-sm-9">
+                                        <input type="text" class="form-control text-right" name="sell-total" id="sell-total" placeholder="0.00000000"  data-minlength="1"  required>
+                                        <span class="input-group-addon text-ellipsis  text-left asset2-name"></span>
+                                    </div>
+                                </div>
+                                <div class="panel-body no-top-padding">
+                                    <button type="submit" class="btn btn-primary pull-right">Sell</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6" id="orderbook-sells">
+                        <span class="section-title">Sell Orders</span>
+                        <div class="pull-right">Total: <span class="total-amount bold">0.00000000</span> <span class="asset1-name"></span></div>
+                        <table class="tinytable datatable table table-striped cell-border table-hover table-condensed text-right" width="100%">
+                        <thead>
+                        <tr class="info text-right">
+                            <th>Price (<span class="asset2-name"></span>)</th>
+                            <th>Amount (<span class="asset1-name"></span>)</th>
+                            <th>Total (<span class="asset2-name"></span>)</th>
+                            <th>Sum (<span class="asset2-name"></span>)</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                        </table>
+                    </div>
+                    <div class="col-sm-6" id="orderbook-buys">
+                        <span class="section-title">Buy Orders</span>
+                        <div class="pull-right">Total: <span class="total-amount bold">0.00000000</span> <span class="asset2-name"></span></div>
+                        <table class="tinytable datatable table table-striped cell-border table-hover table-condensed text-right" width="100%">
+                        <thead>
+                        <tr class="info text-right">
+                            <th>Price (<span class="asset2-name"></span>)</th>
+                            <th>Amount (<span class="asset1-name"></span>)</th>
+                            <th>Total (<span class="asset2-name"></span>)</th>
+                            <th>Sum (<span class="asset2-name"></span>)</th>
+                         </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                        </table>
+                    </div>
+                </div>
+                <span class="section-title">Market Depth</span>
+                <div id="market-depth-container">
+                    <!-- Market Depth Chart -->
+                </div>
+                <div class="row">
+                    <div class="col-sm-6" id="trade-history">
+                        <span class="section-title">Trade History</span>
+                        <div class="btn-group pull-right">
+                            <a href="#market-trade-history" data-toggle="tab" class="btn btn-sm btn-primary active">Market Trades</a>
+                            <a href="#my-trade-history"     data-toggle="tab" class="btn btn-sm btn-primary">My Trades</a>
+                        </div>
+                        <div class="tab-content">
+                            <div id="market-trade-history" class="tab-pane active">
+                                <table class="tinytable datatable table table-striped cell-border table-hover table-condensed text-right" width="100%">
+                                <thead>
+                                <tr class="info text-right">
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Price (<span class="asset2-name"></span>)</th>
+                                    <th>Amount (<span class="asset1-name"></span>)</th>
+                                    <th>Total (<span class="asset2-name"></span>)</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                                </table>
+                            </div>
+                            <div id="my-trade-history" class="tab-pane">
+                                <table class="tinytable datatable table table-striped cell-border table-hover table-condensed text-right" width="100%">
+                                <thead>
+                                <tr class="info text-right">
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Price (<span class="asset2-name"></span>)</th>
+                                    <th>Amount (<span class="asset1-name"></span>)</th>
+                                    <th>Total (<span class="asset2-name"></span>)</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6" id="open-orders">
+                        <span class="section-title">My Open Orders</span>
+                        <table class="tinytable datatable table table-striped cell-border table-hover table-condensed text-right" width="100%">
+                        <thead>
+                        <tr class="info text-right">
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Price (<span class="asset2-name"></span>)</th>
+                            <th>Amount (<span class="asset1-name"></span>)</th>
+                            <th>Total (<span class="asset2-name"></span>)</th>
+                            <th>&nbsp;</th>
+                         </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="hidden-xs hidden-sm hidden-md col-lg-3" id="market-sidemenu">
+                <div id="market-sidemenu-container" class="affix" data-spy="affix" data-offset-top="20" data-offset-bottom="200" >
+                    <div class="panel panel-default no-bottom-margin no-bottom-border">
+                        <!-- Asset #1 Information (supply, price, reputation) -->
+                        <div id="asset1-info">
+                            <div class="panel-heading panel-heading-lg">
+                                <img src="images/icons/btc.png" class="asset-icon fw-icon-20"> <span class="asset1-name"></span> Information
+                                <a href="#" class="btn btn-xs btn-success pull-right more-info" data-toggle="tooltip" data-placement="left" title="More Information" target="_blank"><i class="fa fa-lg auto-width fa-info-circle"></i></a>
+                            </div>                    
+                            <table class="table table-striped cell-border table-condensed no-bottom-margin" width="100%">
+                            <tbody>
+                            <tr>
+                                <th class="info" style="width: 95px !important;">Total Supply</th>
+                                <td><i class="fa fa-lg fa-unlock auto-width margin-top-5 supply-lock"></i> <span class="supply-total">0</span></td>
+                            </tr>
+                            <tr>
+                                <th class="info">Last Price</th>
+                                <td><span class="last-price-xcp">0.00000000</span> XCP ($<span class="last-price-usd">0.00</span>)</td>
+                            </tr>
+                            <tr>
+                                <th class="info">Reputation</th>
+                                <td class="reputation"></td>
+                            </tr>
+                            </tbody>
+                            </table>
+                        </div>
+                        <!-- Asset #2 Information (supply, price, reputation) -->
+                        <div id="asset2-info">
+                            <div class="panel-heading panel-middle panel-heading-lg">
+                                <img src="images/icons/btc.png" class="asset-icon fw-icon-20"> <span class="asset2-name"></span> Information
+                                <a href="#" class="btn btn-xs btn-success pull-right more-info" data-toggle="tooltip" data-placement="left" title="More Information" target="_blank"><i class="fa fa-lg auto-width fa-info-circle"></i></a>
+                            </div>                    
+                            <table class="table table-striped cell-border table-condensed no-bottom-margin" width="100%">
+                            <tbody>
+                            <tr>
+                                <th class="info" style="width: 95px !important;">Total Supply</th>
+                                <td><i class="fa fa-lg fa-unlock auto-width margin-top-5 supply-lock"></i> <span class="supply-total">0</span></td>
+                            </tr>
+                            <tr>
+                                <th class="info">Last Price</th>
+                                <td><span class="last-price-xcp">0.00000000</span> XCP ($<span class="last-price-usd">0.00</span>)</td>
+                            </tr>
+                            <tr>
+                                <th class="info">Reputation</th>
+                                <td class="reputation"></td>
+                            </tr>
+                            </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="markets-container">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.highcharts-color-2 {
+    stroke: #808080;
+}
+</style>
+
+<script>
+// Define the basic chart elements config common to all charts
+FW.CHART_CONFIG = {
+    chart: {
+        borderColor: '#DFD7CA',
+        borderWidth: 1,
+    },
+    exporting: {
+        enabled: true,
+        buttons: {
+            contextButton: {
+                align: 'right',
+                y: -5,
+                x: 2
+            }                
+        }
+    },
+    title: {
+        text: ''
+    },
+    // Remove padding from dropdown menus
+    navigation: {
+        menuStyle: {
+            padding: "0px 0px"
+        }
+    },
+    plotOptions: {
+        line: {
+            marker: {
+                enabled: false
+            }
+        },
+        series: {
+            marker: {
+                enabled: false
+            }
+        }
+    },
+    xAxis: {
+        events: {
+            // Detect when user changes zoom level and save preference
+            setExtremes: function(e){
+                if(typeof(e.rangeSelectorButton)!== 'undefined'){
+                    var btn = e.rangeSelectorButton,
+                        idx = null,
+                        c   = btn.count,
+                        t   = btn.type,
+                        ls  = localStorage;
+                    if(t=='hour') idx = 0;
+                    if(t=='day')  idx = 1;
+                    if(t=='week') idx = 2;
+                    if(t=='month' && c==1) idx = 3;
+                    if(t=='month' && c==3) idx = 4;
+                    if(t=='month' && c==6) idx = 5;
+                    if(t=='year'  && c==1) idx = 6;
+                    if(t=='ytd') idx = 7;
+                    if(t=='all') idx = 8;
+                    ls.setItem('marketChartZoom',idx);
+                }
+            }
+        }
+    },
+    rangeSelector: {
+        selected: 3,
+        y: -5,
+        // Bump 'Zoom' buttons over to alow room for buttons
+        buttonPosition: {
+            x: 15
+        },
+        inputPosition: {
+            x: 13
+        },
+        buttons: [{
+            type: 'hour',
+            count: 24,
+            text: '1d'
+        },{
+            type: 'day',
+            count: 2,
+            text: '2d'
+        }, {
+            type: 'week',
+            count: 1,
+            text: '1w'
+        }, {
+            type: 'month',
+            count: 1,
+            text: '1m'
+        }, {
+            type: 'month',
+            count: 3,
+            text: '3m'
+        }, {
+            type: 'month',
+            count: 6,
+            text: '6m'
+        }, {
+            type: 'year',
+            count: 1,
+            text: '1y'
+        }, {
+            type: 'ytd',
+            text: 'YTD'
+        }, {
+            type: 'all',
+            text: 'All'
+        }]
+    },
+    lang: {
+        noData: "No Trades Found"
+    },
+    noData: {
+        style: {
+            fontWeight: 'bold',
+            fontSize: '15px',
+            color: '#303030'
+        }
+    }
+};
+
+
+
+// Quick function to handle resizing sidemenu to fit parent width
+function resizeSidemenu(e){
+    var el = $("#market-sidemenu-container"),
+        w  = el.parent().width();
+    el.width(w);
+}
+
+
+$(document).ready(function(){
+    // Setup alias for localstorage
+    var ls = localStorage;
+
+
+    // Initialize some placeholders
+    FW.RAW_CHART_DATA  = [];
+    FW.CHART_DATA      = [];
+    FW.MARKET_NAME     = 'BTC/XCP';
+    FW.ASSET_DIVISIBLE = {};
+
+    // Load preferred market chart
+    var chart = ls.getItem('marketChart') || 'candlestick';
+    $('#market-chart-container').load('html/exchange/charts/' + chart + '.html');
+
+    // Load Market depth chart
+    $('#market-depth-container').load('html/exchange/charts/market-depth.html');
+
+    // Load market information
+    $('#markets-container').load('html/exchange/markets-small.html');
+
+    // Keep the 'Exchange' tab selected
+    $('#exchange').addClass('active');
+
+    // Make priority a dropdown
+    $('#buy-fee-priority').selectpicker();
+    $('#sell-fee-priority').selectpicker();
+
+    // Handle loading any data from FW.DIALOG_DATA
+    var data = FW.DIALOG_DATA;
+    if(data.market)
+        FW.MARKET_NAME = data.market;
+
+    // Reset dialog data so we don't reuse data in the future
+    FW.DIALOG_DATA = {};
+
+     // Update market information 
+    updateMarket(FW.MARKET_NAME);
+
+    // Handle swapping the market when the user clicks the <-> swap button
+    $('#market-swap-button').click($.debounce(100,function(e){
+        var x = String(FW.MARKET_NAME).split('/');
+        FW.MARKET_NAME = x[1] + '/' + x[0];
+        updateMarket(FW.MARKET_NAME);
+    }));
+
+    // Handle Refreshing the market data
+    $('#market-refresh-button').click($.debounce(100,function(e){
+        updateMarket(FW.MARKET_NAME, true);
+    }));
+
+    // Set the active chart in the dropdown list
+    $('#chart-list li > a').each(function(idx, item){
+        var el = $(item);
+        if(el.attr('data-chart')==chart)
+            el.closest('li').addClass('active');
+    });
+
+    // Handle switching charts when user selects one from dropdown
+    $('#chart-list li > a').click($.debounce(100,function(e){
+        var chart = $(e.target).attr('data-chart');
+        if(chart){
+            $('#chart-list ul li').removeClass('active');
+            $(this).closest('li').addClass('active');
+            ls.setItem('marketChart',chart);
+            loadChartType(chart);
+        }
+    }));
+
+    // Handle changing the active 'History' tab and adjusting column width to fit
+    $('#trade-history a[data-toggle="tab"]').on( 'shown.bs.tab', function(e){
+        $('#trade-history a').removeClass('active');
+        $(this).addClass('active');
+        $.fn.dataTable.tables( {visible: true, api: true} ).columns.adjust();
+    });
+
+    // Handle detecting order cancellations and 
+    $('#open-orders').on('click', 'a.cancel-button', function(e){
+        var tx = $(this).attr('data-tx');
+        FW.DIALOG_DATA = {
+            tx_hash: tx
+        }
+        dialogCancelOrder();
+    });
+
+    // Handle updating 'Buy' order form when user clicks sell orders
+    $('#orderbook-sells table.tinytable').on('click','tr',function(){
+        var table  = $('#orderbook-sells table').DataTable({ retrieve: true }),
+            data   = table.data(),
+            price  = parseFloat(table.row( this ).data()[0]),
+            amount = 0,
+            total  = 0,
+            fmt    = '0,0.00000000';
+        $.each(data, function(idx, item){
+            if(parseFloat(item[0])<=price){
+                amount += parseFloat(item[1]);
+                total  += parseFloat(item[2]);
+            }
+        });
+        $('#buy-price').val(numeral(price).format(fmt));
+        $('#buy-amount').val(numeral(amount).format(fmt));
+        $('#buy-total').val(numeral(total).format(fmt));
+    });
+
+    // Handle updating 'Sell' order form when user clicks buy orders
+    $('#orderbook-buys table.tinytable').on('click','tr',function(){
+        var table  = $('#orderbook-buys table').DataTable({ retrieve: true }),
+            data   = table.data(),
+            price  = parseFloat(table.row( this ).data()[0]),
+            amount = 0,
+            total  = 0,
+            fmt    = '0,0.00000000';
+        $.each(data, function(idx, item){
+            if(parseFloat(item[0])>=price){
+                amount += parseFloat(item[1]);
+                total  += parseFloat(item[2]);
+            }
+        });
+        $('#sell-price').val(numeral(price).format(fmt));
+        $('#sell-amount').val(numeral(amount).format(fmt));
+        $('#sell-total').val(numeral(total).format(fmt));
+    });    
+
+    // Setup listeners on price/amount/total fields to recalculate as user types
+    $.each(['buy','sell'], function(idx,id){
+        var fields = ['amount','total','price'];
+        // Handle formatting field values after user focus leaves the field
+        $.each(fields, function(idx2, name){
+            var sel = '#' + id + '-' + name;
+            $(sel).blur(function(){
+                var me  = $(this),
+                    val = parseFloat(me.val().replace(',',''));
+                me.val(numeral(val).format('0,0.00000000'));
+            });
+            // Remove the error indicator off fields as user types
+            $(sel).keyup(function(){
+                $.each(fields, function(idx3, name2){
+                    $('#' + id + '-' + name2).closest('.form-group').removeClass('has-error has-danger');
+                });
+            });
+        });
+        // Handle re-calculating the total as a user types the price
+        $('#' + id + '-price').keyup(function(){
+            var amount = $('#' + id + '-amount').val().replace(',',''),
+                price  = parseFloat($(this).val().replace(',',''));
+            if(price){
+                total = numeral(amount * price).format('0,0.00000000');
+                $('#' + id + '-total').val(total);
+            }
+        });
+        // Handle re-calculating the  total as a user types the amount
+        $('#' + id + '-amount').keyup(function(){
+            var amount = parseFloat($(this).val().replace(',','')),
+                price  = $('#' + id + '-price').val().replace(',','');
+            if(amount){
+                total = numeral(amount * price).format('0,0.00000000');
+                $('#' + id + '-total').val(total);
+            }
+        });
+        // Handle re-calculating the amount as a user types the total
+        $('#' + id + '-total').keyup(function(){
+            var total  = parseFloat($(this).val().replace(',','')),
+                price  = $('#' + id + '-price').val().replace(',','');
+            if(total){
+                amount = numeral(total / price).format('0,0.00000000');
+                $('#' + id + '-amount').val(amount);
+            }
+        });
+        // Handle validating the 'Buy' form
+        $('#market-' + id + '-form').on('submit', function(e){
+            e.preventDefault(); // Prevent normal form submission
+            console.log('caught submit id,vals=',id,vals);
+            // Get object with form values
+            var vals   = array2Object($(this).serializeArray()),
+                assets = String(FW.MARKET_NAME).split('/'),
+                asset1 = assets[0],
+                asset2 = assets[1],
+                errors = [];
+            console.log('FW.ASSET_DIVISIBLE=',FW.ASSET_DIVISIBLE);
+            console.log('FW.MARKET_NAME=',FW.MARKET_NAME);
+            // Verify price/amount/total are greater than 0
+            if(numeral(vals[id + '-price']).value()==0){
+                errors.push('You must enter a ' + id + ' price which is greater than 0!');
+                $('#' + id + '-price').closest('.form-group').addClass('has-error has-danger');
+            }
+            if(numeral(vals[id + '-amount']).value()==0){
+                errors.push('You must enter a ' + id + ' amount which is greater than 0!');
+                $('#' + id + '-amount').closest('.form-group').addClass('has-error has-danger');
+            }
+            if(numeral(vals[id + '-total']).value()==0){
+                errors.push('You must enter a total ' + id + ' amount which is greater than 0!');
+                $('#' + id + '-total').closest('.form-group').addClass('has-error has-danger');
+            }
+            // Verify that the amount is valid (divisible/integer)
+            if(!FW.ASSET_DIVISIBLE[asset1] && vals[id + '-amount'].split('.')[1]!='00000000'){
+                errors.push('Your ' + id + ' amount must be an integer!');
+                $('#' + id + '-amount').closest('.form-group').addClass('has-error has-danger');
+            }
+            // Verify that the price and total are valid (divisible/integer)
+            if(!FW.ASSET_DIVISIBLE[asset2] && vals[id + '-total'].split('.')[1]!='00000000'){
+                errors.push('Your ' + id + ' total must be an integer!');
+                $('#' + id + '-total').closest('.form-group').addClass('has-error has-danger');
+            }
+            // Verify that the buy total is less than the balance
+            if(id=='buy' && numeral(vals[id + '-total']).value() > numeral(vals[id + '-balance']).value()){
+                errors.push('Your ' + id + ' total is more than your available balance!');
+                $('#' + id + '-total').closest('.form-group').addClass('has-error has-danger');
+            }
+            // Verify that the sell amount is less than the balance
+            if(id=='sell' && numeral(vals[id + '-amount']).value() > numeral(vals[id + '-balance']).value()){
+                errors.push('Your ' + id + ' amount is more than your available balance!');
+                $('#' + id + '-amount').closest('.form-group').addClass('has-error has-danger');
+            }
+            // Display any error message
+            if(errors.length){
+                dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+            } else {
+                var get_asset   = (id=='buy') ? asset1 : asset2,
+                    give_asset  = (id=='buy') ? asset2 : asset1,
+                    get_amount  = (id=='buy') ? vals['buy-amount'] : vals['sell-total'],
+                    give_amount = (id=='buy') ? vals['buy-total'] : vals['sell-amount'],
+                    get_format  = (FW.ASSET_DIVISIBLE[get_asset]) ? '0.00000000' : '0',
+                    give_format = (FW.ASSET_DIVISIBLE[give_asset]) ? '0.00000000' : '0';
+
+                // Save data so it is easily available to the dialog box
+                FW.DIALOG_DATA = {
+                    market: FW.MARKET_NAME,
+                    type: id,
+                    get_asset:   get_asset,
+                    give_asset:  give_asset,
+                    get_amount:  numeral(get_amount).format(get_format),
+                    give_amount: numeral(give_amount).format(give_format),
+                }
+                dialogOrder();
+            }
+        });
+
+    });
+
+    // // Handle validating the 'Buy' form
+    // $('#market-buy-form').on('submit', function(e){
+    //     e.preventDefault(); // Prevent normal form submission
+    //     // Get object with form values
+    //     var vals   = array2Object($(this).serializeArray()),
+    //         assets = String(FW.MARKET_NAME).split('/'),
+    //         asset1 = assets[0],
+    //         asset2 = assets[1],
+    //         errors = [];
+    //     console.log('caught form submit vals=',vals);
+    //     // Verify buy price/amount/total are greater than 0
+    //     if(numeral(vals['buy-price']).value()==0){
+    //         errors.push('You must enter a buy price which is greater than 0!');
+    //         $('#buy-price').closest('.form-group').addClass('has-error has-danger');
+    //     }
+    //     if(numeral(vals['buy-amount']).value()==0){
+    //         errors.push('You must enter a buy amount which is greater than 0!');
+    //         $('#buy-amount').closest('.form-group').addClass('has-error has-danger');
+    //     }
+    //     if(numeral(vals['buy-total']).value()==0){
+    //         errors.push('You must enter a total amount which is greater than 0!');
+    //         $('#buy-total').closest('.form-group').addClass('has-error has-danger');
+    //     }
+    //     console.log('asset1_div=',FW.ASSET1_DIVISIBLE);
+    //     console.log('asset2_div=',FW.ASSET2_DIVISIBLE);
+    //     // Verify that the amount is valid (amount = get)
+    //     if(!FW.ASSET1_DIVISIBLE && vals['buy-amount'].split('.')[1]!='00000000'){
+    //         errors.push('Your buy amount must be an integer!');
+    //         $('#buy-amount').closest('.form-group').addClass('has-error has-danger');
+    //     }
+    //     // Display any error message
+    //     if(errors.length){
+    //         dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+    //     } else {
+    //         // Save data so it is easily available to the dialog box
+    //         FW.DIALOG_DATA = {
+    //             market: FW.MARKET_NAME,
+    //             type: 'Buy',
+    //             get_asset: asset1,
+    //             get_amount: vals['buy-amount'],
+    //             give_asset: asset2,
+    //             give_amount: vals['buy-total']
+    //         }
+    //         dialogOrder();
+    //     }
+    // });
+
+
+    // Adjust the sidemenu panel to fit the parent panel
+    resizeSidemenu();
+
+    // Define placeholders
+    var lastWidth  = 0,
+        lastHeight = 0,
+        lastRows   = 0;
+
+    // Unbind the event to prevent duplicate listeners
+    $(window).unbind('resize');
+    // Detect any window resizes and resize datatables to fit 
+    $(window).resize($.debounce(10,function(e){
+        var win    = $(window),
+            height = win.height(),
+            width  = win.width();
+        if(width!=lastWidth){
+            // Fit max amount of tabs on screen (horizontally)
+            autoCollapseTabs();
+            // Resize sidemenu to fit available space
+            resizeSidemenu();
+        }
+        // Try to fit max amount of rows on screen (vertically)
+        if(height!=lastHeight && $('#markets-small').length){
+            var rows = getMarketsRowCount();
+            if(rows!=lastRows){
+                lastRows = rows;
+                $('#markets-small .datatable').each(function(idx, el){
+                    $(this).DataTable().page.len(rows).draw();
+                });
+            }
+        }
+        lastWidth  = width;
+        lastHeight = height;
+    }));
+
+});
+</script>

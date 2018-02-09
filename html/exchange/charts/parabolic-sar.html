@@ -1,0 +1,152 @@
+<!-- Parabolic SAR Chart -->
+
+<!-- Chart Options Dropdown -->
+<!-- 
+<div class="dropdown left-dropdown-menu pull-left" id="chart-options">
+    <button class="btn btn-default btn-xs dropdown-toggle" type="button" data-toggle="dropdown">
+        <i class="fa fa-lg fa-cog"></i>
+    </button>
+    <ul class="dropdown-menu">
+        <div class="dropdown-menu-header">Chart Options</div>
+        <div class="chart-options panel-body">
+            Price Envelope chart options go here
+        </div>
+    </ul>
+</div>
+-->
+
+<div id="market-chart"></div>
+
+<script type="text/javascript">
+
+// Handle updating market chart
+function updateMarketChart( market ){
+    var assets = String(market).split('/'),
+        asset1 = assets[0],
+        asset2 = assets[1],
+        data   = FW.MARKET_DATA[market].chart.ohlc;
+    // set the allowed units for data grouping
+    var groupingUnits = [[
+            'week',         // unit name
+            [1]             // allowed multiples
+        ], [
+            'month',
+            [1, 2, 3, 4, 6]
+    ]];
+    // Create chart config by applying any customizations to the default config
+    var cfg = $.extend( true, {}, FW.CHART_CONFIG, {
+        plotOptions: {
+            bb: {
+                marker: {
+                    enabled: false
+                }
+            }            
+        },
+        yAxis: [{
+            labels: {
+                align: 'right',
+                x: -3
+            },
+            title: {
+                text: 'OHLC / PSAR'
+            },
+            height: '60%',
+            lineWidth: 2,
+            min: 0
+        }, {
+            labels: {
+                align: 'right',
+                x: -3
+            },
+            title: {
+                text: 'Volume'
+            },
+            top: '65%',
+            height: '35%',
+            offset: 0,
+            lineWidth: 2,
+            min: 0
+        }],
+        series: [{
+            // Open / High / Low / Close
+            type: 'candlestick',
+            id: 'ohlc',
+            data: data.ohlc,
+            dataGrouping: {
+                units: groupingUnits
+            },
+            tooltip: {
+                valueDecimals: 8
+            }
+        }, {
+            // Volume
+            type: 'column',
+            id: 'volume',
+            data: data.volume,
+            yAxis: 1,
+            dataGrouping: {
+                units: groupingUnits
+            },
+            tooltip: {
+                valueDecimals: 8
+            }
+        },{
+            type: 'psar',
+            linkedTo: 'ohlc',
+            colorIndex: 0,
+            dataGrouping: {
+                units: groupingUnits
+            },
+            params: {
+                index: 4
+            }
+        }],
+        tooltip: {
+            split: false,
+            shared: true,
+            useHTML: true,
+            formatter: function(){
+                var me     = this,
+                    tstamp = me.x,
+                    ohlc   = false,
+                    volume = false,
+                    psar   = false,
+                    txt    = '<b>' + moment(tstamp).format('MMMM Mo YYYY HH:mm') + '</b><br>';
+                // Loop through points and extract data to usable vars
+                $.each(me.points, function(idx, item){
+                    var x = item.series.index;
+                    if(x==0) ohlc   = item.point;
+                    if(x==1) volume = item.point.y;
+                    if(x==2) psar   = item.point.y;
+                });
+                txt += '<table class="highcharts-tooltip-table" border=0>';
+                if(volume){
+                    txt += '<tr class="first"><td>Open</td><td class="separator">:</td><td class="text-right">' + numeral(ohlc.open).format('0,0.00000000') + '</td><td>' + asset2 + '</td></tr>';
+                    txt += '<tr><td>High</td><td class="separator">:</td><td class="text-right">' + numeral(ohlc.high).format('0,0.00000000') + '</td><td>' + asset2 + '</td></tr>';
+                    txt += '<tr><td>Low</td><td class="separator">:</td><td class="text-right">' + numeral(ohlc.low).format('0,0.00000000') + '</td><td>' + asset2 + '</td></tr>';
+                    txt += '<tr><td>Close</td><td class="separator">:</td><td class="text-right">' + numeral(ohlc.close).format('0,0.00000000') + '</td><td>' + asset2 + '</td></tr>';
+                    txt += '<tr class="border-top-1"><td>Volume</td><td class="separator">:</td><td class="text-right">' + numeral(volume).format('0,0.00000000') + '</td><td>' + asset1 + '</td></tr>';
+                }
+                if(psar)
+                    txt += '<tr class="border-top-1"><td>PSAR</td><td class="separator">:</td><td class="text-right">' + numeral(psar).format('0,0.00000000') + '</td><td>' + asset2 + '</td></tr>';
+                txt += '</table>';
+                return txt;
+            },
+        },
+    });
+    // Handle restoring last known zoom level
+    var sel = localStorage.getItem('marketChartZoom');
+    if(sel)
+        cfg.rangeSelector.selected = sel;
+    // Initialize the chart
+    setTimeout(function(){
+        try {
+            Highcharts.stockChart('market-chart', cfg);
+            $('.highcharts-credits').remove();
+        } catch (e){
+            // Failover to simple line chart if we encounter any failures
+            loadChartType('line');
+        }
+    }, 10);
+}
+</script>
