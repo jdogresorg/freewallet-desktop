@@ -167,6 +167,27 @@ function setXChainAPI( network ){
     FW.XCHAIN_API = getXChainAPI(network);
 }
 
+
+// Handle checking for an updated wallet version
+function checkWalletUpgrade(version){
+    $.get('https://freewallet.io/releases/current', function(current){
+        var a  = version.trim().split('.'),
+            b  = current.trim().split('.'),
+            update = false;
+        // Check for any semantic versioning differences
+        if(a[0]<b[0]){       // Major
+            update = true;
+        } else if(a[1]<b[1]){ // Minor
+            update = true;
+        } else if(a[2]<b[2]){ // Patch
+            update = true;
+        }
+        // If an update is available, handle notifying the user
+        if(update)
+            dialogUpdateAvailable(current.trim());
+    })
+}
+
 // Handle loading content into the main panel
 function loadPage(page){
     var html = page + '.html';
@@ -2772,6 +2793,57 @@ function dialogImportWatchAddress(){
                     dialog.close();
                 } else {
                     dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Error', 'Invalid Address! Please enter a valid address!');
+                }
+            }
+        }]
+    });
+}
+
+// 'New Version Available' dialog box
+function dialogUpdateAvailable(version){
+    BootstrapDialog.show({
+        type: 'type-default',
+        title: '<i class="fa fa-lg fa-fw fa-upload"></i> New version available!',
+        message: function(dialog){
+            var msg = $('<div class="center"></div>');
+            msg.append('<p>A new version of FreeWallet (' + version + ') is now available for download!</p>');
+            return msg;
+        },
+        buttons:[{
+            label: 'Ignore',
+            icon: 'fa fa-lg fa-fw fa-ban',       
+            cssClass: 'btn-danger', 
+            action: function(dialog){
+                dialog.close();
+            }
+        },{
+            label: 'Download Now',
+            icon: 'fa fa-lg fa-fw fa-download',       
+            cssClass: 'btn-success', 
+            hotkey: 13,
+            action: function(dialog){
+                if(is_nwjs()){
+                    var nw   = require('nw.gui'),
+                        os   = require('os'),
+                        plat = os.platform(),
+                        arch = os.arch(),
+                        file = 'FreeWallet.',
+                        url  = 'https://github.com/jdogresorg/freewallet/releases/download/v' + version + '/';
+                    // Determine the correct file to download based off platform and architecture
+                    if(plat=='darwin'){
+                        file += 'osx64.dmg';
+                    } else if(plat=='win32'){
+                        file += (arch=='x64') ? 'win64' : 'win32';
+                        file += '.exe'
+                    } else {
+                        file += (arch=='x64') ? 'linux64' : 'linux32';
+                        file += '.tgz'
+                    }
+                    url += file;
+                    nw.Shell.openExternal(url);
+                } else {
+                    var url = 'https://github.com/jdogresorg/freewallet/releases/tag/v' + version;
+                    window.open(url);
                 }
             }
         }]

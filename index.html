@@ -256,7 +256,10 @@
                     }
                 });
 
-                // Test strings to make verify functionality
+                // Handle checking if there is a new version of the wallet available
+                checkWalletUpgrade(nw.App.manifest.version);
+
+                // Test strings to verify functionality
                 // var str = 'bitcoin:1Donatet2LrNpuWByAnH8gc9Wh9zSzZuLC?amount=1.23456789';
                 // var str = 'counterparty:1Donatet2LrNpuWByAnH8gc9Wh9zSzZuLC?amount=1.23456789&asset=XCP&memo=test';
                 // var str = 'https://coindaddy.io';
