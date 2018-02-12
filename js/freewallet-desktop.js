@@ -171,20 +171,24 @@ function setXChainAPI( network ){
 // Handle checking for an updated wallet version
 function checkWalletUpgrade(version){
     $.get('https://freewallet.io/releases/current', function(current){
-        var a  = version.trim().split('.'),
-            b  = current.trim().split('.'),
-            update = false;
-        // Check for any semantic versioning differences
-        if(a[0]<b[0]){       // Major
-            update = true;
-        } else if(a[1]<b[1]){ // Minor
-            update = true;
-        } else if(a[2]<b[2]){ // Patch
-            update = true;
+        // Only proceed if we have a response/version
+        if(current){
+            var a  = version.trim().split('.'),
+                b  = current.trim().split('.'),
+                update = false;
+            // Check for any semantic versioning differences
+            if(a[0]<b[0]){       // Major
+                update = true;
+            } else if(a[1]<b[1]){ // Minor
+                update = true;
+            } else if(a[2]<b[2]){ // Patch
+                update = true;
+            }
+            // If an update is available, handle notifying the user
+            if(update)
+                dialogUpdateAvailable(current.trim());
         }
-        // If an update is available, handle notifying the user
-        if(update)
-            dialogUpdateAvailable(current.trim());
+
     })
 }
 
@@ -3686,8 +3690,9 @@ function updateMarkets(market, page, full, callback){
 
 // Handle initializing/updating the markets tables
 function updateMarketsView(market){
-    var table = $('#' + market + ' table.datatable').DataTable(FW.MARKETS_DATATABLE_CONFIG),
-        rows = getMarketsRowCount();
+    var small = ($('#markets-small').length) ? true : false,
+        table = $('#' + market + ' table.datatable').DataTable(FW.MARKETS_DATATABLE_CONFIG),
+        rows  = getMarketsRowCount();
     // Define some random records/data for testing
     var data = [];
     // Handle looking up all market pairs for the given market
@@ -3702,7 +3707,9 @@ function updateMarketsView(market){
                 type  = (asset.substr(0,1)=='A') ? 3 : (asset.indexOf('.')!=-1) ? 2 : 1;
             // Remove network and longname, and add asset
             rec.splice(0,2, asset); 
-            // console.log('rec=',rec);
+            // Remove Ask/Bid for small markets viewer
+            if(small)
+                rec.splice(2,2);
             // Only add record if user wants to view this type of asset
             if(FW.MARKET_OPTIONS.indexOf(type)!=-1)
                 data.push(rec);
