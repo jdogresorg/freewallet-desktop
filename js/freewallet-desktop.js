@@ -1983,7 +1983,7 @@ function cpCancel(network, source, tx_hash, fee, callback){
 function cpBtcpay(network, source, order_match_id, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
     // Create unsigned send transaction
-    createBtcpay(network, order_match_id, fee, function(o){
+    createBtcpay(network, source, order_match_id, fee, function(o){
         if(o && o.result){
             // Sign the transaction
             signTransaction(network, source, o.result, function(signedTx){
@@ -2208,11 +2208,12 @@ function createOrder(network, source, get_asset, give_asset, get_quantity, give_
 }
 
 // Handle creating btcpay transaction
-function createBtcpay(network, order_match_id, fee, callback){
-    // console.log('createBtcpay=', network, order_match_id, fee, callback);
+function createBtcpay(network, source, order_match_id, fee, callback){
+    // console.log('createBtcpay=', network, source, order_match_id, fee, callback);
     var data = {
        method: "create_btcpay",
        params: {
+            source: source,
             order_match_id: order_match_id,
             fee: parseInt(fee),
             allow_unconfirmed_inputs: true
