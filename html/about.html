@@ -1,7 +1,9 @@
 
 <center>
     <p>FreeWallet is a free wallet which supports Bitcoin and Counterparty.</p>
-    <img src="images/logo.png" height="100" style="margin-bottom: 15px">
+    <a href="https://freewallet.io"><img src="images/logo.png" height="100" style="margin-bottom: 5px"></a>
+    <div id="fw_version"></div>
+    <hr size=1 class="spacer">
     <p>Freewallet uses public APIs available from the following providers:</p>
     <div>
         <a href="https://xchain.io" target="_blank"><img class="about-logo" src="images/xchain-color-500.png"></a>
@@ -19,6 +21,10 @@ img.about-logo {
     margin-left: 5px;
     margin-right: 5px;
 }
+hr.spacer {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
 </style>
 
 <div class="text-right">
@@ -32,7 +38,11 @@ $(document).ready(function(){
 
     // Define donation address
     var address = '1FWDonkMbC6hL64JiysuggHnUAw2CKWszs',
-        debug   = $('#btn-debug');
+        debug   = $('#btn-debug'),
+        version = (is_nwjs()) ? 'Version ' + nw.App.manifest.version : 'Development Build';
+
+    // Display current version number
+    $('#fw_version').html(version);
 
     // Handle showing/hiding the debug button
     if(is_nwjs()){
