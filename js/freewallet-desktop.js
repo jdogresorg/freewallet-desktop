@@ -975,11 +975,57 @@ function autoBtcpay(network, o){
     });      
 }
 
+
+// Handle loading address balance data, saving to memory, and passing to a callback function
+function updateBalances(address, page, full, callback){
+    var page  = (page) ? page : 1,
+        limit = 500, // max records returned by xchain
+        count = (page==1) ? 0 : ((page-1)*limit),
+        url   = FW.XCHAIN_API + '/api/balances/' + address;
+    $.getJSON(url + '/' + page + '/' + limit, function(o){
+        if(o.data){
+            o.data.forEach(function(item){
+                FW.TEMP_BALANCES.data.push(item);
+            });
+            count += o.data.length;
+        }
+        // If a full update was requested, keep updating
+        if(full && count < o.total){
+            updateBalances(address, page+1, true, callback);
+            return;
+        }
+        if(typeof callback === 'function')
+            callback(FW.TEMP_BALANCES, address);
+    });
+}
+
+// Handle updating BTC balance from external source
+// Note: Stop doing this once counterparty switches to using indexd
+function updateBTCBalance(address, callback){
+    var addr  = (address) ? address : FW.WALLET_ADDRESS,
+        net   = (FW.WALLET_NETWORK==2) ? 'tbtc' : 'btc',
+        net2  = (FW.WALLET_NETWORK==2) ? 'BTCTEST' : 'BTC';
+    // Handle updating BTC balance via blocktrail
+    var qty = '0.00000000';
+    $.getJSON('https://api.blocktrail.com/v1/' + net + '/address/' + addr + '?api_key=' + FW.API_KEYS.BLOCKTRAIL, function( data ){
+        if(data.balance)
+            qty =  numeral(data.balance * 0.00000001).format('0.00000000');
+        if(typeof callback === 'function')
+            callback(qty);
+    }).fail(function(o){
+        // Failover to requesting balance info from chain.so
+        $.getJSON('https://chain.so/api/v2/get_address_balance/' + net2 + '/' + addr, function( data ){
+            if(data.status=='success')
+                qty = numeral(parseFloat(data.data.confirmed_balance) + parseFloat(data.data.unconfirmed_balance)).format('0.00000000');
+            if(typeof callback === 'function')
+                callback(qty);
+        });
+    });    
+}
+
 // Update address balances
 function updateWalletBalances( address, force ){
     var addr  = (address) ? address : FW.WALLET_ADDRESS,
-        net   = (FW.WALLET_NETWORK==2) ? 'tbtc' : 'btc',
-        net2  = (FW.WALLET_NETWORK==2) ? 'BTCTEST' : 'BTC',
         info  = getAddressBalance(addr) || {},
         last  = info.lastUpdated || 0,
         ms    = 300000, // 5 minutes
@@ -989,7 +1035,8 @@ function updateWalletBalances( address, force ){
     if((parseInt(last) + ms)  <= Date.now() || force){
         // console.log('updating wallet balances');
         // Callback to handle saving data when we are entirely done 
-        var doneCb = function(info){
+        var doneCb = function(){
+            var info = FW.TEMP_BALANCES;
             if(btc && xcp){
                 // Sort array to show items in the following order
                 // BTC & XCP 1st and second
@@ -1025,7 +1072,7 @@ function updateWalletBalances( address, force ){
             }
         }
         // Define default record
-        var info = {
+        FW.TEMP_BALANCES = {
             address: addr,
             data: [],
             lastUpdated: Date.now()
@@ -1033,15 +1080,14 @@ function updateWalletBalances( address, force ){
         // Get BTC/XCP currency info
         var btc_info = getAssetPrice('BTC',true),
             xcp_info = getAssetPrice('XCP',true);
-        // Handle Updating asset balances (first 500 only)
-        $.getJSON(FW.XCHAIN_API + '/api/balances/' + addr, function( data ){
-            data.data.forEach(function(item){ info.data.push(item); });
+        // Update asset balances
+        updateBalances(address, 1, true, function(){
             xcp = true; // Flag to indicate we are done with XCP update
-            doneCb(info);
+            doneCb();
         });
-        // Callback to handle adding BTC to balances list
-        var addBTCCb = function(qty){
-            info.data.push({
+        // Update BTC Balance
+        updateBTCBalance(address, function(qty){
+            FW.TEMP_BALANCES.data.push({
                 asset: "BTC",
                 estimated_value: {
                     btc: qty,
@@ -1051,25 +1097,10 @@ function updateWalletBalances( address, force ){
                 quantity: qty
             });
             btc = true; // Flag to indicate we are done with BTC update
-            doneCb(info);
-        }
-        // Handle updating BTC balance via blocktrail
-        var qty = '0.00000000';
-        $.getJSON('https://api.blocktrail.com/v1/' + net + '/address/' + addr + '?api_key=' + FW.API_KEYS.BLOCKTRAIL, function( data ){
-            if(data.balance)
-                qty =  numeral(data.balance * 0.00000001).format('0.00000000');
-            addBTCCb(qty);
-        }).fail(function(o){
-            // Failover to requesting balance info from chain.so
-            $.getJSON('https://chain.so//api/v2/get_address_balance/' + net2 + '/' + addr, function( data ){
-                if(data.status=='success')
-                    qty = numeral(parseFloat(data.data.confirmed_balance) + parseFloat(data.data.unconfirmed_balance)).format('0.00000000');
-                addBTCCb(qty);
-            });
+            doneCb();
         });
     }
 }
-
 
 // Update address history information
 function updateWalletHistory( address, force ){
