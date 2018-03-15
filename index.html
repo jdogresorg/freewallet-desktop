@@ -269,15 +269,17 @@
                 // var str = 'counterparty:?action=signtx&tx=your-unsigned-transaction-here';
                 // processURIData(str);
 
-                // loop through the arguments and process any urls
+                // loop through the arguments and process
                 var args = nw.App.argv;
                 args.forEach(function(item){
                     processURIData(item);
                 });
 
-                // Listen for events that try to open the app and process them
-                nw.App.on('open', function(data){
-                    processURIData(data);
+                // Listen for events that open the app and process the last argument passed (if any)
+                nw.App.on('open', function(argString){
+                    var args = String(argString).split(' ');
+                    if(args.length)
+                        processURIData(args[args.length-1]);
                 });
 
             }
