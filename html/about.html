@@ -6,10 +6,10 @@
     <hr size=1 class="spacer">
     <p>Freewallet uses public APIs available from the following providers:</p>
     <div>
-        <a href="https://xchain.io" target="_blank"><img class="about-logo" src="images/xchain-color-500.png"></a>
-        <a href="https://coindaddy.io" target="_blank"><img class="about-logo" src="images/coindaddy-500.jpg"></a>
-        <a href="https://blocktrail.com" target="_blank"><img class="about-logo" src="images/blocktrail-logo.png"></a>
-        <a href="https://chain.so" target="_blank"><img class="about-logo" src="images/sochain-logo.png"></a>
+        <a target="_blank" href="https://xchain.io"><img class="about-logo" src="images/xchain-color-500.png"></a>
+        <a target="_blank" href="https://coindaddy.io"><img class="about-logo" src="images/coindaddy-500.jpg"></a>
+        <a target="_blank" href="https://blocktrail.com"><img class="about-logo" src="images/blocktrail-logo.png"></a>
+        <a target="_blank" href="https://chain.so"><img class="about-logo" src="images/sochain-logo.png"></a>
     </div>
     <br>
     <p>If you would like to support continued development of FreeWallet, please consider making a donation using the 'Donate' button below, or donate to one of the wallet bounties.</p>
@@ -29,6 +29,7 @@ hr.spacer {
 
 <div class="text-right">
     <div id="btn-debug" class="btn btn-info pull-left"><i class="fa fa-lg fa-fw fa-bug"></i> Debug</div>
+    <div id="btn-update" class="btn btn-primary"><i class="fa fa-lg fa-fw fa-download"></i> Check for Update</div>
     <div id="btn-donate" class="btn btn-info"><i class="fa fa-lg fa-fw fa-bitcoin"></i> Donate</div>
     <div id="btn-ok" class="btn btn-success "><i class="fa fa-lg fa-fw fa-thumbs-up"></i> Ok</div>
 </div>
@@ -39,6 +40,7 @@ $(document).ready(function(){
     // Define donation address
     var address = '1FWDonkMbC6hL64JiysuggHnUAw2CKWszs',
         debug   = $('#btn-debug'),
+        update  = $('#btn-update'),
         version = (is_nwjs()) ? 'Version ' + nw.App.manifest.version : 'Development Build';
 
     // Display current version number
@@ -49,8 +51,12 @@ $(document).ready(function(){
         debug.click($.debounce(100,function(e){
             nw.Window.get().showDevTools();
         }));
+        update.click($.debounce(100,function(e){
+            checkWalletUpgrade(version, true);
+        }));
     } else {
-        debug.hide();       
+        debug.hide();
+        update.hide();
     }
 
     // When a user clicks the donate now button, save bounty address and launch 'Send Funds' window
