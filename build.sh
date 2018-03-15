@@ -7,6 +7,9 @@
 # You can find your identity by doing : security find-identity
 identity="0682F98695F753BAF4C7B9F6C2BD1CEACD736C40"
 
+# Path to nwjs executable
+nwjs=/Applications/nwjs.app/Contents/MacOS/nwjs
+
 ###
 ### DO NOT EDIT ANYTHING BELOW THIS LINE
 ###
@@ -52,6 +55,20 @@ while true; do
         * ) echo "Please answer yes or no.";;
     esac
 done
+
+# Run test build
+while true; do
+    read -p "Run test build for debugging?" yn
+    case $yn in
+        [Yy]* ) yn="Y"
+                echo "### Running nwjs..."
+                $nwjs $base_dir/build
+                break;;
+        [Nn]* ) break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
 
 # Run nwjs builder
 while true; do
