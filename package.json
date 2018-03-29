@@ -2,7 +2,13 @@
   "main": "index.html",
   "name": "FreeWallet",
   "description": "Freewallet is a free desktop wallet that supports Bitcoin and Counterparty",
-  "version": "0.9.7",
+  "version": "0.9.8",
+  "author": "Jeremy Johnson <j-dog@j-dog.net>",
+  "license": "To license this application please contact Jeremy Johnson <j-dog@j-dog.net>",
+  "repository" : { 
+    "type" : "git",
+    "url" : "https://github.com/jdogresorg/freewallet-desktop.git"
+  },
   "single-instance": true,
   "window": {
     "title": "FreeWallet",
@@ -26,8 +32,8 @@
     "datatables.net": "^1.10.16",
     "eonasdan-bootstrap-datetimepicker": "^4.17.47",
     "font-awesome": "^4.7.0",
-    "highstock-release": "^6.0.3",
     "highcharts-no-data-to-display": "^0.1.2",
+    "highstock-release": "^6.0.3",
     "jquery": "^3.2.1",
     "jquery-ui-dist": "^1.12.1",
     "jquery.qrcode": "^1.0.3",

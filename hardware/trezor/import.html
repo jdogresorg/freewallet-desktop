@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Import Wallet Addresses</title>
+    <link type="text/css"  rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>        
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://connect.trezor.io/4/connect.js"></script>
+    <script src="custom.js"></script>
+    <script src="app.js"></script>
+</head> 
+<body>
+    <div class="container" style="margin-top: 15px">
+        <div class="row">
+            <div class="col-xs-12 col-lg-offset-3 col-lg-6">
+                <div class="panel panel-primary" id="step1">
+                    <div class="panel-heading">
+                        <i class="fa fa-lg fa-download"></i> Import Wallet Addresses
+                        <div class="pull-right">Step 1 of 3</div>
+                    </div>
+                    <div class="panel-body">
+                        <center>
+                            <p class="text-justify">FreeWallet would now like you to select an account on your Trezor device and export the public key for that account. This public key will be used to generate a list of addresses which you can then choose to import into FreeWallet.</p>
+                            <div class="alert alert-info" id="trezor-status">Please click the button below to get started</div>
+                            <button class="btn btn-success" id="connect">Connect to Trezor</button>
+                            <!-- Network Selector -->
+                            <!-- Disable network selector for now until we are able to sign testnet transactions
+                                <div>
+                                    <button class="btn btn-success pull-right" id="connect">Connect to Trezor >></button>
+                                    <select class="form-control pull-left" id="network-selector">
+                                        <option value="mainnet">Mainnet</option>
+                                        <option value="testnet">Testnet</option>
+                                    </select>
+                                </div>
+                            -->
+                        </center>
+                    </div>
+                </div>
+                <div class="panel panel-primary" id="step2" style="display:none;">
+                    <div class="panel-heading">
+                        <i class="fa fa-lg fa-download"></i> Select Wallet Addresses
+                        <div class="pull-right">Step 2 of 3</div>
+                    </div>
+                    <div class="panel-body">
+                        <center>Please select the addresses that you want to add to Freewallet and click 'Import'</center>
+                    </div>
+                    <form id="import-addresses">
+                    <table class="table table-condensed table-striped" id="addresslist">
+                    <thead>
+                        <th>Address</th>
+                        <th><div class="pull-right"># Assets found</div></th>
+                    </thead>
+                    <tbody>
+                        <!-- Addresses content is inserted here -->
+                    </tbody>
+                    </table>
+                    </form>
+                    <div class="panel-body">
+                        <center>
+                            <button id="generate" class="btn btn-info">Add another address</button>
+                            <button id="back" class="btn btn-danger pull-left" id="connect"><< Back</button>
+                            <button id="import" class="btn btn-success pull-right" id="connect">Import >></button>
+                        </center>
+                    </div>
+                </div>
+                <div class="panel panel-primary" id="step3" style="display:none;">
+                    <div class="panel-heading">
+                        <i class="fa fa-lg fa-download"></i> Import Complete
+                        <div class="pull-right">Step 3 of 3</div>
+                    </div>
+                    <div class="panel-body">
+                        <center>
+                            <div class="alert alert-success" style="margin-bottom: 0px !important;">Your Trezor hardware wallet addresses have been imported to FreeWallet.</div>
+                        </center>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+<!-- Custom CSS-->
+<style>
+.checkbox {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+th:first-child,
+td:first-child {
+    padding-left: 15px !important;
+}
+th:last-child,
+td:last-child {
+    padding-right: 15px !important;
+}
+tbody tr:last-child
+    border-bottom:1px solid #ddd;
+}
+.no-bottom-margin {
+    margin-bottom: 0px;
+}
+#network-selector {
+    width: 100px;
+}
+</style>
+
+<!-- Handle connecting to trezor device -->
+<script>
+$(document).ready(function(){
+
+    var addresses = [],
+        xpubkey   = false,
+        status    = $('#trezor-status'),
+        network   = 'mainnet',
+        ignore    = false,
+        basepath  = false;
+
+    // Connect to trezor device when user clicks 'Connect' button
+    $('#connect').click(function(){
+        // network = $('#network-selector').val();
+        status.text('Communicating with the Trezor...');
+        trezor.getXpubkey(network, function(data){
+            console.log('data=',data);
+            if(data.success){
+                xpubkey  = data.xpubkey;
+                basepath = data.serializedPath;
+                // Generate a list of the first 10 addresses
+                addresses = trezor.getAddressesFromXpub(network, xpubkey, 10, 0);
+                addresses.forEach(function(address, index){ 
+                    var path = basepath + "/0'/" + index;
+                    addAddress(address, path); 
+                });
+                // Move to step 2
+                $('#step1').hide();
+                $('#step2').show();
+            } else {
+                status.text('Error getting public key... Please try again');
+            }
+        });
+    });
+
+    // Handle moving back to step1
+    $('#back').click(function(){
+        $('#step2').hide();
+        $('#step1').show();
+        $('#addresslist tbody').html('');
+    });
+
+    // Handle generating additional addresses
+    $('#generate').click(function(){
+        var arr = trezor.getAddressesFromXpub(network, xpubkey, 1, addresses.length);
+        arr.forEach(function(address){ 
+            addresses.push(address);
+            var path = basepath + "/0'/" + (addresses.length -1);
+            addAddress(address, path); 
+        });
+    });
+
+    // Handle importing the addresses
+    $('#import').click(function(){
+        var obj = {};
+        $('input:checked').each(function(){
+            var addr = $(this).val(),
+                path = $(this).attr('data-path');
+            obj[path] = addr;
+        });
+        // Pass address data to Freewallet via URI 
+        var url = 'freewallet:?action=import&device=trezor&network=' + network + '&data=' + encodeURI(JSON.stringify(obj));
+        console.log('throwing user to ', url);
+        window.location = url;
+        $('#step2').hide();
+        $('#step3').show();
+    });
+
+});
+</script>
+</body>
+</html>

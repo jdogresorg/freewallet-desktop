@@ -259,16 +259,6 @@
                 // Handle checking if there is a new version of the wallet available
                 checkWalletUpgrade(nw.App.manifest.version);
 
-                // Test strings to verify functionality
-                // var str = 'bitcoin:1Donatet2LrNpuWByAnH8gc9Wh9zSzZuLC?amount=1.23456789';
-                // var str = 'counterparty:1Donatet2LrNpuWByAnH8gc9Wh9zSzZuLC?amount=1.23456789&asset=XCP&memo=test';
-                // var str = 'https://coindaddy.io';
-                // var str = 'counterparty:?action=sign&message=test&icon=https%3A%2F%2Fcounterpartychain.io%2Fcontent%2Fimages%2Ficons%2Fstopthenuke.png&callback=http%3A%2F%2Fdev.authparty.io%2Fapi%2Fv1%2Fauthorize_login%3Fprovider%3D005f15c462fe3eb536c4bec5fef42c%26modal_id%3DbemghXSwNXxhqzd';
-                // var str = 'counterparty:?action=sign&message=Authparty%20Login%20BOhuLIDqbJjBMzh';
-                // var str = 'counterparty:?action=broadcast&message=Some%20Message';
-                // var str = 'counterparty:?action=signtx&tx=your-unsigned-transaction-here';
-                // processURIData(str);
-
                 // loop through the arguments and process
                 var args = nw.App.argv;
                 args.forEach(function(item){
@@ -283,6 +273,18 @@
                 });
 
             }
+
+            // Test strings to verify functionality
+            // var str = 'bitcoin:1Donatet2LrNpuWByAnH8gc9Wh9zSzZuLC?amount=1.23456789';
+            // var str = 'counterparty:1Donatet2LrNpuWByAnH8gc9Wh9zSzZuLC?amount=1.23456789&asset=XCP&memo=test';
+            // var str = 'https://coindaddy.io';
+            // var str = 'counterparty:?action=sign&message=test&icon=https%3A%2F%2Fcounterpartychain.io%2Fcontent%2Fimages%2Ficons%2Fstopthenuke.png&callback=http%3A%2F%2Fdev.authparty.io%2Fapi%2Fv1%2Fauthorize_login%3Fprovider%3D005f15c462fe3eb536c4bec5fef42c%26modal_id%3DbemghXSwNXxhqzd';
+            // var str = 'counterparty:?action=sign&message=Authparty%20Login%20BOhuLIDqbJjBMzh';
+            // var str = 'counterparty:?action=broadcast&message=Some%20Message';
+            // var str = 'counterparty:?action=signtx&tx=your-unsigned-transaction-here';
+            // var str = "freewallet:?action=import&device=trezor&network=mainnet&data=%7B%2244'/0'/0'/0'/0%22:%221EMV8Xz6odQrjzRExPiTZrLcFDZ3fr3Viu%22,%2244'/0'/0'/0'/1%22:%221PMRoTp11MLPmayCDSkpdhD9JqCp85ZLug%22,%2244'/0'/0'/0'/2%22:%221KV364dENq1j8ZjStevytHjzihAxkUQbwG%22,%2244'/0'/0'/0'/3%22:%221LSgyGwf6Tbj1GfgnbcaLMQ2K1sJ14hS5f%22%7D"
+            // processURIData(str);
+
         });
     </script>
 

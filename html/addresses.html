@@ -2,11 +2,11 @@
     <p>Please select an address from the list below and click 'Ok'</p>
     <!-- Search Toolbar -->
     <div class="btn-toolbar" role="toolbar" aria-label="">
-        <input type="text" class="form-control address-list-search pull-left" placeholder="Search">
-        <div class="btn-group pull-right address-list-type" role="group" aria-label="">
-            <button type="button" value="0" class="btn btn-default active">All</button>
+        <div class="btn-group address-list-type" role="group" aria-label="">
+            <button type="button" value="0" class="btn btn-default active" style="width:60px">All</button>
             <button type="button" value="1" class="btn btn-default">Indexed</button>
             <button type="button" value="2" class="btn btn-default">Imported</button>
+            <button type="button" value="4" class="btn btn-default">Hardware Wallet</button>
             <button type="button" value="3" class="btn btn-default">Watch Only</button>
         </div>
     </div>
@@ -17,6 +17,7 @@
         </ul>
     </div>
     <input type="hidden" name="selected-address" class="selected-address" value="">
+    <input type="text" class="form-control address-list-search pull-left" placeholder="Filter / Search">
     <div class="action-buttons pull-right">
         <div id="btn-ok" class="btn btn-ok btn-success pull-right margin-left-5"><i class="fa fa-lg fa-fw fa-thumbs-up"></i> Ok</div>
         <div id="btn-cancel" class="btn btn-ok btn-danger pull-right margin-left-5"><i class="fa fa-lg fa-fw fa-thumbs-down"></i> Cancel</div>
@@ -27,6 +28,7 @@
             <ul class="dropdown-menu">
                 <li><a href="#" id="btn-generate"><i class="fa fa-lg fa-plus-circle"></i> Generate New Address</a></li>
                 <li><a href="#" id="btn-import"><i class="fa fa-lg fa-key"></i> Import Private Key</a></li>
+                <li><a href="#" id="btn-hardware"><i class="fa fa-lg fa-lock"></i> Add Hardware Wallet Address</a></li>
                 <li><a href="#" id="btn-watch"><i class="fa fa-lg fa-eye"></i> Add 'Watch Only' Address</a></li>
             </ul>
         </div>
@@ -37,10 +39,17 @@
 $(document).ready(function(){
 
     // Default to showing all types
-    FW.WALLET_ADDRESS_TYPE = 1; 
+    FW.WALLET_ADDRESS_TYPE = 0; 
 
     // Display address list
     updateAddressList();
+
+    // Focus the filter field so users can 
+    setTimeout(function(){
+        console.log('focus');
+        $('input[type="text"]').focus();
+    },500);
+    
 
     // Handle updating/toggling the 'active' item in the address type button
     $('.address-list-type button').click($.debounce(100,function(e){
@@ -101,5 +110,12 @@ $(document).ready(function(){
         dialogClose('dialog-change-address');
     }));
 
+    // Handle prompting user to choose their hardware device
+    $('#btn-hardware').click($.debounce(100,function(e){
+        // Make sure wallet is unlocked
+        if(dialogCheckLocked('add a hardware wallet address'))
+            return;
+        dialogImportHardwareAddress();
+    }));
 });
 </script>

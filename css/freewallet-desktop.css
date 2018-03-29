@@ -566,6 +566,7 @@ li.history-list-received .history-list-amount {
     height: 100%;
 }
 .address-list-search {
+    margin-top: 10px;
     width: 145px;
 }
 

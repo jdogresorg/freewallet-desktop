@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Sign Transaction</title>
+    <link type="text/css"  rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>        
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://connect.trezor.io/4/connect.js"></script>
+    <script src="custom.js" type="text/javascript"></script>
+    <script src="app.js" type="text/javascript"></script>
+</head> 
+<body>
+    <div class="container" style="margin-top: 15px">
+        <div class="row">
+            <div class="col-xs-12 col-lg-offset-3 col-lg-6">
+                <div class="panel panel-primary" id="step1">
+                    <div class="panel-heading">
+                        <i class="fa fa-lg fa-sign"></i> Sign Transaction
+                    </div>
+                    <div class="panel-body">
+                        <center>
+                            <div id="intro"><p>FreeWallet would now like you to sign a send transaction using your Trezor.</p></div>
+                            <div class="alert alert-info" id="trezor-status">
+                                Please click the button below to get started
+                            
+                            </div>
+                            <button class="btn btn-success margin-bottom-10" id="connect">Connect to Trezor</button>
+                            <div class="alert alert-warning no-bottom-margin" id="popups"><b>Note:</b> You need to allow popups from freewallet.io to sign transactions</div>
+                            <a href="#" target="_blank" class="btn btn-success" id="view" style="display:none;">View Transaction</a>
+                        </center>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<style>
+.no-bottom-margin {
+    margin-bottom: 0px;
+}
+#connect {
+    margin-bottom: 15px;
+}
+</style>
+<script>
+$(document).ready(function(){
+    var qs     = parseQueryString(),
+        tx     = (qs.tx) ? qs.tx : false,
+        status = $('#trezor-status');
+        host   = (qs.network=='testnet') ? 'testnet.xchain.io' : 'xchain.io';
+
+    // Connect to trezor device when user clicks 'Connect' button
+    $('#connect').click(function(){
+        // Make sure
+        if(tx){
+            status.text('Communicating with the Trezor...');
+            trezor.signTx(qs.network, qs.address, decodeURIComponent(qs.path), tx,  function(data){
+                console.log('data=',data);
+                if(data.success){
+                    console.log('Serialized TX:', data.serialized_tx); // tx in hex
+                    console.log('Signatures:', data.signatures); // array of signatures, in hex
+                    // Handle broadcasting the transaction
+                    trezor.broadcastTx(qs.network, data.serialized_tx, function(txid){
+                        if(txid){
+                            status.text('Your transaction has been signed and broadcast to the network!');
+                            $('#intro').hide();
+                            $('#connect').hide();
+                            $('#popups').hide();
+                            $('#view').attr('href','https://' + host + '/tx/' + txid).show();
+                        } else {
+                            console.error('Error:', data.error); // error message
+                            status.text('Error broadcasting transaction! Please try again.');
+                        }
+                    });
+                    // decode the signed transaction and verify that the last output matches the source address
+                } else {
+                    console.error('Error:', data.error); // error message
+                    status.text('Error signing transaction! Please try again.');
+                }
+            });
+        } else {
+            status.removeClass('alert-info').addClass('alert-danger');
+            status.text('Unable to detect a valid transaction!');
+        }    
+    });        
+
+});
+</script>
+</body>
+</html>

@@ -36,11 +36,11 @@ FW.WALLET_ADDRESSES = JSON.parse(ls.getItem('walletAddresses')) || [];
 // {
 //         address: '14PPCFzhQbMFyuUTRRqDnbt1gTVnXcCETi',
 //         label: 'My Wallet Address'
-//         network: 1, // 1=Mainnet, 2=Testnet
-//         type: 1,    // 1=indexed, 2=privkey (imported), 3=watch-only
-//         index: 0    // The index of the address
+//         network: 1,              // 1=Mainnet, 2=Testnet
+//         type: 1,                 // 1=indexed, 2=imported (privkey), 3=watch-only, 4=trezor, 5=ledger, 6=keepkey
+//         index: 0                 // The index of the address
+//         path: "m/44'/0'/0"       // Node path for address (ex: m/44'/0'/0)
 // }
-
 FW.WALLET_KEYS      = {}; // Address/Private keys
 FW.EXCHANGE_MARKETS = {}; // DEX Markets cache
 
@@ -436,9 +436,18 @@ function setWalletAddress( address, load=0 ){
 }
 
 // Handle adding addresses to FW.WALLET_ADDRESSES array
-function addWalletAddress( network=1, address='', label='', type=1, index='' ){
-    // console.log('addWalletAddress network,address,label,type,index=',network,address,label,type,index);
+function addWalletAddress( network=1, address='', label='', type=1, index='', path='' ){
+    // console.log('addWalletAddress network,address,label,type,index=',network,address,label,type,index, path);
+    // Bail out if no address is passed
     if(address=='')
+        return;
+    // Bail out if address already exists
+    var found = false;
+    FW.WALLET_ADDRESSES.forEach(function(item){
+        if(item.address==address)
+            found = true;
+    });
+    if(found)
         return;
     // Convert network to integer value
     if(typeof network == 'string')
@@ -447,7 +456,8 @@ function addWalletAddress( network=1, address='', label='', type=1, index='' ){
         address: address, // Address to add
         network: network, // Default to mainnet (1=mainnet, 2=testnet)
         label: label,     // Default to blank label
-        type: type,       // 1=indexed, 2=imported (privkey), 3=watch-only
+        type: type,       // 1=indexed, 2=imported (privkey), 3=watch-only, 4=trezor, 5=ledger, 6=keepkey
+        path: path,       // node path for address (ex: m/44'/0'/0)
         index: index      // wallet address index (used in address sorting)
     };
     FW.WALLET_ADDRESSES.push(info);
@@ -1750,6 +1760,9 @@ function updateAddressList(){
                 filterMatch = true;
             if(type!=0 && item.type==type)
                 typeMatch = true;
+            // Match all hardware wallets (Trezor, Ledger, Keepkey)
+            if(type==4 && (item.type==4||item.type==5||item.type==6))
+                typeMatch = true;
             // Only display if we have both filter and type matches
             if(filterMatch && typeMatch){
                 cnt++;
@@ -1759,7 +1772,8 @@ function updateAddressList(){
                     cnt = 0;
                 }
                 var label   = item.label,
-                    address = item.address;
+                    address = item.address,
+                    id      = item.address;
                 // Highlight the filter/search
                 if(filter){
                     label   = label.replace(filter,'<span class="highlight-search-term">' + filter + '</span>');
@@ -1770,7 +1784,7 @@ function updateAddressList(){
                     btc_amt = (btc) ? btc.quantity : 0,
                     xcp_amt = (xcp) ? xcp.quantity : 0,
                     fmt = '0,0.00000000';
-                html += '<li class="' + cls + ' address-list-item" data-address="' + address + '">';
+                html += '<li class="' + cls + ' address-list-item" data-address="' + id + '">';
                 html += '    <div class="address-list-info">';
                 html += '        <div class="address-list-label">' + label + '</div>';
                 html += '        <div class="address-list-address">' + address + '</div>';
@@ -2261,21 +2275,62 @@ function createBtcpay(network, source, order_match_id, fee, callback){
     });
 }
 
+// Handle signing a transaction using a hardware wallet
+function signHardwareWalletTransaction(network, source, unsignedTx, callback){
+    console.log('signHardwareWalletTransaction network, source, unsignedTx=',network, source, unsignedTx);
+    var info = getWalletAddressInfo(source),
+        type = info.type,
+        url  = 'https://freewallet.io/hardware/',
+        data = 'network=' + network + '&address=' + source + '&path=' + encodeURIComponent(info.path) + '&tx=' + unsignedTx;
+    if(type==4) url += 'trezor'
+    if(type==5) url += 'ledger'
+    if(type==6) url += 'keepkey'
+    url += '/sign.html?' + data;
+    // Display message 
+    dialogConfirm('Sign with Hardware wallet', 'You will now be taken to freewallet.io to sign this transaction using your hardware device.', false, false, function(confirm){
+        if(confirm){
+            console.log('sending user to url:', url);
+            // Close all open dialog boxes
+            dialogClose();
+            // Open external window to sign the transaction
+            if(is_nwjs()){
+                var nw   = require('nw.gui');
+                nw.Shell.openExternal(url);
+            } else {
+                window.open(url,'_blank');
+            }
+        }
+    });
+}
 
-// Handle signing a transaction
+// Handle checking if an address is a hardware wallet
+function isHardwareWallet(address){
+    var info  = getWalletAddressInfo(address),
+        types = [4,5,6];
+    if(types.indexOf(info.type)!=-1)
+        return true;
+    return false;
+}
+
+// Handle signing a transaction based on what type of address it is
 function signTransaction(network, source, unsignedTx, callback){
-    var net      = (network=='testnet') ? 'testnet' : 'mainnet',
-        callback = (typeof callback === 'function') ? callback : false;
-        privKey  = getPrivateKey(net, source)
-        cwKey    = new CWPrivateKey(privKey);
-    // update network (used in CWBitcore)
-    NETWORK = bitcore.Networks[net];
-    // Callback to processes response from signRawTransaction()
-    var cb = function(x, signedTx){
-        if(callback)
-            callback(signedTx);
+    if(isHardwareWallet(source)){
+        signHardwareWalletTransaction(network, source, unsignedTx);
+    } else {
+        // Sign the transaction normally using CWBitcore
+        var net      = (network=='testnet') ? 'testnet' : 'mainnet',
+            callback = (typeof callback === 'function') ? callback : false;
+            privKey  = getPrivateKey(net, source)
+            cwKey    = new CWPrivateKey(privKey);
+        // update network (used in CWBitcore)
+        NETWORK = bitcore.Networks[net];
+        // Callback to processes response from signRawTransaction()
+        var cb = function(x, signedTx){
+            if(callback)
+                callback(signedTx);
+        }
+        CWBitcore.signRawTransaction(unsignedTx, cwKey, cb);
     }
-    CWBitcore.signRawTransaction(unsignedTx, cwKey, cb);
 }
 
 // Handle signing a message and returning the signature
@@ -2299,7 +2354,7 @@ function broadcastTransaction(network, tx, callback){
         },
         complete: function(o){
             // console.log('o=',o);
-            // Handle successfull broadcast
+            // Handle successful broadcast
             if(o.responseJSON.tx_hash){
                 var txid = o.responseJSON.tx_hash;
                 if(callback)
@@ -2889,6 +2944,16 @@ function dialogUpdateAvailable(version){
     });
 }
 
+// Import Hardware wallet address dialog box
+function dialogImportHardwareAddress(){
+    BootstrapDialog.show({
+        type: 'type-default',
+        id: 'dialog-import-hardware-address',
+        title: '<i class="fa fa-fw fa-lock"></i> Choose your Hardware wallet',
+        message: $('<div></div>').load('html/hardware-wallet.html'),
+    });
+}
+
 // Function to handle checking if the wallet is unlocked and displaying an error, and return false if 
 function dialogCheckLocked(action, callback){
     if(!ss.getItem('wallet')){
@@ -3420,7 +3485,7 @@ function displayContextMenu(event){
             }
         }));
         // Don't display 'View Private Key' option for watch-only addresses
-        if(info.type!=3){
+        if([1,2].indexOf(info.type)!=-1){
             mnu.append(new nw.MenuItem({ 
                 label: 'View Private Key',
                 click: function(){ 
@@ -3515,8 +3580,9 @@ function getUrlHostname(url){
 // Handle processing any URI data that is passed
 function processURIData(data){
     if(data){
+        console.log('processURIData data=',data);
         var addr = data,
-            btc  = /^(bitcoin|counterparty):/i,
+            btc  = /^(bitcoin|counterparty|freewallet):/i,
             url  = /^(http|https):/i,
             o    = { valid: false };
         // Handle parsing in bitcoin and counterparty URI data
@@ -3609,6 +3675,28 @@ function processURIData(data){
                     tx: o.tx || '',
                 }
                 dialogSignTransaction();
+            }
+            // Handle importing wallet addresses
+            if(o.action=='import'){
+                // Check if wallet is locked... if so, notify user that they have to unlock wallet
+                if(dialogCheckLocked('import an address', cb))
+                    return;
+                // Trezor Wallet
+                if(o.device=='trezor'){
+                    // addWalletAddress( network=1, address='', label='', type=1, index='', path='' );
+                    var obj = JSON.parse(o.data),
+                        txt = '',
+                        net = (o.network=='testnet') ? 'testnet' : 'mainnet';
+                    Object.keys(obj).forEach(function(path){
+                        var addr = obj[path],
+                            arr  = String(path).split('/');
+                            idx  = parseInt(arr[arr.length-1]);
+                        txt += addr + '<br>';
+                        addWalletAddress(net, addr, 'Trezor Address #' + (idx+1), 4, idx, path );
+                    });
+                }
+                ls.setItem('walletAddresses', JSON.stringify(FW.WALLET_ADDRESSES));
+                dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Import Successful', 'The following addresses have been added to Freewallet: <br/>' + txt);
             }
         } else if(o.address){
             // Check if wallet is locked... if so, notify user that they have to unlock wallet
