@@ -7,4 +7,4 @@ Exec=/usr/share/FreeWallet/FreeWallet %U
 Icon=/usr/share/icons/FreeWallet/FreeWallet.png
 Terminal=false
 Categories=Office;
-MimeType=x-scheme-handler/bitcoin;x-scheme-handler/counterparty;
+MimeType=x-scheme-handler/bitcoin;x-scheme-handler/counterparty;x-scheme-handler/freewallet;

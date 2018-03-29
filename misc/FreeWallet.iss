@@ -32,7 +32,11 @@ Root: HKCR; Subkey: "counterparty"; ValueType: "string"; ValueData: "URL:counter
 Root: HKCR; Subkey: "counterparty"; ValueType: "string"; ValueName: "URL Protocol"; ValueData: ""
 Root: HKCR; Subkey: "counterparty\DefaultIcon"; ValueType: "string"; ValueData: "{app}\FreeWallet.exe,0"
 Root: HKCR; Subkey: "counterparty\shell\open\command"; ValueType: "string"; ValueData: """{app}\FreeWallet.exe"" ""%1"""
-
+; Add support for freewallet: urls
+Root: HKCR; Subkey: "freewallet"; ValueType: "string"; ValueData: "URL:freewallet Protocol"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "freewallet"; ValueType: "string"; ValueName: "URL Protocol"; ValueData: ""
+Root: HKCR; Subkey: "freewallet\DefaultIcon"; ValueType: "string"; ValueData: "{app}\FreeWallet.exe,0"
+Root: HKCR; Subkey: "freewallet\shell\open\command"; ValueType: "string"; ValueData: """{app}\FreeWallet.exe"" ""%1"""
 
 ; Override some default messages
 [Messages]

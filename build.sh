@@ -99,6 +99,9 @@ while true; do
                 /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:4:CFBundleURLName string Counterparty" $plist
                 /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:4:CFBundleURLSchemes array" $plist
                 /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:4:CFBundleURLSchemes:0 string counterparty" $plist
+                /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:5:CFBundleURLName string FreeWallet" $plist
+                /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:5:CFBundleURLSchemes array" $plist
+                /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:5:CFBundleURLSchemes:0 string freewallet" $plist
                 break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
