@@ -4,7 +4,14 @@
     <a href="#" data-toggle="tooltip" title='This is an optional memo to include' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
 </label>
 <div class="col-sm-9">
-    <input type="text" class="form-control" name="memo"  id="memo" placeholder="Enter Memo / Note" >
+    <div class="input-group pull-right" style="width:160px" id="memo-type-wrapper">
+        <span class="input-group-addon">Type</span>
+        <select id="memo-type" name="memo-type" class="selectpicker">
+            <option value="text">Text</option>
+            <option value="data">Data</option>
+        </select>
+    </div>
+    <input type="text" class="form-control" name="memo"  id="memo" placeholder="Enter Memo / Note" style="width:220px">
 </div>
 
 <script>
@@ -24,6 +31,9 @@ $(document).ready(function(){
             el.attr('disabled', false);
         }
     });
+
+    // Make memo type a dropdown
+    $('#memo-type').selectpicker();
 
 });
 </script>

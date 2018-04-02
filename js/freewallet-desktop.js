@@ -1883,10 +1883,10 @@ function array2Object(arr){
 
 
 // Handle generating a send transaction
-function cpSend(network, source, destination, memo, currency, amount, fee, callback){
+function cpSend(network, source, destination, memo, memo_is_hex, currency, amount, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
     // Create unsigned send transaction
-    createSend(network, source, destination, memo, currency, getSatoshis(amount), fee, function(o){
+    createSend(network, source, destination, memo, memo_is_hex, currency, getSatoshis(amount), fee, function(o){
         if(o && o.result){
             // Sign the transaction
             signTransaction(network, source, o.result, function(signedTx){
@@ -2115,8 +2115,8 @@ function cpRequest(network, data, callback){
 }
 
 // Handle creating send transaction
-function createSend(network, source, destination, memo, asset, quantity, fee, callback){
-    // console.log('createSend=',network, source, destination, asset, quantity, fee, callback);
+function createSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback){
+    // console.log('createSend=',network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback);
     var data = {
        method: "create_send",
        params: {
@@ -2131,6 +2131,8 @@ function createSend(network, source, destination, memo, asset, quantity, fee, ca
     };
     if(memo)
         data.params.memo = memo;
+    if(memo_is_hex)
+        data.params.memo_is_hex = true;
     if(fee)
         data.params.fee = fee;
     cpRequest(network, data, function(o){

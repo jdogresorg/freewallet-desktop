@@ -139,6 +139,15 @@ $(document).ready(function(){
             errors.push('You must enter a fee which is greater than 0.00000000!');
             $('#fee-amount').closest('.form-group').addClass('has-error has-danger');
         }
+        // Verify that the memo is below the max allowed characters
+        if(vals['memo']!=''){
+            var type = vals['memo-type'],
+                max  = (type=='data') ? 68 : 34;
+            if(vals['memo'].length>max){
+                errors.push('Maximum memo length for a ' + type + ' memo is ' + max + ' characters!');
+                $('#memo').closest('.form-group').addClass('has-error has-danger');
+            }
+        }
         // Display any error message
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
@@ -155,8 +164,9 @@ $(document).ready(function(){
             var confirmCb = function(){
                 var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
                     amt_sat = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).format('0') : numeral(vals.amount).format('0'),
-                    fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value());
-                cpSend(network, vals.source, vals.destination, vals.memo, vals.name, amt_sat, fee_sat, doneCb);
+                    fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
+                    is_data = (vals['memo-type']=='data') ? true : false;
+                cpSend(network, vals.source, vals.destination, vals.memo, is_data, vals.name, amt_sat, fee_sat, doneCb);
             }
             // Confirm the action with the user
             var title = '<img src="' + FW.XCHAIN_API + '/icon/' + FW.ASSET_INFO.asset + '.png" class="fw-icon-20 margin-right-5"> Confirm ' + vals.name + ' Send?';
