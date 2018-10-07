@@ -68,7 +68,7 @@
         $('#history-info-more').attr('href', FW.XCHAIN_API + '/tx/' + tx);
 
         // Request transaction information
-        $.getJSON('https://' + host + '/api/tx/' + tx, function( o ){
+        $.getJSON(FW.XCHAIN_API + '/api/tx/' + tx, function( o ){
             if(!o.error){
                 $('#source').html(o.source);
                 $('#asset').html('<img src="' + FW.XCHAIN_API + '/icon/' + o.asset + '.png" class="asset-icon-sm pull-left">' + o.asset);

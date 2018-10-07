@@ -2346,6 +2346,18 @@ function signMessage(network, source, message){
 
 // Broadcast a given transaction
 function broadcastTransaction(network, tx, callback){
+    // Prevent broadcasting any other transaction for 5 seconds
+    // Temporary solution to prevent issue where occasionally duplicate transaction is created and broadcast
+    // Remove this hack fix once we have determined why duplicate transaction is being created
+    if(FW.BROADCAST_LOCK==true){
+        cbError('Broadcasting another transaction to quickly',callback);
+        return;
+    } else {
+        FW.BROADCAST_LOCK = true;
+        setTimeout(function(){ 
+            FW.BROADCAST_LOCK = false;
+        }, 5000);
+    }
     var net  = (network=='testnet') ? 'BTCTEST' : 'BTC';
     // First try to broadcast using the XChain API
     $.ajax({
