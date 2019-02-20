@@ -24,8 +24,8 @@ fi
 base_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Extract app name and version from package.json
-app_name=`cat package.json | grep "name" | awk '{print $2}' | tr -d '",'`
-version=`cat package.json | grep "version" | awk '{print $2}' | tr -d '",'` 
+app_name=`cat package.json | grep -m1 "name" | awk '{print $2}' | tr -d '",'`
+version=`cat package.json | grep -m1 "version" | awk '{print $2}' | tr -d '",'` 
 
 # Copy files to build directory
 while true; do

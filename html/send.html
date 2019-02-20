@@ -140,7 +140,7 @@ $(document).ready(function(){
             $('#fee-amount').closest('.form-group').addClass('has-error has-danger');
         }
         // Verify that the memo is below the max allowed characters
-        if(vals['memo']!=''){
+        if(vals['memo'] && vals['memo']!=''){
             var type = vals['memo-type'],
                 max  = (type=='data') ? 68 : 34;
             if(vals['memo'].length>max){

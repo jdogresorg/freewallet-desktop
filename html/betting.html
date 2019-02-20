@@ -18,6 +18,7 @@
                         </div>
                     </div>            
                     <a href="#" class="btn btn-block btn-success margin-bottom-5" id="donate-now">Donate Now</a>
+                    <a href="#" class="btn btn-block btn-info"    id="access-now">Get Access Now</a>
                 </div>
             </div>
             <p>Counterparty has a robust <a href="https://counterparty.io/docs/protocol_specification/#bet">decentralized betting system</a> built into the protocol with the following features :</p>
@@ -33,7 +34,8 @@
                 <li>Simple interface that allows anyone to place a bet on an oracle/feed</li>
                 <li>Bet history interface which shows betting history, results, and allows exporting bet data</li>
             </ul>
-            <p>If a easy-to-use decentralized betting interface sounds like a good idea to you, please consider making a donation to support the development of this feature.</p>
+            <p class="text-justify">These features will be made available to all wallet users at no cost after the development bounty is fully funded. If you would like immediate access to these features please click the 'Get Access Now' button.</p>
+            <p class="text-justify">Users who hold <a href="https://xchain.io/asset/FULLACCESS" target="_blank"><b>FULLACCESS</b></a> or <a href="https://xchain.io/asset/XCHAINPEPE" target="_blank"><b>XCHAINPEPE</b></a> tokens will have immediate access to all the features listed above after the betting interface is completed.</p>
             <p><b>Bounty Address</b> : <span id="bounty-address"></span></p>
         </div>
     </div>
@@ -46,7 +48,7 @@ $(document).ready(function(){
 
     // Define information about this bounty;
     var address = '1FWBetKxYBmMDszTAkyK1VYC6gLxznzjMG',
-        bounty  = 750,
+        bounty  = 1000,
         balance = 0,
         percent = 0;
 
@@ -77,6 +79,11 @@ $(document).ready(function(){
         };
         dialogSend();
     }));
+
+    // Display the "Get Access Now" dialog interface so users can purchase an access token
+    $('#access-now').click($.debounce(100, function(e){
+        dialogBuyAccess();
+    }));    
 });
 </script>
 

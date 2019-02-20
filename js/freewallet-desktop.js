@@ -167,7 +167,6 @@ function setXChainAPI( network ){
     FW.XCHAIN_API = getXChainAPI(network);
 }
 
-
 // Handle checking for an updated wallet version
 function checkWalletUpgrade(version, message){
     $.get('https://freewallet.io/releases/current', function(current){
@@ -237,7 +236,6 @@ function initWallet(){
     setInterval(checkUpdateWallet, 60000);
     updateWalletOptions();
 }
-
 
 // Reset/Remove wallet
 function resetWallet(){
@@ -988,7 +986,6 @@ function autoBtcpay(network, o){
     });      
 }
 
-
 // Handle loading address balance data, saving to memory, and passing to a callback function
 function updateBalances(address, page, full, callback){
     var page  = (page) ? page : 1,
@@ -1012,28 +1009,82 @@ function updateBalances(address, page, full, callback){
     });
 }
 
-// Handle updating BTC balance from external source
-// Note: Stop doing this once counterparty switches to using indexd
+// Handle updating BTC balance from external source with multiple failovers
 function updateBTCBalance(address, callback){
-    var addr  = (address) ? address : FW.WALLET_ADDRESS,
-        net   = (FW.WALLET_NETWORK==2) ? 'tbtc' : 'btc',
-        net2  = (FW.WALLET_NETWORK==2) ? 'BTCTEST' : 'BTC';
-    // Handle updating BTC balance via blocktrail
-    var qty = '0.00000000';
-    $.getJSON('https://api.blocktrail.com/v1/' + net + '/address/' + addr + '?api_key=' + FW.API_KEYS.BLOCKTRAIL, function( data ){
-        if(data.balance)
-            qty =  numeral(data.balance * 0.00000001).format('0.00000000');
-        if(typeof callback === 'function')
-            callback(qty);
-    }).fail(function(o){
-        // Failover to requesting balance info from chain.so
-        $.getJSON('https://chain.so/api/v2/get_address_balance/' + net2 + '/' + addr, function( data ){
-            if(data.status=='success')
-                qty = numeral(parseFloat(data.data.confirmed_balance) + parseFloat(data.data.unconfirmed_balance)).format('0.00000000');
-            if(typeof callback === 'function')
-                callback(qty);
+    // Main API - Blockcypher
+    getBTCBalance(address, 'blockcypher', function(bal){
+        if(typeof bal === 'number'){
+            callback(bal)
+        } else {
+            // Failover #1 - Blockstream
+            getBTCBalance(address, 'blockstream', function(bal){
+                if(typeof bal === 'number'){
+                    callback(bal)
+                } else {
+                    // Failover #2 - Chain.so
+                    getBTCBalance(address, 'chain.so', function(bal){
+                        if(typeof bal === 'number'){
+                            callback(bal)
+                        } else {
+                            // Failover #3 - Indexd
+                            getBTCBalance(address, 'indexd', function(bal){
+                                if(typeof bal === 'number'){
+                                    callback(bal)
+                                } else {
+                                    callback(0);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    });
+}
+
+// Handle getting BTC balance (in satoshis) from various sources
+function getBTCBalance(address, source, callback){
+    var addr = (address) ? address : FW.WALLET_ADDRESS,
+        bal  = false; // BTC Balance or false for failure
+    // BlockCypher
+    if(source=='blockcypher'){
+        var net = (FW.WALLET_NETWORK==2) ? 'test3' : 'main';
+        $.getJSON('https://api.blockcypher.com/v1/btc/' + net + '/addrs/' + addr + '/balance', function( o ){
+            if(typeof o.balance === 'number')
+                bal = o.balance + o.unconfirmed_balance;
+        }).always(function(){
+            callback(bal);
         });
-    });    
+    // Blockstream
+    } else if(source=='blockstream'){
+        var net = (FW.WALLET_NETWORK==2) ? '/testnet' : '';
+        $.getJSON('https://blockstream.info' + net + '/api/address/' + addr, function( o ){
+            if(typeof o.confirmed_balance === 'number')
+                bal = o.confirmed_balance + o.mempool_balance;
+        }).always(function(){
+            callback(bal);
+        });
+    // Chain.so
+    } else if(source=='chain.so'){
+        var net = (FW.WALLET_NETWORK==2) ? 'BTCTEST' : 'BTC';
+        $.getJSON('https://chain.so/api/v2/get_address_balance/' + net + '/' + addr, function( o ){
+            if(o.status=='success')
+                bal = (parseFloat(o.data.confirmed_balance) + parseFloat(o.data.unconfirmed_balance)) * 100000000;
+        }).always(function(){
+            callback(bal);
+        });
+    // CoinDaddy indexd
+    } else if(source=='indexd'){
+        var port = (FW.WALLET_NETWORK==2) ? 18432 : 8432;
+        $.get('http://public.coindaddy.io:' + port + '/a/' + addr + '/balance', function( balance ){
+            if(typeof balance === 'number')
+                bal = balance;
+        }).always(function(){
+            callback(bal);
+        });
+    } else {
+        callback(bal);
+    }
 }
 
 // Update address balances
@@ -1099,11 +1150,12 @@ function updateWalletBalances( address, force ){
             doneCb();
         });
         // Update BTC Balance
-        updateBTCBalance(address, function(qty){
+        updateBTCBalance(address, function(sat){
+            var qty = numeral(sat * 0.00000001).format('0,0.00000000');
             FW.TEMP_BALANCES.data.push({
                 asset: "BTC",
                 estimated_value: {
-                    btc: qty,
+                    btc: numeral(qty).format('0,0.00000000'),
                     usd: numeral(parseFloat(btc_info.price_usd) * qty).format('0.00'),
                     xcp: numeral(qty / parseFloat(xcp_info.price_btc)).format('0.00000000'),
                 },
@@ -1111,6 +1163,131 @@ function updateWalletBalances( address, force ){
             });
             btc = true; // Flag to indicate we are done with BTC update
             doneCb();
+        });
+    }
+}
+
+// Handle updating BTC history from external source with multiple failovers
+function updateBTCHistory(address, callback){
+    // Main API - Blockcypher
+    getBTCHistory(address, 'blockcypher', function(txs){
+        if(txs instanceof Array){
+            callback(txs)
+        } else {
+            // Failover #1 - Blockstream
+            getBTCHistory(address, 'blockstream', function(txs){
+                if(txs instanceof Array){
+                    callback(txs)
+                } else {
+                    // Failover #2 - Chain.so
+                    getBTCHistory(address, 'chain.so', function(txs){
+                        if(txs instanceof Array){
+                            callback(txs)
+                        } else {
+                            callback([]);
+                        }
+                    });
+                }
+            });
+        }
+    });
+}
+
+// Handle getting BTC transaction history from various sources
+function getBTCHistory(address, source, callback){
+    var addr = (address) ? address : FW.WALLET_ADDRESS,
+        data = false; // Array of history transactions
+    // BlockCypher - Last 50 transactions
+    if(source=='blockcypher'){
+        var net = (FW.WALLET_NETWORK==2) ? 'test3' : 'main';
+        $.getJSON('https://api.blockcypher.com/v1/btc/' + net + '/addrs/' + addr + '/full?limit=50', function( o ){
+            if(o.txs){
+                data = [];
+                o.txs.forEach(function(tx){
+                    var quantity = '0.00000000';
+                    // If first input is our address, assume this is a send
+                    if(tx.inputs[0].addresses && tx.inputs[0].addresses[0]==addr){
+                        quantity = '-' + numeral(tx.total * 0.00000001).format('0.00000000');
+                    } else {
+                        // If our address is included in an output, assume it is a receive
+                        tx.outputs.forEach(function(out){
+                            var found = false;
+                            if(out.addresses){
+                                out.addresses.forEach(function(addr2){
+                                    if(addr2==addr)
+                                        quantity = numeral(out.value * 0.00000001).format('0.00000000');
+                                })
+                            }
+                        });
+                    }
+                    data.push({
+                        hash: tx.hash,
+                        timestamp: moment(tx.confirmed,["YYYY-MM-DDTH:m:s.SSSS[Z]"]).unix(),
+                        quantity: quantity
+                    });
+                });
+            }
+        }).always(function(){
+            callback(data);
+        });
+    }
+    // Blockstream - Last 25 transactions
+    if(source=='blockstream'){
+        var net = (FW.WALLET_NETWORK==2) ? '/testnet' : '';
+        $.getJSON('https://blockstream.info' + net + '/api/address/' + addr + '/txs', function( o ){
+            if(o instanceof Array){
+                data = [];
+                o.forEach(function(tx){
+                    var quantity = '0.00000000';
+                    // If first input is our address, assume this is a send
+                    if(tx.vin[0].prevout.scriptpubkey_address==addr){
+                        quantity = '-' + numeral(tx.vin[0].prevout.value * 0.00000001).format('0.00000000');
+                    } else {
+                        // If our address is included in an output, assume it is a receive
+                        tx.vout.forEach(function(out){
+                            if(out.scriptpubkey_address==addr)
+                                quantity = numeral(out.value * 0.00000001).format('0.00000000');
+                        });
+                    }
+                    data.push({
+                        hash: tx.txid,
+                        timestamp: tx.status.block_time,
+                        quantity: quantity
+                    });
+                });
+            }
+        }).always(function(){
+            callback(data);
+        });
+    }
+    // Chain.so - uses FIFO and requires multiple calls, so not really helpful, but useful as a last resort
+    if(source=='chain.so'){
+        var net = (FW.WALLET_NETWORK==2) ? 'BTCTEST' : 'BTC';
+        $.getJSON('https://chain.so/api/v2/get_tx_received/' + net + '/' + addr, function( o ){
+            if(o.status=='success'){
+                data = [];
+                o.data.txs.forEach(function(tx){
+                    data.push({
+                        hash: tx.txid,
+                        timestamp: tx.time,
+                        quantity: tx.value
+                    });                    
+                });
+            }
+        }).always(function(){
+            $.getJSON('https://chain.so/api/v2/get_tx_spent/' + net + '/' + addr, function( o ){
+                if(o.status=='success'){
+                    o.data.txs.forEach(function(tx){
+                        data.push({
+                            hash: tx.txid,
+                            timestamp: tx.time,
+                            quantity: '-' + tx.value
+                        });                    
+                    });
+                }
+            }).always(function(){
+                callback(data);
+            });
         });
     }
 }
@@ -1179,20 +1356,19 @@ function updateWalletHistory( address, force ){
             info.data = arr;
         }
         // Handle updating BTC history
-        $.getJSON( 'https://api.blocktrail.com/v1/' + net + '/address/' + addr + '/transactions?limit=100&sort_dir=desc&api_key=' + FW.API_KEYS.BLOCKTRAIL, function( data ){
-            data.data.forEach(function(item){
-                var quantity = numeral(item.estimated_value * 0.00000001).format('0.00000000');
-                if(item.inputs[0].address==addr)
-                    quantity = '-' + quantity;
-                addTransaction({
-                    type: 'send',
-                    tx: item.hash,
-                    asset: 'BTC',
-                    asset_longname: '', 
-                    quantity: quantity,
-                    timestamp: (item.block_height) ? moment(item.time,["YYYY-MM-DDTH:m:s"]).unix() : null
+        updateBTCHistory(addr, function(txs){
+            if(txs instanceof Array){
+                txs.forEach(function(tx){
+                    addTransaction({
+                        type: 'send',
+                        tx: tx.hash,
+                        asset: 'BTC',
+                        asset_longname: '', 
+                        quantity: tx.quantity,
+                        timestamp: tx.timestamp
+                    });                    
                 });
-            });
+            }
             status.btc = true; // Flag to indicate we are done with BTC update
             doneCb();
         });
@@ -1203,7 +1379,8 @@ function updateWalletHistory( address, force ){
                     var quantity = item.quantity,
                         tstamp   = item.timestamp,
                         asset    = item.asset,
-                        tx_type  = String(item.tx_type).toLowerCase();
+                        tx_type  = String(item.tx_type).toLowerCase(),
+                        longname = item.asset_longname;
                     if(tx_type=='bet'){
                         asset    = 'XCP';
                         quantity = item.wager_quantity;
@@ -1212,6 +1389,7 @@ function updateWalletHistory( address, force ){
                         quantity = item.burned;
                     } else if(tx_type=='order'){
                         asset    = item.get_asset,
+                        longname = item.get_asset_longname,
                         quantity = item.get_quantity;
                     } else if(tx_type=='send'){
                         if(item.source==address)
@@ -1221,7 +1399,7 @@ function updateWalletHistory( address, force ){
                         type: tx_type,
                         tx: item.tx_hash,
                         asset: asset,
-                        asset_longname: item.asset_longname, 
+                        asset_longname: longname, 
                         quantity: quantity,
                         timestamp: tstamp
                     });
@@ -1255,8 +1433,7 @@ function getAddressBalance(address, asset=''){
     return info;
 }
 
-// Handle checking balances info for a given address 
-// Optionally you can specify an asset to get back just that balance
+// Handle checking history info for a given address 
 function getAddressHistory(address, asset=''){
     var info = false;
     FW.WALLET_HISTORY.forEach(function(item){
@@ -1866,7 +2043,6 @@ var getFormType = function(){
     return type;
 }
 
-
 // Convert array of serialized form values into object with name:value pairs
 function array2Object(arr){
     var vals   = {};
@@ -1880,7 +2056,6 @@ function array2Object(arr){
 /*
  * Counterparty related functions
  */
-
 
 // Handle generating a send transaction
 function cpSend(network, source, destination, memo, memo_is_hex, currency, amount, fee, callback){
@@ -2056,7 +2231,6 @@ function cpBtcpay(network, source, order_match_id, fee, callback){
     });
 }
 
-
 // Handle generating a send transaction
 function cpOrder(network, source, get_asset, give_asset, get_quantity, give_quantity, expiration, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
@@ -2086,7 +2260,6 @@ function cpOrder(network, source, get_asset, give_asset, get_quantity, give_quan
         }
     });
 }
-
 
 // Handle sending request to counterparty servers
 function cpRequest(network, data, callback){
@@ -3065,6 +3238,19 @@ function dialogBroadcastMessage(){
         id: 'dialog-broadcast-message',
         title: '<i class="fa fa-fw fa-bullhorn"></i> Broadcast Message',
         message: $('<div></div>').load('html/broadcast.html'),
+    });
+}
+
+// 'Create Order' dialog box
+function dialogBuyAccess(){
+    // Make sure wallet is unlocked
+    if(dialogCheckLocked('create an order'))
+        return;
+    BootstrapDialog.show({
+        type: 'type-default',
+        id: 'dialog-buy-access',
+        title: '<i class="fa fa-fw fa-exclamation-circle"></i> Get Access Now',
+        message: $('<div></div>').load('html/buyaccess.html'),
     });
 }
 

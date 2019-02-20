@@ -18,7 +18,7 @@
                         </div>
                     </div>            
                     <a href="#" class="btn btn-block btn-success" id="donate-now">Donate Now</a>
-                    <a href="https://swapbot.tokenly.com/bot/jdogresorg/fullaccess" class="btn btn-block btn-info margin-bottom-5" id="access-now" target="_blank">Get Access Now</a>
+                    <a href="#" class="btn btn-block btn-info"    id="access-now">Get Access Now</a>
                 </div>
             </div>
             <p>Counterparty has a Decentralized EXchange (DEX) built into the protocol which enables peer-to-peer trading of BTC, XCP, or any Counterparty asset. All buy and sell orders are automatically escrowed in the Bitcoin blockchain until they are completed, which means your funds are never at risk of being lost or stolen. </p>
@@ -43,7 +43,7 @@ $(document).ready(function(){
 
     // Define information about this bounty;
     var address = '1FWDEXhxWcxtrbqnGhLoKofLwKs7aSbREj',
-        bounty  = 1250,
+        bounty  = 1500,
         balance = 0,
         percent = 0;
 
@@ -75,10 +75,10 @@ $(document).ready(function(){
         dialogSend();
     }));
 
-    // Handle displaying the dex interface
-    // $('#view-dex').click(function(e){
-    //     $('#main-content-panel').load('html/exchange/markets.html');
-    // });
+    // Display the "Get Access Now" dialog interface so users can purchase an access token
+    $('#access-now').click($.debounce(100, function(e){
+        dialogBuyAccess();
+    }));
 
 });
 </script>

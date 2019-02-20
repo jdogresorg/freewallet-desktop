@@ -53,28 +53,44 @@
 <!-- Code to load/update data -->
 <script type="text/javascript">
     var testnet = (FW.WALLET_NETWORK==2) ? true : false,
-        net     = (testnet) ? 'tBTC' : 'BTC',
         tx      = FW.CURRENT_TRANSACTION.tx;
 
     $(document).ready(function(){
 
         if(FW.CURRENT_TRANSACTION.asset=='BTC'){
-            // Update 'more info' link to point to transaction url
-            $('#history-info-more').attr('href','https://blocktrail.com/' + net + '/tx/' + tx)
+            var net = (FW.WALLET_NETWORK==2) ? '/testnet' : '';
 
-            // Request transaction information from xchain.io
-            $.getJSON('https://api.blocktrail.com/v1/' + net + '/transaction/' + tx + '?api_key=' + FW.API_KEYS.BLOCKTRAIL, function( o ){
-                if(!o.error){
-                    $('#source').html(o.inputs[0].address);
-                    $('#destination').html(o.outputs[0].address);
+            // Update 'more info' link to point to transaction url
+            $('#history-info-more').attr('href','https://blockstream.info' + net + '/tx/' + tx);
+
+            // Request transaction information from blockstream
+            $.getJSON('https://blockstream.info' + net + '/api/tx/' + tx, function(o){
+                if(o.txid){
+                    $('#source').html(o.vin[0].prevout.scriptpubkey_address);
+                    $('#destination').html(o.vout[0].scriptpubkey_address);
                     $('#asset').html('<img src="images/icons/btc.png" class="asset-icon-sm pull-left">BTC');
-                    $('#tx-hash').html(o.hash);
-                    $('#quantity').text(numeral(o.estimated_value).multiply(0.00000001).format('0,0.00000000'));
-                    $('#status').text((o.block_height) ? 'Valid' : 'Pending');
-                    $('#timestamp').html('<span data-livestamp='  + moment(o.first_seen_at,["YYYY-MM-DDTH:m:s"]).unix() + ' class="nowrap"></span>');
-                    $('#block').html(numeral(o.block_height).format('0,0'));
+                    $('#tx-hash').html(o.txid);
+                    $('#quantity').text(numeral(o.vout[0].value).multiply(0.00000001).format('0,0.00000000'));
+                    $('#status').text((o.status.block_height) ? 'Valid' : 'Pending');
+                    $('#timestamp').html('<span data-livestamp='  + o.status.block_time + ' class="nowrap"></span>');
+                    $('#block').html(numeral(o.status.block_height).format('0,0'));
                     $('#tx-index').text('-');
                 }
+            }).fail(function(){
+                var net = (FW.WALLET_NETWORK==2) ? 'test3' : 'main';
+                $.getJSON('https://api.blockcypher.com/v1/btc/' + net + '/txs/' + tx, function(o){
+                    if(o.hash){
+                        $('#source').html(o.inputs[0].addresses[0]);
+                        $('#destination').html('-');
+                        $('#asset').html('<img src="images/icons/btc.png" class="asset-icon-sm pull-left">BTC');
+                        $('#tx-hash').html(o.hash);
+                        $('#quantity').text(numeral(o.outputs[0].value).multiply(0.00000001).format('0,0.00000000'));
+                        $('#status').text((o.block_height) ? 'Valid' : 'Pending');
+                        $('#timestamp').html('<span data-livestamp='  + moment(o.confirmed,["YYYY-MM-DDTH:m:s"]).unix() + ' class="nowrap"></span>');
+                        $('#block').html(numeral(o.block_height).format('0,0'));
+                        $('#tx-index').text('-');
+                    }
+                });
             });             
         } else {
             // Update 'more info' link to point to transaction url
@@ -101,13 +117,7 @@
                     }
                 }
             });   
-
-
         }
-
-// var 
-// 
-
 
     });
 

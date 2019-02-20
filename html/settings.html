@@ -23,6 +23,7 @@
                 <li class="active">
                     <a data-toggle="tab" href="#wallet"><i class="fa fa-bitcoin"></i> Wallet</a></li>
                 <li><a data-toggle="tab" href="#preferences"><i class="fa fa-cog"></i> Preferences</a></li>
+                <li><a data-toggle="tab" href="#apikeys"><i class="fa fa-key"></i> API Keys</a></li>
                 <li><a data-toggle="tab" href="#servers"><i class="fa fa-server"></i> Server Settings</a></li>
             </ul>
             <div class="tab-content" style="border: 1px solid #ccc; border-top: 0px !important;padding: 10px">
@@ -121,6 +122,20 @@
                         </div>                
                     </fieldset>            
                 </div>
+                <!-- API Keys -->
+                <div id="apikeys" class="tab-pane">
+                    <fieldset>
+                        <div class="form-group">
+                            <label for="api-key-pastebin" class="col-sm-3 control-label no-right-padding">
+                                Pastebin
+                                <a href="#" data-toggle="tooltip" title='This is the API key for the pastebin.com API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" name="api-key-pastebin" id="api-key-pastebin">
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>                
                 <!-- Server Settings -->
                 <div id="servers" class="tab-pane">
                     <fieldset>
@@ -307,6 +322,10 @@ $(document).ready(function(){
     var val = ls.getItem('feePriority') || 'High';
     $('#current-priority').val(val);
 
+    // Restore any API keys
+    $('#api-key-pastebin').val(ls.getItem('apiKeyPastebin'));
+
+
     // Make any selects look nicer by using dialog-select
     $('.selectpicker').selectpicker({
         style: 'btn-default btn-block',
@@ -317,6 +336,12 @@ $(document).ready(function(){
     $('#current-priority').change(function(e){
         var val = $(this).val();
         ls.setItem('feePriority', val);
+    });
+
+    // Save pastebin.com API key
+    $('#api-key-pastebin').change(function(){
+        var val = $(this).val();
+        ls.setItem('apiKeyPastebin', val);
     });
 
     // Handle form validation
