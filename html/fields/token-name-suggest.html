@@ -39,6 +39,8 @@ $(document).ready(function(){
             txt = 'This is the name of the token you would like to lock the supply of';
         if(type=='dividend')
             txt = 'This is the name of the token you would like to pay a dividend on';
+        if(type=='dispenser-watchlist-add')
+            txt = 'This is the name of the token you would like to add to a dispenser watchlist';
         if(txt)
             tip.attr('data-original-title',txt);
 
@@ -52,9 +54,11 @@ $(document).ready(function(){
         'COVALC',
         'DATABITS',
         'FLDC',
+        'MAFIACASH',
+        'BITCORN',
         'PEPECASH',
         'SCOTCOIN',
-        'XCP'
+        'XCP',
     ];
 
     // Handle offering asset name suggestions
@@ -107,10 +111,12 @@ $(document).ready(function(){
                             action = 'lock the supply of';
                         if(type=='transfer-ownership')
                             action = 'transfer ownership of';
+                        if(type=='dispenser-watchlist-add')
+                            action = 'add a watchlist for ';
                         dialogMessage('Notice', '<center>Before you can ' + action + ' <b><i>' + name + '</i></b>, you must first register the name', true);
                     } else {
                         // If this is a dividend payment, then bail out and DO NOT update FW.ASSET_INFO as it overwrites the dividend asset data
-                        if(type=='dividend'||type=='add-market')
+                        if(type=='dividend'||type=='add-market'||type=='dispenser-watchlist-add')
                             return;
                         FW.ASSET_INFO = o;
                         // Error if asset is owned by another address

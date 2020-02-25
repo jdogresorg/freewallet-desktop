@@ -76,7 +76,7 @@ $(document).ready(function(){
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-sign-transaction');
-                    dialogMessage('<i class="fa fa-lg fa-check"></i> Broadcast Successfull', '<center>Your transaction has been broadcast to the network and should be confirmed shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Broadcast Successful', '<center>Your transaction has been broadcast to the network and should be confirmed shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
@@ -123,7 +123,7 @@ $(document).ready(function(){
         } else {
             // Handle signing the message and populating the 'Signed' box
             var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
-            signTransaction(network, vals.source, vals.transaction, function(tx){
+            signTransaction(network, vals.source, vals.source, vals.transaction, function(tx){
                 var val = '';
                 if(tx){
                     val = tx;

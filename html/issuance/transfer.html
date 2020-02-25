@@ -97,7 +97,7 @@ $(document).ready(function(){
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-transfer-ownership');
-                    dialogMessage('<i class="fa fa-lg fa-check"></i> Transfer Successfull', '<center>Your transfer has been broadcast to the network and the token owner should be updated shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Transfer Successful', '<center>Your transfer has been broadcast to the network and the token owner should be updated shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }

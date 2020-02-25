@@ -1,0 +1,91 @@
+<!-- Transaction Information -->
+<div class="row">
+    <div class="col-xs-12">
+        <div class="panel panel-default table-responsive">
+            <div class="panel-heading panel-heading-lg">
+                <i class="fa fa-lg fa-truck"></i> Sweep Details
+                <a href="#" class="btn btn-xs btn-success pull-right" id="history-info-more" target="_blank"><i class="fa fa-info-circle"></i> more info</a>
+            </div>
+            <table class="table table-striped table-bordered table-condensed">
+            <tbody>
+            <tr>
+                <td class="info bold nowrap" width="130">Transaction Hash</td>
+                <td id="tx-hash"></td>
+            </tr>
+            <tr>
+                <td class="info bold" width="130">TX Index</td>
+                <td id="tx-index"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Block #</td>
+                <td id="block"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Time</td>
+                <td id="timestamp"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Source</td>
+                <td id="source"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Destination</td>
+                <td id="destination"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Flags</td>
+                <td id="flags"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Memo</td>
+                <td id="memo"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Fee Paid</td>
+                <td id="fee"></td>
+            </tr>
+            <tr>
+                <td class="info bold">Status</td>
+                <td id="status"></td>
+            </tr>
+            </tbody>
+            </table>
+        </div>
+    </div>
+</div><!-- end row -->
+
+<!-- Code to load/update data -->
+<script type="text/javascript">
+    var testnet = (FW.WALLET_NETWORK==2) ? true : false,
+        tx      = FW.CURRENT_TRANSACTION.tx;
+
+    $(document).ready(function(){
+
+        // Update 'more info' link to point to transaction url
+        $('#history-info-more').attr('href', FW.XCHAIN_API + '/tx/' + tx);
+
+        // Request transaction information from xchain.io
+        $.getJSON(FW.XCHAIN_API + '/api/tx/' + tx, function( o ){
+            if(!o.error){
+                $('#source').html(o.source);
+                $('#destination').html(o.destination);
+                var net = (testnet) ? '/testnet' : '';
+                $('#tx-hash').html(o.tx_hash);
+                $('#memo').text(o.memo);
+                $('#flags').text(o.flags);
+                $('#status').text(o.status);
+                $('#fee').text(o.fee + ' XCP');
+                $('#timestamp').html('<span data-livestamp='  + o.timestamp + ' class="nowrap"></span> (' + moment.unix(o.timestamp).utcOffset(0).format() + ' GMT)');
+                if(o.tx_index){
+                    $('#block').html(numeral(o.block_index).format('0,0'));
+                    $('#tx-index').text(numeral(o.tx_index).format('0,0'));
+                } else {
+                    $('#block').text('-');
+                    $('#tx-index').text('-');
+                }
+            }
+        });   
+
+    });
+
+</script>

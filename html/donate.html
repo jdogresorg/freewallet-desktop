@@ -1,0 +1,76 @@
+<center>
+    <div style="margin-bottom:20px">
+        <a href="https://freewallet.io"><img src="images/logo.png" style="height:100px;margin-right:30px"></a>
+        <a href="https://xchain.io"><img src="images/xchain-color-500.png"  style="height:100px"></a>
+    </div>
+
+    <p align="justify">Please support continued development of FreeWallet and hosting of the xchain.io Counterparty block explorer by making a donation using the 'Donate' button below.</p>
+    <p align="justify">If you would like to get rid of this annoying donate message forever, please purchase a FULLACCESS token from a dispenser using the 'Buy FULLACCESS' button below.</p>
+</center>
+
+<style>
+img.about-logo {
+    height: 40px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+hr.spacer {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+</style>
+
+<div class="text-right">
+    <div id="btn-buy" class="btn btn-success pull-left"><i class="fa fa-lg fa-fw fa-btc"></i> Buy FULLACCESS</div>
+    <div id="btn-donate" class="btn btn-info"><i class="fa fa-lg fa-fw fa-bitcoin"></i> Donate</div>
+</div>
+
+<script>
+$(document).ready(function(){
+
+    // Define donation address
+    var address = '1FWDonkMbC6hL64JiysuggHnUAw2CKWszs',
+        debug   = $('#btn-debug'),
+        update  = $('#btn-update'),
+        version = (is_nwjs()) ? 'Version ' + nw.App.manifest.version : 'Development Build';
+
+    // Display current version number
+    $('#fw_version').html(version);
+
+    // Handle showing/hiding the debug button
+    if(is_nwjs()){
+        debug.click($.debounce(100,function(e){
+            nw.Window.get().showDevTools();
+        }));
+        update.click($.debounce(100,function(e){
+            checkWalletUpgrade(version, true);
+        }));
+    }
+
+    // When a user clicks the donate now button, save bounty address and launch 'Send Funds' window
+    $('#btn-donate').click($.debounce(100, function(e){
+        FW.DIALOG_DATA = {
+            destination: address,
+            token: 'BTC'
+        };
+        dialogSend();
+        dialogClose('dialog-donate');
+    }));
+
+    // When a user clicks the donate now button, save bounty address and launch 'Send Funds' window
+    $('#btn-buy').click($.debounce(100, function(e){
+        FW.DIALOG_DATA = {
+            token: 'FULLACCESS'
+        };
+        loadPage('dispensers');
+        dialogClose('dialog-donate');
+    }));
+
+
+    // Hide the send form if users clicks 'cancel' button
+    $('#btn-ok').click($.debounce(100,function(e){
+        dialogClose('dialog-donate');
+    }));
+
+});
+</script>

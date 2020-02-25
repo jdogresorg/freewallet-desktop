@@ -49,6 +49,8 @@ $(document).ready(function(){
             txt = 'This is the address where the broadcast will originate from';
         if(type=='callback')
             txt = 'This is the address which has signed the message';
+        if(type=='dispenser')
+            txt = 'This is the address where you would like to setup a dispenser';
         if(txt)
             tip.attr('data-original-title',txt);
 

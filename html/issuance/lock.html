@@ -96,7 +96,7 @@ $(document).ready(function(){
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-lock-supply');
-                    dialogMessage('<i class="fa fa-lg fa-check"></i> Lock Successfull', '<center>Your transaction has been broadcast to the network and the token supply should be locked shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Lock Successful', '<center>Your transaction has been broadcast to the network and the token supply should be locked shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }

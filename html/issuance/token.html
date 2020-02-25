@@ -268,7 +268,7 @@ $(document).ready(function(){
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-create-token');
-                    dialogMessage('<i class="fa fa-lg fa-check"></i> Issuance Successfull', '<center>Your issuance has been broadcast to the network and your token should be create shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Issuance Successful', '<center>Your issuance has been broadcast to the network and your token should be create shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }

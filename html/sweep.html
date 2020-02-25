@@ -1,0 +1,152 @@
+<!-- Sweep Form -->
+<form class="form-horizontal" id="sweep-form" data-toggle="validator" role="form">
+    <div class="form-group" id="source-address-field">
+        <!-- Source Address Field -->
+    </div>
+    <div class="form-group" id="destination-address-field">
+        <!-- Destination Address Field -->
+    </div>
+    <!-- Transfer Address Balances -->
+    <div class="form-group" id="transfer-balances-field">
+        <label for="transfer-balances" class="col-sm-3 control-label text-left">
+            Balances
+            <a href="#" data-toggle="tooltip" title='This indicates if you would like to sweep all asset balances' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <select id="transfer-balances" name="transfer-balances" class="selectpicker">
+                <option value="Y">Yes - Transfer all token balances</option>
+                <option value="N">No - Leave token balances alone</option>
+            </select>
+        </div>
+    </div>
+    <!-- Transfer Token Ownership -->
+    <div class="form-group" id="transfer-ownership-field">
+        <label for="transfer-ownership" class="col-sm-3 control-label text-left">
+            Ownerships
+            <a href="#" data-toggle="tooltip" title='This indicates if you would like to transfer all asset ownerships' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <select id="transfer-ownership" name="transfer-ownership" class="selectpicker">
+                <option value="Y">Yes - Transfer all token ownerships</option>
+                <option value="N">No - Leave token ownerships alone</option>
+            </select>
+        </div>
+    </div>
+    <div class="form-group" id="memo-field">
+        <!-- Memo Field -->
+    </div>
+    <div class="form-group" id="tx-fee-field">
+        <!-- Transaction Fee Field -->
+    </div>
+    <div class="text-right">
+        <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
+        <div id="btn-submit" class="btn btn-success "><i class="fa fa-lg fa-fw fa-truck"></i> Sweep</div>
+    </div>
+</form>
+
+
+<script>
+$(document).ready(function(){
+
+    // Load any field content
+    $('#source-address-field').load('html/fields/source-address.html');
+    $('#destination-address-field').load('html/fields/destination-address.html');
+    $('#memo-field').load('html/fields/memo.html');
+    $('#tx-fee-field').load('html/fields/tx-fee.html');
+
+    // Delay initializing some fields to give things a chance to load
+    setTimeout(function(){
+
+        // Initialize any tooltips
+        $('[data-toggle="tooltip"]').tooltip({ 
+            html: true,
+            placement: 'bottom'
+        }); 
+
+        // balances and ownership dropdowns 
+        $('#transfer-balances').selectpicker({ width: '100%' });
+        $('#transfer-ownership').selectpicker({ width: '100%' });
+
+    },100);
+
+    // Submit form if user clicks 'Submit' button
+    $('#btn-submit').click($.debounce(100,function(e){
+        $('#sweep-form').submit();
+    }));
+
+    // Hide the form if users clicks 'Cancel' button
+    $('#btn-cancel').click($.debounce(100,function(e){
+        dialogClose('dialog-sweep');
+    }));
+
+    // Handle form validation and displaying any errors
+    $('#sweep-form').validator().on('submit', function(e){
+        // prevent form submission
+        e.preventDefault(); 
+        // Get object with form values
+        var vals   = array2Object($(this).serializeArray()),
+            errors = [];
+        console.log('vals=',vals);
+        // Remove error indicators from any fields 
+        $('.form-group').removeClass('has-error has-danger');
+
+        // Verify we have a valid address
+        if(!isValidAddress(vals.destination)){
+            errors.push('You must enter a valid destination address!');
+            $('#destination-address').closest('.form-group').addClass('has-error has-danger');
+        }
+
+        // Verify we have valid fee amount 
+        if(numeral(vals['fee-amount']).value()==0){
+            errors.push('You must enter a fee which is greater than 0.00000000!');
+            $('#fee-amount').closest('.form-group').addClass('has-error has-danger');
+        }
+
+        // Make sure that we have an action for this sweep
+        if(vals['transfer-balances']=='N' && vals['transfer-ownership']=='N'){
+            errors.push('You must select an action for this sweep!');
+        }
+
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+        } else {
+            // Callback to run after broadcasting send
+            var doneCb = function(tx){
+                if(tx){
+                    dialogClose('dialog-sweep');
+                    dialogMessage('<i class="fa fa-lg fa-truck"></i> Sweep Successful', '<center>Your sweep has been sent to the network and should be included to a block shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                }
+            }
+            // Callback to run if user confirms action
+            var confirmCb = function(){
+                var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                    fee_sat  = parseInt(numeral(vals['fee-amount']).multiply(100000000).value());
+                    flags    = 0;
+                    if(vals['transfer-balances']=='Y') 
+                        flags += 1;
+                    if(vals['transfer-ownership']=='Y') 
+                        flags += 2;
+                    if(vals.memo!='' && vals['memo-type']=='data')
+                        flags += 4
+                cpSweep(network, vals.source, vals.destination, flags, vals.memo, fee_sat, doneCb);
+            }
+            // Confirm the action with the user
+            var title = '<i class="fa fa-lg fa-fw fa-fire"></i> Confirm Sweep?',
+                msg   = '';
+            if(vals['transfer-balances']=='Y')
+                msg   = 'Transfer all balances';
+            if(vals['transfer-ownership']=='Y'){
+                if(msg!='')
+                    msg += ' and<br/>';
+                msg += 'Transfer all token ownership';
+            }
+            msg += '<br/>to<br/>' + vals.destination;
+            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+        }
+    })
+
+
+});
+</script>

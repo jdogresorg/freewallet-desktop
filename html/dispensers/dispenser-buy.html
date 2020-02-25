@@ -1,0 +1,124 @@
+<!-- Dispenser Buy Form -->
+<form class="form-horizontal" id="dispenser-buy-form" data-toggle="validator" role="form">
+    <div class="form-group" id="token-name-select-field">
+        <!-- Token Name Field  -->
+    </div>
+    <div class="form-group" id="amount-field">
+        <!-- Amount Field -->
+    </div>
+    <div class="form-group" id="btc-amount-field">
+        <!-- BTC Amount Field -->
+    </div>
+    <div class="form-group" id="tx-fee-field">
+        <!-- Transaction Fee Field -->
+    </div>
+    <div class="text-right">
+        <div id="btn-submit" class="btn btn-success"><i class="fa fa-lg fa-fw fa-btc"></i> Buy Now</div>
+        <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
+    </div>
+</form>
+
+
+<script>
+$(document).ready(function(){
+
+    // Load any field content
+    $('#token-name-select-field').load('html/fields/token-name-select.html');
+    $('#amount-field').load('html/fields/amount.html');
+    $('#btc-amount-field').load('html/fields/amount-btc.html');
+    $('#tx-fee-field').load('html/fields/tx-fee.html');
+
+    // Delay initializing some fields to give things a chance to load
+    setTimeout(function(){
+
+        // Initialize any tooltips
+        $('[data-toggle="tooltip"]').tooltip({ 
+            html: true,
+            placement: 'bottom'
+        }); 
+
+        // // Detect any asset change and clear the escrow and give amounts
+        // $('#token-name-select').change(function(e){
+        //     $('#escrow-amount').val('');
+        //     $('#escrow-amount-value').val('');
+        //     $('#give-amount').val('');
+        //     $('#give-amount-value').val('');
+        // });
+
+    },100);
+
+    // Clear the dialog data
+    // FW.DIALOG_DATA = {};
+
+    // Submit form if user clicks 'Submit' button
+    $('#btn-submit').click($.debounce(100,function(e){
+        $('#dispenser-buy-form').submit();
+    }));
+
+    // Hide the form if users clicks 'Cancel' button
+    $('#btn-cancel').click($.debounce(100,function(e){
+        dialogClose('dialog-dispenser-buy');
+    }));
+
+    // Handle form validation and displaying any errors
+    $('#dispenser-buy-form').validator().on('submit', function(e){
+        // prevent form submission
+        e.preventDefault(); 
+        // Get object with form values
+        var vals   = array2Object($(this).serializeArray()),
+            errors = [];
+        console.log('vals=',vals);
+        // Remove error indicators from any fields 
+        $('.form-group').removeClass('has-error has-danger');
+
+        // Verify we have valid fee amount 
+        if(numeral(vals['fee-amount']).value()==0){
+            errors.push('You must enter a fee which is greater than 0.00000000!');
+            $('#fee-amount').closest('.form-group').addClass('has-error has-danger');
+        }
+
+        // Throw error if amount is below dust amount
+        if(numeral(vals['btc-amount']).multiply(100000000).value()<=5430){
+            errors.push('BTC Amount must be greater than dust (0.00005430 BTC)!');
+            $('#btc-amount').closest('.form-group').addClass('has-error has-danger');
+        }
+
+
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+        } else {
+            // Callback to run after broadcasting send
+            var doneCb = function(tx){
+                if(tx){
+                    dialogClose('dialog-dispenser-buy');
+                    dialogMessage('<i class="fa fa-lg fa-truck"></i> Dispenser Buy Successful', '<center>Your buy transaction has been sent to the network and should be included to a block shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                }
+            }
+            // Callback to run if user confirms action
+            var confirmCb = function(){
+                var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                    source  = FW.WALLET_ADDRESS,
+                    amt_sat = parseInt(numeral(vals['btc-amount']).multiply(100000000).value()),
+                    fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value());
+                cpSend(network, source, data.destination, null, null, 'BTC', amt_sat, fee_sat, doneCb);
+            }
+            // Confirm the action with the user
+            var data    = FW.DIALOG_DATA;
+            var title = '<img src="' + FW.XCHAIN_API + '/icon/' + data.asset + '.png" class="fw-icon-20 margin-right-5"> Confirm Buy ' + data.name + '?';
+            var msg  = 'Buy <b>' + vals.amount + ' ' + data.name + '</b>';
+                msg += ' <br/>for <b>' + vals['btc-amount'] + ' BTC</b>';
+            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+
+            // var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+            //     source   = FW.WALLET_ADDRESS,
+            //     status   = 10, // 10 = Close Dispenser
+            //     fee_sat  = parseInt(numeral(vals['fee-amount']).multiply(100000000).value());
+            // cpDispenser(network, source, vals.asset, 0, 0, 0, status, fee_sat, doneCb);
+        }
+    })
+
+
+});
+</script>

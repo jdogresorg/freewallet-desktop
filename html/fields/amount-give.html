@@ -1,0 +1,96 @@
+<!-- Give Amount Field -->
+<label class="col-sm-3 control-label text-left" for="amount">
+    Give Amount
+    <a href="#" data-toggle="tooltip" title='This is the amount that you would like to give out with each dispense' class="pull-right" id="give-amount-tooltip"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>
+<div class="col-sm-9">
+    <div class="input-group pull-left" style="width:223px" id="give-amount-wrapper">
+        <input type="text" class="form-control" name="give-amount" id="give-amount" placeholder="0.00000000"  data-minlength="1" required >
+        <a class="input-group-addon" id="give-amount-max">MAX</a>
+    </div>
+    <div class="input-group pull-right" style="width:180px" id="give-amount-value-wrapper">
+        <a class="input-group-addon"><i class="fa fa-usd"></i></a>
+        <input type="text" class="form-control" name="value" id="give-amount-value" placeholder="0.00" >
+    </div>
+</div>
+
+<script>
+
+// Function to calculate and set fiat value based on asset amount
+function updateGiveValue(amt){
+    if(! $('#give-amount-value').prop('disabled')){
+        var val = (FW.ASSET_INFO.estimated_value.btc *  numeral(amt).value()) * btc_info.price_usd;
+        if(!isFinite(val))
+            val = 0;
+        $('#give-amount-value').val(numeral(val).format('0,0.00'));
+    }
+}
+
+// Function to calculate and display asset amount based on fiat value
+function updateGiveAmount(val){
+    var amt = ((numeral(val).value() / btc_info.price_usd) / FW.ASSET_INFO.estimated_value.btc),
+        fmt = (String($('#available').val()).indexOf('.')!=-1) ? '0,0.00000000' : '0,0';
+    if(!isFinite(amt))
+        amt = 0;
+    $('#give-amount').val(numeral(amt).format(fmt));
+}
+
+$(document).ready(function(){
+
+    // Stash current price info on BTC and XCP
+    var btc_info = getAssetPrice('BTC',true);
+        xcp_info = getAssetPrice('XCP',true);
+        type     = getFormType();
+
+      // Detect any amount change and format as valid number
+    $('#give-amount').change(function(e){
+        var amt = String($(this).val()).replace(/[^0-9.]/g,''),
+            val = $('#escrow-amount').val(),
+            fmt = (FW.ASSET_INFO.divisible) ? '0,0.00000000' : '0,0';
+        if(val)
+            fmt = (val.indexOf('.')!=-1) ? '0,0.00000000' : '0,0';
+        // Max the give amount at the escrow amount
+        var escrow = numeral($('#escrow-amount').val()).value(),
+            give   = numeral($('#give-amount').val()).value();
+        if(give > escrow)
+            amt = escrow;
+        if(amt==0){
+            $(this).val('');
+        } else {
+            $(this).val(numeral(amt).format(fmt));
+        }
+        updateGiveValue(amt);
+    });
+
+    // Calculate the fiat value as the user types the amount
+    $('#give-amount').keyup($.debounce(100,function(e){
+        var amt = String($(this).val()).replace(/[^0-9.]/g,'');
+        updateGiveValue(amt);
+    }));
+
+    // Make sure fiat value is in correct format
+    $('#give-amount-value').change(function(e){
+        var val = String($(this).val()).replace(/[^0-9.]/g,'');
+        $(this).val(numeral(val).format('0,0.00'));
+        updateGiveAmount(val);
+        // Fire change event on give amount field to re-run validation
+        $('#give-amount').change();
+    });
+
+    // Calculate the crypto value as the user types the fiat amount
+    $('#give-amount-value').keyup($.debounce(100,function(e){
+        var amt = String($(this).val()).replace(/[^0-9.]/g,'');
+        updateGiveAmount(amt);
+    }));
+
+    // When user clicks 'Max' button, set amount to max available
+    $('#give-amount-max').click($.debounce(100,function(e){
+        var max = String($('#escrow-amount').val()).replace(/[^0-9.,]/g,'');
+        $('#give-amount').val(max);
+        // Set fiat value
+        var max = String($('#escrow-amount-value').val()).replace(/[^0-9.,]/g,'');
+        $('#give-amount-value').val(max);
+    }));
+
+});
+</script>

@@ -15,7 +15,7 @@
 
     </div>
     <br>
-    <p align="justify">If you would like to support continued development of FreeWallet, please consider making a donation using the 'Donate' button below, or donate to one of the wallet bounties.</p>
+    <p align="justify">If you would like to support continued development of FreeWallet and continued hosting of the XChain.io counterparty block explorer, please consider making a donation using the 'Donate' button below, or purchase a FULLACCESS token using the button below.</p>
 </center>
 
 <style>
@@ -32,9 +32,9 @@ hr.spacer {
 
 <div class="text-right">
     <div id="btn-debug" class="btn btn-info pull-left"><i class="fa fa-lg fa-fw fa-bug"></i> Debug</div>
-    <div id="btn-update" class="btn btn-primary"><i class="fa fa-lg fa-fw fa-download"></i> Check for Update</div>
+    <div id="btn-update" class="btn btn-primary pull-left" style="margin-left: 5px"><i class="fa fa-lg fa-fw fa-download"></i> Check for Update</div>
+    <div id="btn-buy" class="btn btn-success"><i class="fa fa-lg fa-fw fa-btc"></i> Buy FULLACCESS</div>
     <div id="btn-donate" class="btn btn-info"><i class="fa fa-lg fa-fw fa-bitcoin"></i> Donate</div>
-    <div id="btn-ok" class="btn btn-success "><i class="fa fa-lg fa-fw fa-thumbs-up"></i> Ok</div>
 </div>
 
 <script>
@@ -68,7 +68,18 @@ $(document).ready(function(){
             destination: address
         };
         dialogSend();
+        dialogClose('dialog-about');
     }));
+
+    // When a user clicks the donate now button, save bounty address and launch 'Send Funds' window
+    $('#btn-buy').click($.debounce(100, function(e){
+        FW.DIALOG_DATA = {
+            token: 'FULLACCESS'
+        };
+        loadPage('dispensers');
+        dialogClose('dialog-about');
+    }));
+
 
     // Hide the send form if users clicks 'cancel' button
     $('#btn-ok').click($.debounce(100,function(e){

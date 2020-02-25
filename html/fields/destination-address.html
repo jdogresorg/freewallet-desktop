@@ -38,6 +38,13 @@ $(document).ready(function(){
 
     },750);
 
+    $('#destination-address').change(function(){
+        var me  = $(this),
+            val = String(me.val()).trim();
+            me.val(val);
+
+    });
+
     // Display 'Address Book' when user clicks address book link
     $('#destination-address-book').click($.debounce(100,function(e){
         dialogComingSoon();

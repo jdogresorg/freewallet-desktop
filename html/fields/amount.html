@@ -20,6 +20,8 @@
 function updateSendValue(amt){
     if(! $('#amount-value').prop('disabled')){
         var val = (FW.ASSET_INFO.estimated_value.btc *  numeral(amt).value()) * btc_info.price_usd;
+        if(!isFinite(val))
+            val = 0;
         $('#amount-value').val(numeral(val).format('0,0.00'));
     }
 }
@@ -27,7 +29,9 @@ function updateSendValue(amt){
 // Function to calculate and display asset amount based on fiat value
 function updateSendAmount(val){
     var amt = ((numeral(val).value() / btc_info.price_usd) / FW.ASSET_INFO.estimated_value.btc),
-        fmt = (String($('#available').val()).indexOf('.')!=-1) ? '0,0.00000000' : '0,0';
+        fmt = (FW.ASSET_INFO.divisible) ? '0,0.00000000' : '0,0';
+    if(!isFinite(amt))
+        amt = 0;
     $('#amount').val(numeral(amt).format(fmt));
 }
 
@@ -38,7 +42,6 @@ $(document).ready(function(){
         xcp_info = getAssetPrice('XCP',true);
         type     = getFormType();
         tip      = $('#amount-tooltip');
-
     // Change the look/feel of the form based on form type
     if(type=='send'){
         // On the 'Send Funds' form, resize the fee fields a bit since less space is available
@@ -49,6 +52,8 @@ $(document).ready(function(){
         $('#amount-value').attr('readonly', true);
         $('#amount-max').hide();
         $('#amount').addClass('input-rounded-right');
+    } else if(type=='dispenser-buy'){
+        $('#amount').val(FW.DIALOG_DATA.give_quantity);
     }
 
     // Wait a brief moment to allow things to initialize
@@ -58,10 +63,16 @@ $(document).ready(function(){
         var txt = false;
         if(type=='send')
             txt = 'This is the amount that you would like to send';
+        if(type=='burn')
+            txt = 'This is the amount that you would like to burn';
+        if(type=='destroy')
+            txt = 'This is the amount that you would like to destroy';
         if(type=='dividend')
             txt = 'This is the amount of dividend tokens that you would like to pay out per each unit';
         if(type=='issue-supply')
             txt = 'This is the amount of additional supply you would like to issue';
+        if(type=='dispenser-buy')
+            txt = 'This is the amount of ' + FW.DIALOG_DATA.name +' that you would like to buy';
         if(txt)
             tip.attr('data-original-title',txt);
 
@@ -70,10 +81,28 @@ $(document).ready(function(){
     // Detect any amount change and format as valid number
     $('#amount').change(function(e){
         var amt = String($(this).val()).replace(/[^0-9.]/g,''),
-            val = $('#available').val(),
-            fmt = (FW.ASSET_INFO.divisible) ? '0,0.00000000' : '0,0';
-        if(val)
-            fmt = (val.indexOf('.')!=-1) ? '0,0.00000000' : '0,0';
+            fmt = (FW.ASSET_INFO.divisible) ? '0,0.00000000' : '0,0',
+            o   = FW.DIALOG_DATA;
+        // Force the amount to an increment of what the dispenser is selling
+        if(type=='dispenser-buy'){
+            var amt = numeral(amt).value(),
+                min = numeral(o.give_quantity).value(),
+                max = numeral(o.give_remaining).value(),
+                sat = numeral(o.satoshirate).value();
+            // Force minimum quantity to dispenser give amount
+            if(amt < min)
+                amt = min;
+            // Force maximum quantity to what is available in the dispenser
+            if(amt > max)
+                amt = max;
+            // Force quantity to a multiple of what the dispenser is offering
+            if(amt % min && amt < max)
+                amt = (amt - (amt % min));
+            // Update the BTC amount to be based off the quantity
+            var btc = numeral((amt / min) * sat).format('0,0.00000000');
+            $('#btc-amount').val(btc);
+            updateBTCValue(btc);
+        }
         $(this).val(numeral(amt).format(fmt));
         updateSendValue(amt);
     });
@@ -100,7 +129,10 @@ $(document).ready(function(){
     // When user clicks 'Max' button, set amount to max available
     $('#amount-max').click($.debounce(100,function(e){
         var max = String($('#available').val()).replace(/[^0-9.,]/g,'');
-        $('#amount').val(max);
+        // For dispenser buys, force max to be max available in dispenser
+        if(type=='dispenser-buy')
+            max = FW.DIALOG_DATA.give_remaining;
+        $('#amount').val(max).change();
         // If fiat field is not disabled, set fiat value as well
         if(! $('#amount-value').prop('disabled')){
             var max = String($('#available-value').val()).replace(/[^0-9.,]/g,'');

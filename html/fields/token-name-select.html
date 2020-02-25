@@ -12,6 +12,10 @@
 
 $(document).ready(function(){
 
+    // Get the current form type and tooltip
+    var type = getFormType(),
+        tip  = $('#token-name-select-tooltip');
+
     // Stash current price info on BTC and XCP
     btc_info = getAssetPrice('BTC',true),
     xcp_info = getAssetPrice('XCP',true);
@@ -20,11 +24,23 @@ $(document).ready(function(){
     var balances = getAddressBalance(FW.WALLET_ADDRESS),
         html     = '',
         el       = $('#token-name-select');
-    if(balances && balances.data){
-        balances.data.forEach(function(item){
-            var asset = (item.asset_longname && item.asset_longname!='') ? item.asset_longname : item.asset;
-            html += '<option data-content="<img src=\'' + FW.XCHAIN_API + '/icon/' + item.asset + '.png\' class=\'fw-icon-20 margin-right-5\'>' + asset + '">' + asset + '</option>';
-        });
+    // Force "BTC" to be the only option for burning
+    if(type=='burn'){
+        html += '<option data-content="<img src=\'' + FW.XCHAIN_API + '/icon/BTC.png\' class=\'fw-icon-20 margin-right-5\'>BTC">BTC</option>';
+    } else if(type=='dispenser-buy'){
+        var o = FW.DIALOG_DATA;
+        html += '<option data-content="<img src=\'' + FW.XCHAIN_API + '/icon/' + o.asset + '.png\' class=\'fw-icon-20 margin-right-5\'>' + o.name +'">' + o.name + '</option>';
+    } else {
+        if(balances && balances.data){
+            balances.data.forEach(function(item){
+                // Skip BTC in some cases
+                if(item.asset=='BTC' && (type=='destroy'||type=='dispenser'))
+                    return;
+                var asset = (item.asset_longname && item.asset_longname!='') ? item.asset_longname : item.asset;
+                html += '<option data-content="<img src=\'' + FW.XCHAIN_API + '/icon/' + item.asset + '.png\' class=\'fw-icon-20 margin-right-5\'>' + asset + '">' + asset + '</option>';
+            });
+        }
+
     }
     el.html(html);
     el.selectpicker({ width: '100%' });
@@ -33,16 +49,13 @@ $(document).ready(function(){
     if(typeof updateAvailableQuantity === 'function')
         updateAvailableQuantity();
 
-    // Get the current form type and tooltip
-    var type = getFormType(),
-        tip  = $('#token-name-select-tooltip');
-
     // Change the look/feel of the form based on form type
     if(type=='dividend'){
         $('#token-name-select-label').text('Dividend');
         $('#token-name-select').attr('name','dividend');
-    // } else if(type=='issue-supply'){
-    //     // do something else here
+    } else if(['burn','dispenser-buy'].indexOf(type)!=-1){
+        $('#token-name-select').prop('disabled',true);
+        $('#token-name-select');
     }
 
     // Wait a brief moment to allow things to initialize
@@ -54,6 +67,14 @@ $(document).ready(function(){
             txt = 'This is the name of the token which you would like to send';
         if(type=='dividend')
             txt = 'This is the name of the token which you would like to pay out as a dividend';
+        if(type=='burn')
+            txt = 'This is the name of the token which you would like to burn';
+        if(type=='destroy')
+            txt = 'This is the name of the token which you would like to destroy';
+        if(type=='dispenser')
+            txt = 'This is the name of the token which you would like to use in a dispenser';
+        if(type=='dispenser-buy')
+            txt = 'This is the name of the token which you would like to buy';
         if(txt)
             tip.attr('data-original-title',txt);
 
@@ -73,8 +94,12 @@ $(document).ready(function(){
             // Handle enabling/disabling the fiat field based on if we detect some estimated BTC value
             if(o.estimated_value.btc=='0.00000000'){
                 $('#amount-value').prop('disabled',true);
+                $('#escrow-amount-value').prop('disabled',true);
+                $('#give-amount-value').prop('disabled',true);
             } else {
                 $('#amount-value').prop('disabled',false);
+                $('#escrow-amount-value').prop('disabled',false);
+                $('#give-amount-value').prop('disabled',false);
             }
         }
         // If this is BTC, hardcode the values and skip getting asset info

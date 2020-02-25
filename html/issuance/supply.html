@@ -102,7 +102,7 @@ $(document).ready(function(){
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-issue-supply');
-                    dialogMessage('<i class="fa fa-lg fa-check"></i> Issue Supply Successfull', '<center>Your issuance has been broadcast to the network and your additional supply should be available shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Issue Supply Successful', '<center>Your issuance has been broadcast to the network and your additional supply should be available shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }

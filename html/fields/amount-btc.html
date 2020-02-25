@@ -1,0 +1,112 @@
+<!-- BTC Amount Field -->
+<label class="col-sm-3 control-label text-left" for="btc-amount">
+    BTC Amount
+    <a href="#" data-toggle="tooltip" title='This is the amount that you would like to charge per dispense' class="pull-right" id="btc-amount-tooltip"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>
+<div class="col-sm-9">
+    <input type="text" class="form-control pull-left" name="btc-amount" id="btc-amount" placeholder="0.00000000"  data-minlength="1" required  style="width:223px">
+    <div class="input-group pull-right" style="width:180px" id="btc-amount-value-wrapper">
+        <a class="input-group-addon"><i class="fa fa-usd"></i></a>
+        <input type="text" class="form-control" name="value" id="btc-amount-value" placeholder="0.00" >
+    </div>
+</div>
+
+<script>
+
+// Function to calculate and set fiat value based on asset amount
+function updateBTCValue(amt){
+    var val = numeral(amt).value() * btc_info.price_usd;
+    if(!isFinite(val))
+        val = 0;
+    $('#btc-amount-value').val(numeral(val).format('0,0.00'));
+}
+
+// Function to calculate and display asset amount based on fiat value
+function updateBTCAmount(val){
+    var amt = (numeral(val).value() / btc_info.price_usd);
+    if(!isFinite(amt))
+        amt = 0;
+    $('#btc-amount').val(numeral(amt).format('0,0.00000000'));
+}
+
+$(document).ready(function(){
+
+    // Stash current price info on BTC and XCP
+    var btc_info = getAssetPrice('BTC',true);
+        xcp_info = getAssetPrice('XCP',true);
+        type     = getFormType(),
+        dust_sat = 5430,
+        tip      = $('#btc-amount-tooltip');
+
+    // Set initial value 
+    if(type=='dispenser-buy'){
+        $('#btc-amount').val(FW.DIALOG_DATA.satoshirate);
+    }
+
+    // Wait a brief moment to allow things to initialize
+    setTimeout(function(){
+
+        // Change toolip text based on form type 
+        var txt = false;
+        if(type=='dispenser')
+            txt = 'This is the amount that you would like to charge per dispense';
+        if(type=='dispenser-buy')
+            txt = 'This is the amount of BTC that this purchase will cost';
+        if(txt)
+            tip.attr('data-original-title',txt);
+
+    },750);
+
+
+
+    // Detect any amount change and format as valid number
+    $('#btc-amount').change(function(e){
+        var amt = String($(this).val()).replace(/[^0-9.]/g,''),
+            o   = FW.DIALOG_DATA;
+        // Force the amount to an increment of what the dispenser is selling
+        if(type=='dispenser-buy'){
+            var amt = numeral(amt).value(),
+                min = numeral(o.give_quantity).value(),
+                max = numeral(o.give_remaining).value(),
+                sat = numeral(o.satoshirate).value(),
+            amount = (amt / sat) * min;
+            // Force minimum quantity to dispenser give amount
+            if(amount < min)
+                amount = min;
+            // Force maximum quantity to what is available in the dispenser
+            if(amount > max)
+                amount = max;
+            // Force quantity to a multiple of what the dispenser is offering
+            if(amount % min && amt < max)
+                amount = (amount - (amount % min));
+            amt = (amount / min) * sat;
+            // Update the dispenser buy amount to match what they should get from a dispenser
+            // Fire the change event after update to trigger any additional amount
+            $('#amount').val(numeral(amount).format('0,0.00000000'));
+        }
+        $(this).val(numeral(amt).format('0,0.00000000'));
+        updateBTCValue(amt);
+    });
+
+    // Calculate the fiat value as the user types the amount
+    $('#btc-amount').keyup($.debounce(100,function(e){
+        var amt = String($(this).val()).replace(/[^0-9.]/g,'');
+        updateBTCValue(amt);
+    }));
+
+    // Make sure fiat value is in correct format
+    $('#btc-amount-value').change(function(e){
+        var val = String($(this).val()).replace(/[^0-9.]/g,'');
+        $(this).val(numeral(val).format('0,0.00'));
+        updateBTCAmount(val);
+    });
+
+    // Calculate the crypto value as the user types the fiat amount
+    $('#btc-amount-value').keyup($.debounce(100,function(e){
+        var amt = String($(this).val()).replace(/[^0-9.]/g,'');
+        updateBTCAmount(amt);
+    }));
+
+
+});
+</script>

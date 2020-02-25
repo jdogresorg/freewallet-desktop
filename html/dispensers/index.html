@@ -1,0 +1,295 @@
+<!-- Dispensers Lists -->
+<div class="container-fluid" id="dispensers-lists">
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="row">
+                <div class="col-sm-11 col-md-11">
+                    <ul class="nav nav-tabs nav-left nav-tabs-theme" id="dispensers-tabs">
+                        <li class="tab active" data-asset="my-dispensers">
+                            <a href="#my-dispensers" data-toggle="tab" aria-expanded="true">
+                                <div style="display:inline-block; height:21px"><i class="fa fa-lg fa-arrows-h"></i></div>  My Dispensers
+                            </a>
+                        </li>
+                        <li id="dispensers-last-tab">
+                            <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
+                                <i class="fa fa-lg fa-list"></i> More <span class="caret"></span>
+                            </a>
+                            <ul class="dropdown-menu" id="dispensers-tabs-more">
+                                <!-- Tabs get inserted here -->
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-sm-1 col-md-1">
+                    <div class="dropdown left-dropdown-menu pull-right" id="dispensers-settings">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                            <i class="fa fa-lg fa-cog"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-left">
+                            <div class="dropdown-menu-header">Actions</div>
+                            <li><a href="#" id="btn-add"><i class="fa fa-lg fa-plus-circle"></i> Add Dispenser Watchlist</a></li>
+                            <li><a href="#" id="btn-create"><i class="fa fa-lg fa-arrows-h"></i> Create Dispenser</a></li>
+                            <li><a href="#" id="btn-refresh"><i class="fa fa-lg fa-refresh"></i> Refresh Dispenser Lists</a></li>
+                            <div class="dropdown-menu-header">View Options</div>
+                            <div class="dropdown-checkboxes">
+                                <li class="checkbox">
+                                    <label><input type="checkbox" name="options-closed" value="1"><i class="fa fa-lg fa-ban"></i> Hide Closed</label>
+                                </li>
+                            </div>
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-content clear-both" id="dispensers-tabs-content">
+                <!-- Tab content get inserted here -->
+
+                <!-- My Dispensers -->
+                <div class="tab-pane active" id="my-dispensers">
+                    <div class="panel panel-default table-responsive">
+                        <table class="datatable table table-striped cell-border table-hover table-condensed text-right" width="100%" id="my-dispensers-table">
+                        <thead>
+                          <tr class="info text-right">
+                              <th>Asset</th>
+                              <th>Escrowed</th>
+                              <th>Give Amount</th>
+                              <th>Give Remaining</th>
+                              <th>BTC Price</th>
+                              <th>Status</th>
+                              <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+∂
+<script>
+
+
+
+
+// Define datatables config used on this page
+FW.DISPENSERS_DATATABLE_CONFIG = {
+    dom: '<"datatable-options text-center"<"pull-left"><"pull-right"i>p>t',
+    destroy: true, // automatically destroy and re-create this datatable if it has already been initialized
+    deferRender: true,
+    pageLength: getDispensersRowCount(),
+    pagingType: "full",
+    autoWidth: false,
+    language: {
+        lengthMenu: "_MENU_ per page",
+        zeroRecords: "No dispensers found",
+        info: "_TOTAL_ results",
+        info: "Displaying _START_ - _END_ of _TOTAL_",
+        infoEmpty: "No dispensers found",
+        paginate: {
+            first: "<i class='fa fa-chevron-left'></i><i class='fa fa-chevron-left'></i>",
+            previous: "<i class='fa fa-chevron-left'></i>",
+            next: "<i class='fa fa-chevron-right'></i>",
+            last: "<i class='fa fa-chevron-right'></i><i class='fa fa-chevron-right'></i>"
+        }
+    },
+    columns: [
+        { className: "text-left" },
+        null,
+        null,
+        null,
+        null,
+        null,
+        {sortable: false}
+    ],
+    // Callback called whenever the screen is table drawn
+    drawCallback: function( settings ){
+        var table  = $(this).DataTable(),
+            o      = table.page.info(),
+            total  = o.recordsDisplay,
+            length = o.length,
+            stop   = o.start + length,
+            page   = stop / length,
+            pages  = total / length;
+        if(pages > parseInt(pages))
+            pages = parseInt(pages) + 1;
+        // Set table title
+        // $(this).closest('.panel').find('.datatable-options .pull-left').html('<i class="fa fa-lg fa-arrows-h"></i> Dispensers');
+        // Add 'Page X of Y' in between previous/next buttons
+        var txt = '&nbsp;&nbsp;Page ' + numeral(page).format('0,0') + ' of ' + numeral(pages).format('0,0') + '&nbsp;&nbsp;';
+        $(this).closest('.panel').find('.datatable-options .paginate_button.previous').after(txt);
+
+    },
+    // Callback called whenever a row is created
+    createdRow: function( row, data, idx ){
+        var fmt  = (String(data[1]).indexOf('.')==-1) ? '0,0' : '0,0.00000000',
+            id   = $(this).attr('id'),
+            name = data[0],
+            html = '';
+        // Save tx hash in element so we can easily reference when user clicks to launch dispenser url in separate window
+        $(row).attr('data', data);
+        // Display Asset or address name and make it clickable
+        if(id=='my-dispensers-table'){
+            var [name, asset] = data[0].split('|');
+            html = '<img src="' + FW.XCHAIN_API + '/icon/' + asset + '.png" class="fw-icon-20 pull-left">&nbsp;';
+        }
+        html += '<a href="#" class="dispenser-link">' + name + '</a>';
+        $('td', row).eq(0).html(html);
+        $('td', row).eq(1).text(numeral(data[1]).format(fmt));
+        $('td', row).eq(2).text(numeral(data[2]).format(fmt));
+        $('td', row).eq(3).text(numeral(data[3]).format(fmt));
+        $('td', row).eq(4).text(numeral(data[4]).format('0,0.00000000'));
+        var status = (data[5]==10) ? 'Closed' : 'Open',
+            cls    = (data[5]==10) ? 'red' : 'green',
+            html   = '<span class="' + cls + '">' + status + '</span>&nbsp;';
+        $('td', row).eq(5).html(html);
+        html = '';
+        if(id=='my-dispensers-table'){
+            if(status=='Open')
+                html = '<div class="pull-right btn-xs btn-danger btn-close" data-toggle="tooltip" data-placement="left" title="Close Dispenser" data-tx="' + data[7] + '"><i class="fa fa-ban"></i>&nbsp;Close</div>';
+        } else {
+            if(status=='Open')
+                html = '<div class="pull-right btn-xs btn-success btn-buy" data-toggle="tooltip" data-placement="left" title="Buy Now" data-tx="' + data[7] + '"><i class="fa fa-btc"></i>&nbsp;Buy&nbsp;Now</div>';
+        }
+        $('td', row).eq(6).html(html);
+    }
+};
+
+$(document).ready(function(){
+
+    // Populate base market tables/tabs
+    FW.BASE_DISPENSERS.forEach(function(asset){ addDispenserWatchlist(asset); });
+
+    // // Handle loading any data from FW.DIALOG_DATA
+    var data = FW.DIALOG_DATA;
+    if(data.token){
+        var asset = data.token;
+        if(FW.BASE_DISPENSERS.indexOf(asset)==-1){
+            // Add the market to the view, set the tab as active, and update the markets data/view
+            addDispenserWatchlist(asset);
+            FW.BASE_DISPENSERS.push(asset);
+            ls.setItem('walletDispensers', JSON.stringify(FW.BASE_DISPENSERS));
+        }
+        $('#dispensers-tabs a[href="#' + asset + '"]').tab('show');
+    }
+
+    // Reset dialog data so we don't reuse data on form in the future
+    FW.DIALOG_DATA = {};
+
+    // Initialize the datatables
+    $('.datatable').DataTable(FW.DISPENSERS_DATATABLE_CONFIG);
+
+    // Handle updating the dispeners list and displaying them
+    updateDispensersLists();
+
+    // Size the tabs to fit on screen and move any extras to the 'more' menu
+    autoCollapseWatchlistTabs();
+
+    // Initialize the 'View Options'
+    if(FW.DISPENSER_OPTIONS.indexOf(1)!=-1) $(".checkbox [name='options-closed']").prop('checked', true);
+
+    // // Handle updating view when user changes the viewing options
+    $('.dropdown-checkboxes .checkbox input').change($.debounce(100,function(e){ 
+        var arr = [];
+        if($(".checkbox [name='options-closed']").is(':checked')) arr.push(1);
+        FW.DISPENSER_OPTIONS = arr;
+        ls.setItem('walletDispenserOptions',JSON.stringify(FW.DISPENSER_OPTIONS));
+        updateDispensersLists();
+    }));
+
+    // Handle refreshing dispenser data and redrawing screen when user clicks 'Refresh' button
+    $('#btn-refresh').click($.debounce(100,function(e){ updateDispensersLists(true); }));
+
+    // Handle displaying 'Add Dispenser Watchlist' dialog box when user clicks 'Add' button
+    $('#btn-add').click($.debounce(100,function(e){ dialogAddDispenserWatchlist(); }));
+
+    // Handle displaying 'Create Dispenser' dialog box when user clicks 'Add' button
+    $('#btn-create').click($.debounce(100,function(e){ dialogDispenser(); }));
+
+    // Prevent settings dropdown from collapsing while toggling viewing options
+    $('#dispensers-settings .dropdown-menu').click(function(e){
+        if(!$('li > a').is(e.target))
+           e.stopPropagation();
+    });
+
+    // When user clicks dispenser name, launch dispenser in external window
+    $('#dispensers-lists').on('click', 'a.dispenser-link', $.debounce(100,function(e){ 
+        var data = String($(e.target).closest('tr').attr('data')).split(','),
+            url  = FW.XCHAIN_API + '/tx/' + data[6];
+        if(typeof nw !== 'undefined'){
+            nw.Shell.openExternal(url);
+        } else {
+            var win = window.open(url, '_blank');
+        }
+    }));
+
+    // When user clicks dispenser name, launch dispenser in external window
+    $('#dispensers-lists').on('click', '.btn-close', $.debounce(100,function(e){ 
+        var data = String($(e.target).closest('tr').attr('data')).split(','),
+            [name, asset] = String(data[0]).split('|');
+        FW.DIALOG_DATA = {
+            name: name,
+            asset: asset
+        };
+        dialogCloseDispenser();
+        // openMarket(market, false);
+    }));
+
+
+    // When user clicks buy button, launch Buy from dispenser dialog box
+    $('#dispensers-lists').on('click', '.btn-buy', $.debounce(100,function(e){ 
+        var data = String($(e.target).closest('tr').attr('data')).split(','),
+            [name, asset] = String(data[7]).split('|');
+        FW.DIALOG_DATA = {
+            name: name,
+            asset: asset,
+            give_quantity: data[2],
+            give_remaining: data[3],
+            satoshirate: data[4],
+            destination: data[8]
+        };
+        dialogDispenserBuy();
+    }));
+
+    // Make sure only one tab is active at a time (fixes issue where multiple items in the 'More' menu can appear as active)
+    $('#dispensers-lists').on('click', 'li.tab', $.debounce(100,function(e){ 
+        $('#dispensers-lists li.tab').removeClass('active');
+        $(e.target).closest('li.tab').addClass('active');
+    }));
+
+    // Define placeholders
+    var lastWidth  = 0,
+        lastHeight = 0,
+        lastRows   = 0;
+
+    // Unbind the event to prevent duplicate listeners
+    $(window).unbind('resize');
+    // Detect any window resizes and resize datatables to fit 
+    $(window).resize($.debounce(10,function(e){
+        var win    = $(window),
+            height = win.height(),
+            width  = win.width();
+        // Fit max amount of tabs on screen (horizontally)
+        if(width!=lastWidth)
+            autoCollapseWatchlistTabs();            
+        // Try to fit max amount of rows on screen (vertically)
+        if(height!=lastHeight){
+            var rows = getDispensersRowCount();
+            if(rows!=lastRows){
+                lastRows = rows;
+                $('.datatable').each(function(idx, el){
+                    $(this).DataTable().page.len(rows).draw();
+                });
+            }
+        }
+        lastWidth  = width;
+        lastHeight = height;
+    }));
+
+});
+
+</script>

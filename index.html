@@ -39,27 +39,39 @@
                     <li><a href="#" id="balances"><i class="fa fa-lg fa-user"></i> Balances</a></li>
                     <li><a href="#" id="history"><i class="fa fa-lg fa-list"></i> History</a></li>
                     <li><a href="#" id="exchange"><i class="fa fa-lg fa-exchange"></i> Exchange</a></li>
-                    <li><a href="#" id="betting"><i class="fa fa-lg fa-bullseye"></i> Betting</a></li>
+                    <!-- <li><a href="#" id="betting"><i class="fa fa-lg fa-bullseye"></i> Betting</a></li> -->
+                    <li><a href="#" id="dispensers"><i class="fa fa-lg fa-arrows-h"></i> Dispensers</a></li>
+
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" id="actions-dropdown" data-toggle="dropdown" data-placement="bottom" title="Actions"><i class="fa fa-lg fa-list"></i></a>
                         <ul class="dropdown-menu" role="menu">
                             <div class="dropdown-menu-header">Actions</div>
-                            <li><a href="#" id="action-change-address"><i class="fa fa-lg fa-edit"></i> Change Address</a></li>
-                            <li><a href="#" id="action-view-address"><i class="fa fa-lg fa-qrcode"></i> View Address</a></li>
-                            <li><a href="#" id="action-view-privkey"><i class="fa fa-lg fa-user-secret"></i> View Private Key</a></li>
                             <li><a href="#" id="action-send"><i class="fa fa-lg fa-send"></i> Send Funds</a></li>
                             <li><a href="#" id="action-sign-message"><i class="fa fa-lg fa-envelope"></i> Sign Message</a></li>
                             <li><a href="#" id="action-sign-transaction"><i class="fa fa-lg fa-file-text"></i> Sign Transaction</a></li>
                             <li><a href="#" id="action-dividend"><i class="fa fa-lg fa-sitemap"></i> Pay Dividends</a></li>
                             <li><a href="#" id="action-broadcast-message"><i class="fa fa-lg fa-bullhorn"></i> Broadcast Message</a></li>
+                            <li><a href="#" id="action-burn"><i class="fa fa-lg fa-fire"></i> Burn Funds</a></li>
+                            <li><a href="#" id="action-dispenser"><i class="fa fa-lg fa-arrows-h"></i> Create Dispenser</a></li>
                             <div id="header-token-actions" class="dropdown-menu-header">Token Actions</div>
                             <li><a href="#" id="action-asset-create"><i class="fa fa-lg fa-plus-circle"></i> Create a Token</a></li>
                             <li><a href="#" id="action-asset-description"><i class="fa fa-lg fa-edit"></i> Change Description</a></li>
                             <li><a href="#" id="action-asset-supply"><i class="fa fa-lg fa-bank"></i> Issue Supply</a></li>
+                            <li><a href="#" id="action-asset-destroy"><i class="fa fa-lg fa-trash"></i> Destroy Supply</a></li>
                             <li><a href="#" id="action-asset-transfer"><i class="fa fa-lg fa-exchange"></i> Transfer Ownership</a></li>
                             <li><a href="#" id="action-asset-lock"><i class="fa fa-lg fa-lock"></i> Lock Token Supply</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" id="address-dropdown" data-toggle="dropdown" data-placement="bottom" title="Address"><i class="fa fa-lg fa-qrcode"></i></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <div class="dropdown-menu-header">Address Actions</div>
+                            <li><a href="#" id="action-change-address"><i class="fa fa-lg fa-edit"></i> Change Address</a></li>
+                            <li><a href="#" id="action-view-address"><i class="fa fa-lg fa-qrcode"></i> View Address</a></li>
+                            <li><a href="#" id="action-sweep"><i class="fa fa-lg fa-truck"></i> Sweep Address</a></li>
+                            <li><a href="#" id="action-view-privkey"><i class="fa fa-lg fa-user-secret"></i> View Private Key</a></li>
                         </ul>
                     </li>
                     <li><a href="#" id="settings"  data-toggle="tooltip" data-placement="bottom" title="Settings"><i class="fa fa-lg fa-cogs"></i></a></li>
@@ -137,8 +149,10 @@
     <script type="text/javascript" src="js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="js/mnemonic.js"></script>
     <script type="text/javascript" src="js/sanitizer.js"></script>
+    <script type="text/javascript" src="js/buffer.min.js"></script>
 
     <!-- Bitcore includes -->
+    <script type="text/javascript" src="js/bitcoinjs-lib.min.js"></script>
     <script type="text/javascript" src="js/bitcore-lib.min.js"></script>
     <script type="text/javascript" src="js/bitcore-message.min.js"></script>
     <script type="text/javascript" src="js/util.bitcore.js"></script>
@@ -156,6 +170,7 @@
                 'balances',
                 'history',
                 'betting',
+                'dispensers',
                 'exchange',
                 'settings'
             ];
@@ -214,14 +229,23 @@
                 $(this).tooltip('hide');
             });
 
+            // Handle hiding/showing the tooltip when user hovers over the actions icon
+            $('#address-dropdown').hover(function(){
+                $(this).tooltip('show');
+            },function(){
+                $(this).tooltip('hide');
+            });
+
             // Handle clicks on items in the action menu
             $('#action-change-address').click($.debounce(100,function(e){       dialogChangeAddress();      }));
             $('#action-view-address').click($.debounce(100,function(e){         dialogViewAddress();        }));
+            $('#action-sweep').click($.debounce(100,function(e){                dialogSweep();              }));
             $('#action-view-privkey').click($.debounce(100,function(e){         dialogViewPrivateKey();     }));
             $('#action-send').click($.debounce(100,function(e){                 dialogSend();               }));
             $('#action-asset-create').click($.debounce(100,function(e){         dialogCreateToken();        }));
             $('#action-asset-description').click($.debounce(100,function(e){    dialogChangeDescription();  }));
             $('#action-asset-supply').click($.debounce(100,function(e){         dialogIssueSupply();        }));
+            $('#action-asset-destroy').click($.debounce(100,function(e){        dialogDestroy();            }));
             $('#action-asset-transfer').click($.debounce(100,function(e){       dialogTransferOwnership();  }));
             $('#action-asset-lock').click($.debounce(100,function(e){           dialogLockSupply();         }));
             $('#action-sign-message').click($.debounce(100,function(e){         dialogSignMessage();        }));
@@ -229,6 +253,8 @@
             $('#action-dividend').click($.debounce(100,function(e){             dialogPayDividend();        }));
             $('#action-broadcast-message').click($.debounce(100,function(e){    dialogBroadcastMessage()    }));
             $('#action-about').click($.debounce(100,function(e){                dialogAbout();              }));
+            $('#action-burn').click($.debounce(100,function(e){                 dialogBurn();               }));
+            $('#action-dispenser').click($.debounce(100,function(e){            dialogDispenser();          }));
 
             // Detect when running in nwjs and setup some additional listeners
             if(is_nwjs()){
@@ -284,7 +310,6 @@
             // var str = 'counterparty:?action=signtx&tx=your-unsigned-transaction-here';
             // var str = "freewallet:?action=import&device=trezor&network=mainnet&data=%7B%2244'/0'/0'/0'/0%22:%221EMV8Xz6odQrjzRExPiTZrLcFDZ3fr3Viu%22,%2244'/0'/0'/0'/1%22:%221PMRoTp11MLPmayCDSkpdhD9JqCp85ZLug%22,%2244'/0'/0'/0'/2%22:%221KV364dENq1j8ZjStevytHjzihAxkUQbwG%22,%2244'/0'/0'/0'/3%22:%221LSgyGwf6Tbj1GfgnbcaLMQ2K1sJ14hS5f%22%7D"
             // processURIData(str);
-
         });
     </script>
 

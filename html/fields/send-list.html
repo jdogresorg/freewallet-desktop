@@ -1,0 +1,82 @@
+<!-- Send List Field -->
+<label for="send-list" class="col-sm-3 control-label text-left">
+    Send List
+    <a href="#" data-toggle="tooltip" title='This is a CSV separated list of recipients who will be receiving funds from you' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>
+<div class="col-sm-9">
+    <div style="margin-top: 7px;font-style: italic;"><b>List Format:</b> Address, Asset, Quantity, Memo (optional)</div>
+</div>
+<div class="col-sm-12">
+    <textarea type="text" class="form-control lined" id="send-list" name="send-list" placeholder="Address, Asset, Quantity, Memo (optional)" data-minlength="1" style="height: 194px;" required rows="9"></textarea>
+</div>
+
+<script>
+$(document).ready(function(){
+
+    // Verify list format is good after user edits list
+    $('#send-list').change(function(){
+        // Remove error class from any 
+        $('#send-list').closest('.form-group').removeClass('has-error has-danger');
+
+        var lines  = String($(this).val()).split('\n'),
+            errors = [],
+            value  = '',
+            list   = []
+        lines.forEach(function(line, idx){
+            var info     = line.trim().split(','),
+                address  = String(info[0]).trim(),
+                asset    = (info[1]) ? String(info[1]).trim() : '',
+                quantity = (info[2]) ? String(info[2]).trim() : '',
+                memo     = (info[3]) ? String(info[3]).trim() : '';
+            // Throw error on missing list data
+            if(address=='' || asset=='' || quantity==''){
+                // Skip empty lines with no data rather than throwing an error
+                if(address=='' && asset=='' && quantity==''){
+                    return true;
+                } else {
+                    errors.push('Invalid list format on line ' + (idx+1) + '!');
+                }
+            } else {
+                // Verify address is valid
+                if(!isValidAddress(address))
+                    errors.push('Invalid address on line ' + (idx+1) + '!');
+                // Force base asset name to uppercase
+                var arr = asset.split('.');
+                arr[0] = String(arr[0]).toUpperCase();
+                asset = arr.join('.');
+                // Force quantity to correct format
+                var fmt = (String(quantity).indexOf('.')==-1) ? '0' : '0.00000000';
+                quantity = numeral(quantity).format(fmt);
+            }
+            // Update send list with properly formatted values
+            if(value!='')
+                value += "\n"
+            value += address + ', ' + asset + ', ' + quantity;
+            if(memo!='')
+                value += ', ' + memo;
+        });
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+            $('#send-list').closest('.form-group').addClass('has-error has-danger');
+        }
+        $('#send-list').val(value);
+    });
+
+    // Handle enabling memo for multi-send 
+    $('#send-type').change(function(){
+        var type = $(this).val();
+        var val = $('#token-name-select').val(),
+            el  = $('#memo');
+        // If this is BTC, hardcode the values and skip getting asset info
+        if(type=='single' && val=='BTC'){
+            // Disable the memo
+            el.attr('disabled', true);
+            el.val('');
+        } else {
+            el.attr('disabled', false);
+        }
+    });
+
+});
+</script>

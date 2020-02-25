@@ -1,14 +1,14 @@
 <!-- Send Funds Form -->
 <form class="form-horizontal" id="send-form" data-toggle="validator" role="form">
-    <ul  class="nav nav-tabs">
-        <li class="active"><a href="#send-simple" data-toggle="tab"><i class="fa fa-user"></i> Simple Send</a></li>
-        <li><a href="#send-multi" data-toggle="tab"><i class="fa fa-list"></i> Multi Send</a></li>
-        <li><a href="#send-group" data-toggle="tab"><i class="fa fa-users"></i> Group Send</a></li>
+    <input class="hidden" name="type" value="single" id="send-type">
+    <ul class="nav nav-tabs">
+        <li id="send-button-simple" class="active"><a href="#send-simple" data-toggle="tab" ><i class="fa fa-user"></i> Simple Send</a></li>
+        <li id="send-button-multiple"><a href="#send-multi" data-toggle="tab"><i class="fa fa-users"></i> Multi Send</a></li>
     </ul>
     <div class="tab-content clearfix">
 
         <!-- Simple Send -->
-        <div class="tab-pane active panel panel-default" id="send-simple">
+        <div class="tab-pane active panel panel-default">
             <div class="panel-body">
                 <div class="form-group" id="source-address-field">
                     <!-- Source Address Field -->
@@ -25,6 +25,9 @@
                 <div class="form-group" id="amount-field">
                     <!-- Amount Field -->
                 </div>
+                <div class="form-group" id="send-list-field" style="display:none;">
+                    <!-- Mult-Peer-Multi-Asset (MPMA) List -->
+                </div>
                 <div class="form-group" id="memo-field">
                     <!-- Memo Field -->
                 </div>
@@ -35,21 +38,6 @@
                 <div id="btn-cancel" class="btn btn-danger pull-right margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
             </div>
         </div>
-
-        <!-- Multi Send -->
-        <div class="tab-pane panel panel-default table-responsive" id="send-multi">
-            <div class="panel-body text-center">
-                Coming soon
-            </div>
-        </div>  
-
-        <!-- Grouped Send -->
-        <div class="tab-pane panel panel-default table-responsive" id="send-group">
-            <div class="panel-body text-center">
-                Coming soon
-            </div>
-        </div>  
-
     </div>
 
 </form>
@@ -66,7 +54,28 @@ $(document).ready(function(){
     $('#amount-field').load('html/fields/amount.html');
     $('#memo-field').load('html/fields/memo.html');
     $('#tx-fee-field').load('html/fields/tx-fee.html');
+    $('#send-list-field').load('html/fields/send-list.html');
 
+
+    $('#send-button-simple').click(function(){
+        $('#send-type').val('single').change();
+        $('#send-list-field').hide();
+        $('#destination-address-field').show();
+        $('#token-name-select-field').show();
+        $('#available-field').show();
+        $('#amount-field').show();
+        $('#memo-field').show();
+    });
+
+    $('#send-button-multiple').click(function(){
+        $('#send-type').val('multiple').change();
+        $('#send-list-field').show();
+        $('#destination-address-field').hide();
+        $('#token-name-select-field').hide();
+        $('#available-field').hide();
+        $('#amount-field').hide();
+        $('#memo-field').hide();
+    });
     // Delay initializing some fields to give things a chance to load
     setTimeout(function(){
 
@@ -115,64 +124,116 @@ $(document).ready(function(){
         e.preventDefault(); 
         // Get object with form values
         var vals   = array2Object($(this).serializeArray()),
+            type   = vals.type,
             errors = [];
         console.log('vals=',vals);
         // Remove error indicators from any fields 
         $('.form-group').removeClass('has-error has-danger');
-        // Verify we have a valid address
-        if(!isValidAddress(vals.destination)){
-            errors.push('You must enter a valid destination address!');
-            $('#destination-address').closest('.form-group').addClass('has-error has-danger');
+
+        // VALIDATION - Single Send
+        if(type=='single'){
+            // Verify we have a valid address
+            if(!isValidAddress(vals.destination)){
+                errors.push('You must enter a valid destination address!');
+                $('#destination-address').closest('.form-group').addClass('has-error has-danger');
+            }
+            // Verify we have a token name
+            if(typeof vals.name==='undefined'){
+                errors.push('You must select a token to send!');
+                $('#token-name-select').closest('.form-group').addClass('has-error has-danger');
+            }
+            // Verify we have valid amount 
+            if(numeral(vals.amount).value()==0){
+                errors.push('You must enter an amount which is greater than 0!');
+                $('#amount').closest('.form-group').addClass('has-error has-danger');
+            }
+            // Verify that the memo is below the max allowed characters
+            if(vals['memo'] && vals['memo']!=''){
+                var type = vals['memo-type'],
+                    max  = (type=='data') ? 68 : 34;
+                if(vals['memo'].length>max){
+                    errors.push('Maximum memo length for a ' + type + ' memo is ' + max + ' characters!');
+                    $('#memo').closest('.form-group').addClass('has-error has-danger');
+                }
+            }
         }
-        // Verify we have a token name
-        if(typeof vals.name==='undefined'){
-            errors.push('You must select a token to send!');
-            $('#token-name-select').closest('.form-group').addClass('has-error has-danger');
-        }
-        // Verify we have valid amount 
-        if(numeral(vals.amount).value()==0){
-            errors.push('You must enter an amount which is greater than 0!');
-            $('#amount').closest('.form-group').addClass('has-error has-danger');
+        // VALIDATION - Multi-Send (MPMA)
+        if(type=='multiple'){
+            if(vals['send-list']==''){
+                errors.push('You must enter a list of addresses, assets, and quantities!');
+                $('#send-list').closest('.form-group').addClass('has-error has-danger');
+            }
         }
         // Verify we have valid fee amount 
         if(numeral(vals['fee-amount']).value()==0){
             errors.push('You must enter a fee which is greater than 0.00000000!');
             $('#fee-amount').closest('.form-group').addClass('has-error has-danger');
         }
-        // Verify that the memo is below the max allowed characters
-        if(vals['memo'] && vals['memo']!=''){
-            var type = vals['memo-type'],
-                max  = (type=='data') ? 68 : 34;
-            if(vals['memo'].length>max){
-                errors.push('Maximum memo length for a ' + type + ' memo is ' + max + ' characters!');
-                $('#memo').closest('.form-group').addClass('has-error has-danger');
-            }
-        }
         // Display any error message
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
+            var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
+                is_data = (vals['memo-type']=='data') ? true : false;
             // Callback to run after broadcasting send
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-send');
-                    dialogMessage('<i class="fa fa-lg fa-check"></i> Send Successfull', '<center>Your send has been broadcast to the network and should complete shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Send Successful', '<center>Your send has been broadcast to the network and should complete shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
-            // Callback to run if user confirms action
-            var confirmCb = function(){
-                var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                    amt_sat = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).format('0') : numeral(vals.amount).format('0'),
-                    fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
-                    is_data = (vals['memo-type']=='data') ? true : false;
-                cpSend(network, vals.source, vals.destination, vals.memo, is_data, vals.name, amt_sat, fee_sat, doneCb);
+            // Handle processing a single send
+            if(type=='single'){
+                // Callback to run if user confirms action
+                var confirmCb = function(){
+                    var amt_sat = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).format('0') : numeral(vals.amount).format('0');
+                    cpSend(network, vals.source, vals.destination, vals.memo, is_data, vals.name, amt_sat, fee_sat, doneCb);
+                }
+                // Confirm the action with the user
+                var title = '<img src="' + FW.XCHAIN_API + '/icon/' + FW.ASSET_INFO.asset + '.png" class="fw-icon-20 margin-right-5"> Confirm ' + vals.name + ' Send?';
+                var msg  = 'Send <b>' + vals.amount + ' ' + vals.name + '</b>';
+                    msg += ' <br/>to <b>' + vals.destination + '</b>';
+                dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
             }
-            // Confirm the action with the user
-            var title = '<img src="' + FW.XCHAIN_API + '/icon/' + FW.ASSET_INFO.asset + '.png" class="fw-icon-20 margin-right-5"> Confirm ' + vals.name + ' Send?';
-            var msg  = 'Send <b>' + vals.amount + ' ' + vals.name + '</b>';
-                msg += ' <br/>to <b>' + vals.destination + '</b>';
-            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+            // Handle processing multiple sends (MPMA)
+            if(type=='multiple'){
+                var sends        = String($('#send-list').val()).split("\n"),
+                    destinations = [],
+                    assets       = [],
+                    quantities   = [],
+                    memos        = [];
+                // Convert send lines into arrays to pass with API call
+                sends.forEach(function(send){
+                    var [destination, asset, quantity, memo] = String(send).split(',');
+                    destination = String(destination).trim();
+                    asset    = (asset) ? String(asset).trim() : '',
+                    quantity = (quantity) ? String(quantity).trim() : '',
+                    memo     = (memo) ? String(memo).trim().replace(/^"|"$/g, '') : ''; // Replace any enclosing double-quotes
+                    if(quantity.indexOf('.')!=-1){
+                        quantity = parseInt(numeral(quantity).multiply(100000000).value());
+                    } else {
+                        quantity = parseInt(quantity);
+                    }
+                    destinations.push(destination);
+                    assets.push(asset);
+                    quantities.push(quantity);
+                    memos.push(memo);
+                });
+                vals.destination = destinations;
+                vals.asset       = assets;
+                vals.quantity    = quantities;
+                // vals.memo        = memos;
+                // Callback to run if user confirms action
+                var confirmCb = function(){
+                    cpMultiSend(network, vals.source, vals.destination, vals.memo, vals.asset, vals.quantity, fee_sat, doneCb);
+                }
+                // Confirm the action with the user
+                var title = 'Confirm Send?';
+                var msg  = 'Are you sure you want to process the ' + sends.length + ' sends listed below?</b>';
+                dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+            }
 
         }
     });

@@ -607,9 +607,6 @@ li.history-list-received .history-list-amount {
 #send-form i.fa-question-circle-o {
     margin-top: 4px
 }
-#send-form label {
-    padding-right: 0px;
-}
 #send-form .tab-pane.panel {
     border-top: 0px;
     border-top-left-radius: 0px;
@@ -620,6 +617,12 @@ li.history-list-received .history-list-amount {
 #send-form .dropdown-menu {
     padding-top: 0px;
     padding-bottom: 0px;
+}
+#send-list {
+    height:145px;
+    white-space: nowrap;  
+    overflow: auto; 
+    margin-top: 10px
 }
 
 .ui-tooltip {
@@ -1075,4 +1078,50 @@ a.red:hover {
 }
 #markets-small .dropdown-menu {
     padding: 0px 0px;
+}
+
+#dispensers-list {
+    padding: 10px;
+    height: 100%;
+}
+#dispensers-searchbox {
+    width: 100%;
+}
+
+#dispensers-lists table.datatable thead th {
+    border-bottom: 1px solid #ddd;
+}
+#dispensers-lists table.dataTable.no-footer {
+    border-bottom: 0px !important;
+}
+#dispensers-lists {
+    padding: 10px;
+    height: 100%;
+}
+#dispensers-lists .dataTables_info {
+    color: #fff;
+    padding-top: 0px;
+}
+#dispensers-tabs-content .panel {
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+}
+#dispensers-tabs {
+    padding-top: 5px;
+}
+#dispensers-filter {
+    font-size: 11px;
+    padding: 3px 6px;
+}
+
+
+#markets .dataTables_wrapper th, 
+#markets .dataTables_wrapper td,
+#dispensers-lists .dataTables_wrapper th, 
+#dispensers-lists .dataTables_wrapper td {
+    max-width: 200px;
+    min-width: 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

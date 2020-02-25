@@ -128,7 +128,7 @@ $(document).ready(function(){
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-broadcast-message');
-                    dialogMessage('<i class="fa fa-lg fa-check"></i> Broadcast Successfull', '<center>Your broadcast has been sent to the network and should be included to a block shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Broadcast Successful', '<center>Your broadcast has been sent to the network and should be included to a block shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }

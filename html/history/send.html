@@ -77,7 +77,9 @@
                     $('#tx-index').text('-');
                 }
             }).fail(function(){
-                var net = (FW.WALLET_NETWORK==2) ? 'test3' : 'main';
+                // Request transaction info from blockcypher
+                var net = (FW.WALLET_NETWORK==2) ? 'test3' : 'main',
+                    net2 = (FW.WALLET_NETWORK==2) ? 'btc-testnet' : 'btc';
                 $.getJSON('https://api.blockcypher.com/v1/btc/' + net + '/txs/' + tx, function(o){
                     if(o.hash){
                         $('#source').html(o.inputs[0].addresses[0]);
@@ -89,6 +91,7 @@
                         $('#timestamp').html('<span data-livestamp='  + moment(o.confirmed,["YYYY-MM-DDTH:m:s"]).unix() + ' class="nowrap"></span>');
                         $('#block').html(numeral(o.block_height).format('0,0'));
                         $('#tx-index').text('-');
+                        $('#history-info-more').attr('href','https://live.blockcypher.com/' + net2 + '/tx/' + tx);
                     }
                 });
             });             

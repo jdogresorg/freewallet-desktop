@@ -545,7 +545,7 @@ $(document).ready(function(){
         $.fn.dataTable.tables( {visible: true, api: true} ).columns.adjust();
     });
 
-    // Handle detecting order cancellations and 
+    // Handle detecting order cancellations
     $('#open-orders').on('click', 'a.cancel-button', function(e){
         var tx = $(this).attr('data-tx');
         FW.DIALOG_DATA = {
@@ -707,54 +707,6 @@ $(document).ready(function(){
         });
 
     });
-
-    // // Handle validating the 'Buy' form
-    // $('#market-buy-form').on('submit', function(e){
-    //     e.preventDefault(); // Prevent normal form submission
-    //     // Get object with form values
-    //     var vals   = array2Object($(this).serializeArray()),
-    //         assets = String(FW.MARKET_NAME).split('/'),
-    //         asset1 = assets[0],
-    //         asset2 = assets[1],
-    //         errors = [];
-    //     console.log('caught form submit vals=',vals);
-    //     // Verify buy price/amount/total are greater than 0
-    //     if(numeral(vals['buy-price']).value()==0){
-    //         errors.push('You must enter a buy price which is greater than 0!');
-    //         $('#buy-price').closest('.form-group').addClass('has-error has-danger');
-    //     }
-    //     if(numeral(vals['buy-amount']).value()==0){
-    //         errors.push('You must enter a buy amount which is greater than 0!');
-    //         $('#buy-amount').closest('.form-group').addClass('has-error has-danger');
-    //     }
-    //     if(numeral(vals['buy-total']).value()==0){
-    //         errors.push('You must enter a total amount which is greater than 0!');
-    //         $('#buy-total').closest('.form-group').addClass('has-error has-danger');
-    //     }
-    //     console.log('asset1_div=',FW.ASSET1_DIVISIBLE);
-    //     console.log('asset2_div=',FW.ASSET2_DIVISIBLE);
-    //     // Verify that the amount is valid (amount = get)
-    //     if(!FW.ASSET1_DIVISIBLE && vals['buy-amount'].split('.')[1]!='00000000'){
-    //         errors.push('Your buy amount must be an integer!');
-    //         $('#buy-amount').closest('.form-group').addClass('has-error has-danger');
-    //     }
-    //     // Display any error message
-    //     if(errors.length){
-    //         dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
-    //     } else {
-    //         // Save data so it is easily available to the dialog box
-    //         FW.DIALOG_DATA = {
-    //             market: FW.MARKET_NAME,
-    //             type: 'Buy',
-    //             get_asset: asset1,
-    //             get_amount: vals['buy-amount'],
-    //             give_asset: asset2,
-    //             give_amount: vals['buy-total']
-    //         }
-    //         dialogOrder();
-    //     }
-    // });
-
 
     // Adjust the sidemenu panel to fit the parent panel
     resizeSidemenu();
