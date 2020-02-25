@@ -2,9 +2,6 @@ FreeWallet - Desktop Wallet
 ---
 FreeWallet is a free wallet which supports Bitcoin and Counterparty.
 
-If you would like to license this application please contact Jeremy Johnson <j-dog@j-dog.net>
-
-
 Build Notes
 ---
 The majority of the building is done via nw-builder :
