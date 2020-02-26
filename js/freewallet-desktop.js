@@ -3642,7 +3642,7 @@ function dialogUpdateAvailable(version){
                         plat = os.platform(),
                         arch = os.arch(),
                         file = 'FreeWallet.',
-                        url  = 'https://github.com/jdogresorg/freewallet/releases/download/v' + version + '/';
+                        url  = 'https://github.com/jdogresorg/freewallet-desktop/releases/download/v' + version + '/';
                     // Determine the correct file to download based off platform and architecture
                     if(plat=='darwin'){
                         file += 'osx64.dmg';
