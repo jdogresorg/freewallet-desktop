@@ -229,7 +229,7 @@ $(document).ready(function(){
             } else {
                 // Verify parent asset is in valid format
                 if(parts[0].length<4 || parts[0].length>12)
-                    errors.push('Parent token name must be between 4 and 14 characters!');
+                    errors.push('Parent token name must be between 4 and 12 characters!');
                 // Verify only contains A-Z
                 if(!/^[A-Z]+$/.test(parts[0]))
                     errors.push('Parent token name must only contain <b><i>upper-case alphabetical</i></b> characters!');
