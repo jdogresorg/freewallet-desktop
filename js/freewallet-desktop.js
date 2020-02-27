@@ -24,6 +24,9 @@ FW.WALLET_NETWORK = ls.getItem('walletNetwork') || 1;
 // Load latest network information (btc/xcp price, fee info, block info)
 FW.NETWORK_INFO =  JSON.parse(ls.getItem('networkInfo')) || {};
 
+// Wallet format (0=Counterwallet, 1=BIP39)
+FW.WALLET_FORMAT = ls.getItem('walletFormat') || 0;
+
 // Load current wallet address and address label
 FW.WALLET_ADDRESS       = ls.getItem('walletAddress') || null;
 FW.WALLET_ADDRESS_LABEL = ls.getItem('walletAddressLabel') || null;
@@ -247,6 +250,7 @@ function resetWallet(){
     ls.removeItem('walletAddresses');
     ls.removeItem('walletAddressLabel');
     ls.removeItem('walletBalances');
+    ls.removeItem('walletFormat');
     ls.removeItem('walletHistory');
     ls.removeItem('walletNetwork');
     ls.removeItem('walletMarkets');
@@ -263,6 +267,7 @@ function resetWallet(){
     FW.WALLET_BALANCES  = [];
     FW.WALLET_HISTORY   = [];
     FW.WALLET_KEYS      = {};
+    FW.WALLET_FORMAT    = 0;
     FW.BTCPAY_ORDERS    = {};
     FW.BTCPAY_MATCHES   = {};
     FW.BTCPAY_QUEUE     = {};
@@ -271,13 +276,31 @@ function resetWallet(){
     FW.BASE_DISPENSERS  = FW.DEFAULT_DISPENSERS;
 }
 
+// Function to handle generating a passphrase
+function generateWalletPassphrase(isBip39=false){
+    var passphrase = false;
+    if(isBip39){
+        passphrase = bip39.generateMnemonic();
+    } else {
+        passphrase = new Mnemonic(128).toWords().toString().replace(/,/gi, " ");
+    }
+    return passphrase;
+}
+
+
 // Create HD wallet
-function createWallet( passphrase ){
-    var m = new Mnemonic(128);
-    if(passphrase)
-        m = Mnemonic.fromWords(passphrase.trim().split(" "));
-    var wallet    = m.toHex(),
-        password  = Math.random().toString(36).substring(3), // Generate random password
+function createWallet( passphrase, isBip39=false ){
+    var wallet = false;
+    // Generate a passphrase if one is not passed
+    if(!passphrase)
+        passphrase = generateWalletPassphrase(isBip39);
+    // Support BIP39 and counterwallet's shorter wordlist
+    if(isBip39){
+        wallet = bip39.mnemonicToEntropy(passphrase);
+    } else {
+        wallet = Mnemonic.fromWords(passphrase.trim().split(" ")).toHex();
+    }
+    var password  = Math.random().toString(36).substring(3), // Generate random password
         privkeys  = JSON.stringify(FW.WALLET_KEYS),
         encWallet = CryptoJS.AES.encrypt(wallet, String(password)).toString(),
         encKeys   = CryptoJS.AES.encrypt(privkeys, String(password)).toString();
@@ -289,6 +312,9 @@ function createWallet( passphrase ){
     ls.setItem('walletEncrypted',0);
     ls.setItem('walletNetwork',1);
     ss.removeItem('skipWalletAuth');
+    // Set the wallet format (0 = Counterwallet, 1=BIP39)
+    FW.WALLET_FORMAT = (isBip39) ? 1 : 0;
+    ls.setItem('walletFormat', FW.WALLET_FORMAT); // 
     // Add the first 10 addresses to the wallet (both mainnet and testnet)
     var networks = ['mainnet','testnet'];
     networks.forEach(function(net){
@@ -396,9 +422,19 @@ function getWalletPassword(){
 
 // Get 12-word passphrase
 function getWalletPassphrase(){
-    var w = getWallet();
-    if(w)
-        return Mnemonic.fromHex(w).toWords().toString().replace(/,/gi, " ");
+    var w = getWallet(),
+        p = false;
+    if(w){
+        // Counterwallet's Mnemonic wordlist
+        if(FW.WALLET_FORMAT==0)
+            p = Mnemonic.fromHex(w).toWords().toString().replace(/,/gi, " ");
+        // BIP39 wordlist
+        if(FW.WALLET_FORMAT==1)
+            p = bip39.entropyToMnemonic(w);
+        console.log('getWalletPassphrase w=',w,FW.WALLET_FORMAT,p);
+        if(p)
+            return p;
+    }
     return false;
 }
 
@@ -593,14 +629,19 @@ function isValidWalletPassword( password ){
 }
 
 // Validate wallet passphrase
-function isValidWalletPassphrase( passphrase ){
+function isValidWalletPassphrase( passphrase, isBip39=false ){
     var arr   = passphrase.trim().split(" "),
         valid = true;
     if(arr.length<12)
         valid = false;
     for(var i=0;i<arr.length;i++){
-        if($.inArray(arr[i], Mnemonic.words)==-1)
-            valid = false;
+        if(isBip39){
+            if($.inArray(arr[i], bip39.wordlists.english)==-1)
+                valid = false;
+        } else {
+            if($.inArray(arr[i], Mnemonic.words)==-1)
+                valid = false;
+        }
     }
     return valid;
 }
@@ -3406,49 +3447,10 @@ function dialogPassphrase(){
 function dialogManualPassphrase(){
     BootstrapDialog.show({
         type: 'type-default',
+        id: 'dialog-manual-passphrase',
         closeByBackdrop: false,
         title: '<i class="fa fa-lg fa-fw fa-keyboard-o"></i> Enter Passphrase',
-        message: function(dialog){
-            var msg = $('<div class="center"></div>');
-            msg.append('<p>Please enter your existing 12-word wallet passphrase and click \'Ok\'</p>');
-            msg.append('<input type="text" class="btc-wallet-passphrase" id="manualPassphrase" autocomplete="off" >');
-            return msg;
-        },
-        onshown: function(dialog){
-            $('#manualPassphrase').focus();
-        },
-        buttons:[{
-            label: 'Cancel',
-            icon: 'fa fa-lg fa-fw fa-thumbs-down',       
-            cssClass: 'btn-danger', 
-            action: function(dialog){
-                dialogWelcome();
-                dialog.close();
-            }
-        },{
-            label: 'Ok',
-            icon: 'fa fa-lg fa-fw fa-thumbs-up',       
-            cssClass: 'btn-success', 
-            hotkey: 13,
-            action: function(dialog){
-                var val = $('#manualPassphrase').val(),
-                    arr = val.split(' '),
-                    err = false;
-                if(arr.length<12){
-                    err='Passphrase must be 12 words in length';
-                } else if(!isValidWalletPassphrase(val)){
-                    err='Invalid Passphrase';
-                }
-                if(err){
-                    dialogMessage(null, err, true);
-                } else {
-                    resetWallet();
-                    createWallet(val);
-                    dialog.close();
-                    dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Wallet Updated!', 'Your wallet has been updated to use the passphrase you just entered.', false, false);
-                }
-            }
-        }]
+        message: $('<div></div>').load('html/passphrase-existing.html')
     });
 }
 
@@ -3457,47 +3459,12 @@ function dialogNewPassphrase(){
     var pass = new Mnemonic(128).toWords().toString().replace(/,/gi, " ");
     BootstrapDialog.show({
         type: 'type-default',
+        id: 'dialog-new-passphrase',
         cssClass: 'dialog-new-passphrase',
         title: '<i class="fa fa-lg fa-fw fa-eye"></i> New Wallet Passphrase',
         closable: false,
         closeByBackdrop: false,
-        message: function(dialog){
-            var msg = $('<div></div>');
-            msg.append('<p>A passphrase has been created for you and is visible in the black box below. <br/>This passphrase lets you access your wallet and the funds it contains.</p>');
-            msg.append('<div class="btc-wallet-passphrase">' + pass + '</div>');
-            msg.append('<div class="alert alert-danger fade in center bold">' +
-                            '<h3>Write your passphrase down and keep it safe!</h3>' +
-                            '<ul>' +
-                                '<li>If you lose this passphrase, you will lose access to your wallet <i>forever</i>.</p>' +
-                                '<li>If someone gets your passphrase, they gain access to your wallet.</p>' +
-                                '<li>We do not store your passphrase and cannot recover it if lost.</p>' +
-                            '</ul>' +
-                        '</div>');
-            msg.append('<div class="checkbox" id="dialog-new-passphrase-confirm"><label><input type="checkbox" id="dialog-new-passphrase-checkbox"> I have <u>written down</u> or otherwise <u>securely stored</u> my passphrase.</label></div>');
-            return msg;
-        },
-        buttons:[{
-            label: 'Cancel',
-            icon: 'fa fa-lg fa-fw fa-thumbs-down',       
-            cssClass: 'btn-danger', 
-            action: function(dialog){
-                dialogWelcome();
-                dialog.close();
-            }
-        },{
-            label: 'Ok',
-            icon: 'fa fa-lg fa-fw fa-thumbs-up',       
-            cssClass: 'btn-success', 
-            hotkey: 13,
-            action: function(dialog){
-                if($('#dialog-new-passphrase-checkbox').is(':checked')){
-                    createWallet(pass)
-                    dialog.close();
-                } else {
-                    $('#dialog-new-passphrase-confirm').effect( "shake", { times: 3, direction: 'up' }, 1000);
-                }
-            }
-        }]
+        message: $('<div></div>').load('html/passphrase.html')
     });
 }
 

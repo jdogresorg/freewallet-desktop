@@ -1,0 +1,66 @@
+<div id="new-passphrase">
+    <p>A passphrase has been created for you and is visible in the black box below. <br/>This passphrase lets you access your wallet and the funds it contains.</p>
+    <div class="btc-wallet-passphrase"></div>
+    <div class="alert alert-danger fade in center bold">
+        <h3>Write your passphrase down and keep it safe!</h3>
+        <ul>
+            <li>If you lose this passphrase, you will lose access to your wallet <i>forever</i>.</p>
+            <li>If someone gets your passphrase, they gain access to your wallet.</p>
+            <li>We do not store your passphrase and cannot recover it if lost.</p>
+        </ul>
+    </div>
+    <div class="checkbox" id="dialog-new-passphrase-confirm">
+        <label><input type="checkbox" id="dialog-new-passphrase-checkbox"> I have <u>written down</u> or otherwise <u>securely stored</u> my passphrase.</label>
+    </div>
+ 
+    <div class="input-group pull-left" style="width:180px" id="amount-value-wrapper">
+        <label class="input-group-addon">Format</label>
+        <select id="format-select" name="format" class="selectpicker">
+            <option data-content="Counterwallet">Counterwallet</option>
+            <option data-content="BIP39">BIP39</option>
+        </select>
+    </div>
+    <div id="btn-ok" class="btn btn-ok btn-success pull-right margin-left-5"><i class="fa fa-lg fa-fw fa-thumbs-up"></i> Ok</div>
+    <div id="btn-cancel" class="btn btn-ok btn-danger pull-right margin-left-5"><i class="fa fa-lg fa-fw fa-thumbs-down"></i> Cancel</div>
+
+    <div class="clear-both"></div>
+</div>
+
+<script>
+$(document).ready(function(){
+
+    var passphrase = generateWalletPassphrase(),
+        isBip39    = false;
+
+    // Initialize the passphrase format picker and default to counterwallet's funky format
+    $('#format-select').selectpicker({ width: '100%' }).selectpicker("refresh");
+
+    $('.btc-wallet-passphrase').text(generateWalletPassphrase());
+
+    // Re-generate the seed 
+    $('#format-select').change(function(){
+        isBip39    = ($(this).val()=='BIP39') ? true : false;
+        passphrase = generateWalletPassphrase(isBip39);
+        $('.btc-wallet-passphrase').text(passphrase);
+    });
+
+    // Handle going back to the welcome screen if the user clicks cancel
+    $('#btn-cancel').click(function(){
+        dialogWelcome();
+        dialogClose('dialog-new-passphrase');
+    });
+
+    // Handle Verifying that the usre clicked the confirmation button
+    $('#btn-ok').click(function(){
+        if($('#dialog-new-passphrase-checkbox').is(':checked')){
+            resetWallet();
+            createWallet(passphrase, isBip39);
+            dialogClose('dialog-new-passphrase');
+        } else {
+            $('#dialog-new-passphrase-confirm').effect( "shake", { times: 3, direction: 'up' }, 1000);
+        }
+    });
+    // }));
+
+});
+</script>
