@@ -35,9 +35,10 @@ $(document).ready(function(){
     // Initialize the passphrase format picker and default to counterwallet's funky format
     $('#format-select').selectpicker({ width: '100%' }).selectpicker("refresh");
 
-    $('.btc-wallet-passphrase').text(generateWalletPassphrase());
+    // Set wallet passphrase to first generated passphrase
+    $('.btc-wallet-passphrase').text(passphrase);
 
-    // Re-generate the seed 
+    // Re-generate the passphrase on format change
     $('#format-select').change(function(){
         isBip39    = ($(this).val()=='BIP39') ? true : false;
         passphrase = generateWalletPassphrase(isBip39);
@@ -50,7 +51,7 @@ $(document).ready(function(){
         dialogClose('dialog-new-passphrase');
     });
 
-    // Handle Verifying that the usre clicked the confirmation button
+    // Handle verifying that the user clicked the confirmation button
     $('#btn-ok').click(function(){
         if($('#dialog-new-passphrase-checkbox').is(':checked')){
             resetWallet();

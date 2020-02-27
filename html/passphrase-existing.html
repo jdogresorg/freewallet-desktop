@@ -43,7 +43,7 @@ $(document).ready(function(){
         dialogClose('dialog-manual-passphrase');
     });
 
-    // Handle Verifying that the usre clicked the confirmation button
+    // Handle verifying user supplied passphrase is valid
     $('#btn-ok').click(function(){
         var val = $('#manualPassphrase').val(),
             arr = val.split(' '),
@@ -60,15 +60,6 @@ $(document).ready(function(){
             createWallet(passphrase, isBip39);
             dialogClose('dialog-manual-passphrase');
             dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Wallet Updated!', 'Your wallet has been updated to use the passphrase you just entered.', false, false);
-        }
-
-
-        if($('#dialog-new-passphrase-checkbox').is(':checked')){
-            resetWallet();
-            createWallet(passphrase, isBip39);
-            dialogClose('dialog-manual-passphrase');
-        } else {
-            $('#dialog-new-passphrase-confirm').effect( "shake", { times: 3, direction: 'up' }, 1000);
         }
     });
     // }));
