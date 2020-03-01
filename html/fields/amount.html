@@ -29,7 +29,11 @@ function updateSendValue(amt){
 // Function to calculate and display asset amount based on fiat value
 function updateSendAmount(val){
     var amt = ((numeral(val).value() / btc_info.price_usd) / FW.ASSET_INFO.estimated_value.btc),
-        fmt = (FW.ASSET_INFO.divisible) ? '0,0.00000000' : '0,0';
+        fmt = (FW.ASSET_INFO.divisible) ? '0,0.00000000' : '0,0',
+        val = $('#available').val();
+    // If we have an available amount field, rely on that to determine proper format
+    if(val)
+        fmt = (val.indexOf('.')!=-1) ? '0,0.00000000' : '0,0';
     if(!isFinite(amt))
         amt = 0;
     $('#amount').val(numeral(amt).format(fmt));
@@ -81,8 +85,12 @@ $(document).ready(function(){
     // Detect any amount change and format as valid number
     $('#amount').change(function(e){
         var amt = String($(this).val()).replace(/[^0-9.]/g,''),
+            val = $('#available').val(),
             fmt = (FW.ASSET_INFO.divisible) ? '0,0.00000000' : '0,0',
             o   = FW.DIALOG_DATA;
+        // If we have an available amount field, rely on that to determine proper format
+        if(val)
+            fmt = (val.indexOf('.')!=-1) ? '0,0.00000000' : '0,0';
         // Force the amount to an increment of what the dispenser is selling
         if(type=='dispenser-buy'){
             var amt = numeral(amt).value(),
