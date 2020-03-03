@@ -2213,12 +2213,11 @@ function cpSend(network, source, destination, memo, memo_is_hex, currency, amoun
 }
 
 // Handle generating a multi-peer-multi-asset (MPMA) send transaction
-function cpMultiSend(network, source, destination, memo, asset, quantity, fee, callback){
+function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
     // Create unsigned send transaction
-    createMultiSend(network, source, destination, memo, asset, quantity, 1000, null, function(o){
+    createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, 1000, null, function(o){
         if(o && o.result){
-            console.log('pretx unsignedTx=',o.result);
             // Sign the transaction
             signTransaction(network, source, destination, o.result, function(signedTx){
                 if(signedTx){
@@ -2226,13 +2225,11 @@ function cpMultiSend(network, source, destination, memo, asset, quantity, fee, c
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
                             // Create unsigned send transaction
-                            createMultiSend(network, source, destination, memo, asset, quantity, 1000, txid, function(o){
+                            createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, 1000, txid, function(o){
                                 if(o && o.result){
-                                     console.log('send unsignedTx=',o.result);
                                     // Sign the transaction
                                     signP2SHTransaction(network, source, destination, o.result, signedTx, function(signedTx){
                                         if(signedTx){
-                                            console.log('send signedTx=',signedTx);
                                             // Broadcast the transaction
                                             FW.BROADCAST_LOCK = false;
                                             broadcastTransaction(network, signedTx, function(txid){
@@ -2595,7 +2592,8 @@ function createSend(network, source, destination, memo, memo_is_hex, asset, quan
             destination: destination,
             asset: asset,
             quantity: parseInt(quantity),
-            allow_unconfirmed_inputs: true
+            allow_unconfirmed_inputs: true,
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -2604,8 +2602,6 @@ function createSend(network, source, destination, memo, memo_is_hex, asset, quan
         data.params.memo = memo;
     if(memo_is_hex)
         data.params.memo_is_hex = true;
-    if(fee)
-        data.params.fee = fee;
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
@@ -2613,8 +2609,8 @@ function createSend(network, source, destination, memo, memo_is_hex, asset, quan
 }
 
 // Handle creating send transaction
-function createMultiSend(network, source, destination, memo, asset, quantity, fee, txid, callback){
-    // console.log('createMultiSend=',network, source, destination, memo, asset, quantity, fee, p2sh_pretx_txid);
+function createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, callback){
+    // console.log('createMultiSend=',network, source, destination, memo, memo_is_hex, asset, quantity, fee, p2sh_pretx_txid);
     var data = {
        method: "create_send",
        params: {
@@ -2622,16 +2618,15 @@ function createMultiSend(network, source, destination, memo, asset, quantity, fe
             destination: destination,
             asset: asset,
             quantity: quantity,
+            memo: memo,
+            memo_is_hex: memo_is_hex,
+            fee: parseInt(fee),
             allow_unconfirmed_inputs: true,
             encoding: "p2sh"
         },
         jsonrpc: "2.0",
         id: 0
     };
-    if(memo)
-        data.params.memo = memo;
-    if(fee)
-        data.params.fee = fee;
     if(txid)
         data.params.p2sh_pretx_txid = txid;
     cpRequest(network, data, function(o){
@@ -2741,10 +2736,10 @@ function createOrder(network, source, get_asset, give_asset, get_quantity, give_
             give_asset: give_asset,
             give_quantity: give_quantity,
             expiration: expiration,
-            fee: parseInt(fee),
             // Temp fix for bug in API (https://github.com/CounterpartyXCP/counterparty-lib/issues/1025)
             fee_required: 0,
             fee_provided: 0,
+            fee: parseInt(fee),
             allow_unconfirmed_inputs: true
         },
         jsonrpc: "2.0",
@@ -2784,13 +2779,12 @@ function createBurn(network, source, quantity, fee, callback){
        params: {
             source: source,
             quantity: parseInt(quantity),
+            fee: parseInt(fee),
             allow_unconfirmed_inputs: true
         },
         jsonrpc: "2.0",
         id: 0
     };
-    if(fee)
-        data.params.fee = fee;
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
@@ -2807,13 +2801,12 @@ function createDestroy(network, source, asset, quantity, memo, fee, callback){
             source: source,
             asset: asset,
             quantity: parseInt(quantity),
+            fee: parseInt(fee),
             allow_unconfirmed_inputs: true
         },
         jsonrpc: "2.0",
         id: 0
     };
-    if(fee)
-        data.params.fee = fee;
     if(memo)
         data.params.tag = memo;
     cpRequest(network, data, function(o){
@@ -2832,13 +2825,12 @@ function createSweep(network, source, destination, flags, memo, fee, callback){
             destination: destination,
             flags: parseInt(flags),
             memo: memo,
+            fee: parseInt(fee),
             allow_unconfirmed_inputs: true
         },
         jsonrpc: "2.0",
         id: 0
     };
-    if(fee)
-        data.params.fee = fee;
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
@@ -2857,13 +2849,13 @@ function createDispenser(network, source, asset, escrow_amount, give_amount, btc
             escrow_quantity: parseInt(escrow_amount),
             give_quantity: parseInt(give_amount),
             mainchainrate: parseInt(btc_amount),
-            status:  parseInt(status)
+            status:  parseInt(status),
+            fee: parseInt(fee),
+            allow_unconfirmed_inputs: true
         },
         jsonrpc: "2.0",
         id: 0
     };
-    if(fee)
-        data.params.fee = fee;
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
@@ -2996,24 +2988,6 @@ function signTransaction(network, source, destination, unsignedTx, callback){
         }
     }
 }
-
-
-// // Assumes NodeJS runtime. Several libraries exist to replace the Buffer class on web browsers
-// const bitcoin = bitcoinjs;
-// async function signP2SHDataTX(wif, txHex, prevUtxo) {
-//   const network    = bitcoin.networks.testnet // Change appropiately to your used network
-//   const keyPair    = bitcoin.ECPair.fromWIF(wif, network)
-//   const dataTx     = bitcoin.Transaction.fromHex(txHex)    // The unsigned second part of the 2 part P2SH transactions
-//   const preTx      = bitcoin.Transaction.fromHex(prevUtxo) // The previous transaction in raw hex in its entirety
-//   const sigType    = bitcoin.Transaction.SIGHASH_ALL    // This shouldn't be changed unless you REALLY know what you're doing
-//   const sigHash    = dataTx.hashForSignature(0, bitcoin.script.decompile(dataTx.ins[0].script)[0], sigType)
-//   const sig        = keyPair.sign(sigHash)
-//   const encodedSig = bitcoin.script.signature.encode(sig, sigType)
-//   const compiled   = bitcoin.script.compile([encodedSig])
-
-//   dataTx.ins[0].script = Buffer.concat([compiled, dataTx.ins[0].script])
-//   return dataTx.toHex() // The resulting signed transaction in raw hex, ready to be broadcasted
-// }
 
 // Handle signing a transaction based on what type of address it is
 function signP2SHTransaction(network, source, destination, unsignedTx, prevTx, callback){

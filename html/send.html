@@ -203,31 +203,38 @@ $(document).ready(function(){
                     destinations = [],
                     assets       = [],
                     quantities   = [],
-                    memos        = [];
+                    memos        = [],
+                    memo_is_hex  = [],
+                    isHex        = /^[0-9a-fA-F]+$/;
                 // Convert send lines into arrays to pass with API call
                 sends.forEach(function(send){
-                    var [destination, asset, quantity, memo] = String(send).split(',');
-                    destination = String(destination).trim();
-                    asset    = (asset) ? String(asset).trim() : '',
-                    quantity = (quantity) ? String(quantity).trim() : '',
-                    memo     = (memo) ? String(memo).trim().replace(/^"|"$/g, '') : ''; // Replace any enclosing double-quotes
+                    var info     = String(send).trim().split(','),
+                        address  = String(info[0]).trim(),
+                        asset    = (info[1]) ? String(info[1]).trim() : '',
+                        quantity = (info[2]) ? String(info[2]).trim() : '',
+                        memo     = (info[3]) ? String(info[3]).trim().replace(/^"|"$/g,'') : '';
+                    // Re-assemble any memos which have commas
+                    if(memo!='')
+                        memo = String(info.slice(3,info.length).join(',')).trim().replace(/^"|"$/g,'');
                     if(quantity.indexOf('.')!=-1){
                         quantity = parseInt(numeral(quantity).multiply(100000000).value());
                     } else {
                         quantity = parseInt(quantity);
                     }
-                    destinations.push(destination);
+                    destinations.push(address);
                     assets.push(asset);
                     quantities.push(quantity);
                     memos.push(memo);
+                    memo_is_hex.push(isHex.test(memo));
                 });
                 vals.destination = destinations;
                 vals.asset       = assets;
                 vals.quantity    = quantities;
-                // vals.memo        = memos;
+                vals.memo        = memos;
+                vals.memo_is_hex = memo_is_hex;
                 // Callback to run if user confirms action
                 var confirmCb = function(){
-                    cpMultiSend(network, vals.source, vals.destination, vals.memo, vals.asset, vals.quantity, fee_sat, doneCb);
+                    cpMultiSend(network, vals.source, vals.destination, vals.memo, vals.memo_is_hex, vals.asset, vals.quantity, fee_sat, doneCb);
                 }
                 // Confirm the action with the user
                 var title = 'Confirm Send?';

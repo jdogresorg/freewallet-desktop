@@ -15,19 +15,22 @@ $(document).ready(function(){
 
     // Verify list format is good after user edits list
     $('#send-list').change(function(){
+
         // Remove error class from any 
         $('#send-list').closest('.form-group').removeClass('has-error has-danger');
 
         var lines  = String($(this).val()).split('\n'),
             errors = [],
-            value  = '',
-            list   = []
+            value  = '';
         lines.forEach(function(line, idx){
             var info     = line.trim().split(','),
                 address  = String(info[0]).trim(),
                 asset    = (info[1]) ? String(info[1]).trim() : '',
                 quantity = (info[2]) ? String(info[2]).trim() : '',
-                memo     = (info[3]) ? String(info[3]).trim() : '';
+                memo     = (info[3]) ? String(info[3]).trim().replace(/^"|"$/g,'') : '';
+            // Re-assemble any memos which have commas
+            if(memo!='')
+                memo = String(info.slice(3,info.length).join(',')).trim().replace(/^"|"$/g,'');
             // Throw error on missing list data
             if(address=='' || asset=='' || quantity==''){
                 // Skip empty lines with no data rather than throwing an error
@@ -53,7 +56,7 @@ $(document).ready(function(){
                 value += "\n"
             value += address + ', ' + asset + ', ' + quantity;
             if(memo!='')
-                value += ', ' + memo;
+                value += ', "' + memo + '"';
         });
         // Display any error message
         if(errors.length){
