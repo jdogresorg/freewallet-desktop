@@ -431,7 +431,6 @@ function getWalletPassphrase(){
         // BIP39 wordlist
         if(FW.WALLET_FORMAT==1)
             p = bip39.entropyToMnemonic(w);
-        console.log('getWalletPassphrase w=',w,FW.WALLET_FORMAT,p);
         if(p)
             return p;
     }
@@ -2390,6 +2389,7 @@ function cpBtcpay(network, source, order_match_id, fee, callback){
             signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
                     // Broadcast the transaction
+                    FW.BROADCAST_LOCK = false;
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
                             if(cb)
