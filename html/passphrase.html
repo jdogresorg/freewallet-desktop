@@ -29,8 +29,8 @@
 <script>
 $(document).ready(function(){
 
-    var passphrase = generateWalletPassphrase(),
-        isBip39    = false;
+    var isBip39    = false,
+        passphrase = generateWalletPassphrase(isBip39);
 
     // Initialize the passphrase format picker and default to counterwallet's funky format
     $('#format-select').selectpicker({ width: '100%' }).selectpicker("refresh");
