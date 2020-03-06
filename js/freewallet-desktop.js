@@ -318,7 +318,7 @@ function createWallet( passphrase, isBip39=false ){
     // Add the first 10 addresses to the wallet (both mainnet and testnet)
     var networks = ['mainnet','testnet'];
     networks.forEach(function(net){
-        var network = bitcore.Networks[net],
+        var network = bc.Networks[net],
             netname = (net=='testnet') ? 'testnet' : 'bitcoin';
         var s = bc.HDPrivateKey.fromSeed(wallet, network);
         for(var i=0;i<10;i++){
@@ -353,11 +353,10 @@ function addNewWalletAddress(net=1, type='normal'){
     console.log('idx B=',idx);
     // Generate new address
     var w = getWallet(),
-        b = bitcore,
-        n = b.Networks[network],
-        s = b.HDPrivateKey.fromSeed(w, n),
+        n = bc.Networks[network],
+        s = bc.HDPrivateKey.fromSeed(w, n),
         d = s.derive("m/0'/0/" + idx);
-    address = b.Address(d.publicKey, n).toString();
+    address = bc.Address(d.publicKey, n).toString();
     label   = 'Address #' + (idx + 1);
     // Support generating Segwit Addresses (Bech32)
     if(type=='segwit'){
@@ -449,7 +448,7 @@ function getWalletAddress( index ){
     // console.log('getWalletAddress index=',index);
     // update network (used in CWBitcore)
     var net = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-    NETWORK = bitcore.Networks[net];
+    NETWORK = bc.Networks[net];
     if(typeof index === 'number'){
         // var type
         var w = getWallet(),
@@ -577,7 +576,6 @@ function addWalletPrivkey(key){
     var net     = FW.WALLET_NETWORK,                // Numeric
         network = (net==2) ? 'testnet' : 'mainnet', // Text
         ls      = localStorage,
-        bc      = bitcore,
         n       = bc.Networks[network],
         address = false;
     // Try to generate a public key and address using the key
@@ -649,7 +647,7 @@ function isValidWalletPassphrase( passphrase, isBip39=false ){
 function isValidAddress(addr){
     var net  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
     // update network (used in CWBitcore)
-    NETWORK  = bitcore.Networks[net];
+    NETWORK  = bc.Networks[net];
     if(CWBitcore.isValidAddress(addr))
         return true;
     return false;
@@ -1587,7 +1585,7 @@ function getPrivateKey(network, address, prepend=false){
         priv = FW.WALLET_KEYS[address];
     // Loop through HD addresses trying to find private key
     if(!priv){
-        var key = bitcore.HDPrivateKey.fromSeed(wallet, bitcore.Networks[net]),
+        var key = bc.HDPrivateKey.fromSeed(wallet, bc.Networks[net]),
             idx = false;
         FW.WALLET_ADDRESSES.forEach(function(item){
             if(item.address==address)
@@ -1596,7 +1594,7 @@ function getPrivateKey(network, address, prepend=false){
         // If we found the address index, use it to generate private key
         if(idx !== false){
             var d = key.derive("m/0'/0/" + idx),
-                a = bitcore.Address(d.publicKey, bitcore.Networks[net]).toString();
+                a = bc.Address(d.publicKey, bc.Networks[net]).toString();
             // Handle generating the bech32 address
             if(a!=address){
                 var netname = (network=='testnet') ? 'testnet' : 'bitcoin';
@@ -2911,7 +2909,7 @@ function signTransaction(network, source, destination, unsignedTx, callback){
             callback = (typeof callback === 'function') ? callback : false,
             privKey  = getPrivateKey(net, source);
         // Set the appropriate network and get key
-        NETWORK   = bitcore.Networks[netName];
+        NETWORK   = bc.Networks[netName];
         var cwKey = new CWPrivateKey(privKey);
         // Convert destination to array if not already
         if(typeof(destination)==='string')
@@ -3033,8 +3031,7 @@ function getUTXOs(network, address, callback){
 
 // Handle signing a message and returning the signature
 function signMessage(network, source, message){
-    var bc  = bitcore,
-        net = (network=='testnet') ? 'testnet' : 'mainnet',
+    var net = (network=='testnet') ? 'testnet' : 'mainnet',
         key = bc.PrivateKey.fromWIF(getPrivateKey(net, source)),
         sig = bc.Message(message).sign(key);
     return sig;
@@ -3516,13 +3513,13 @@ function dialogImportWatchAddress(){
                     network = 'mainnet',
                     valid   = false;
                 // Check if the address is valid on mainnet
-                NETWORK  = bitcore.Networks[network];
+                NETWORK  = bc.Networks[network];
                 if(CWBitcore.isValidAddress(address))
                     valid = true;
                 // Check if address is valid on testnet
                 if(!valid){
                     network = 'testnet';
-                    NETWORK = bitcore.Networks[network];
+                    NETWORK = bc.Networks[network];
                     if(CWBitcore.isValidAddress(address))
                         valid = true;
                 }
