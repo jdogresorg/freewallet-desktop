@@ -2225,7 +2225,7 @@ function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, qua
                             createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, 1000, txid, function(o){
                                 if(o && o.result){
                                     // Sign the transaction
-                                    signP2SHTransaction(network, source, destination, o.result, signedTx, function(signedTx){
+                                    signP2SHTransaction(network, source, destination, o.result, function(signedTx){
                                         if(signedTx){
                                             // Broadcast the transaction
                                             FW.BROADCAST_LOCK = false;
@@ -2988,7 +2988,7 @@ function signTransaction(network, source, destination, unsignedTx, callback){
 }
 
 // Handle signing a transaction based on what type of address it is
-function signP2SHTransaction(network, source, destination, unsignedTx, prevTx, callback){
+function signP2SHTransaction(network, source, destination, unsignedTx, callback){
     var net        = (network=='testnet') ? 'testnet' : 'mainnet', 
         netName    = (network=='testnet') ? 'testnet' : 'bitcoin', // bitcoinjs-lib
         network    = bitcoinjs.networks[netName],
@@ -2997,7 +2997,6 @@ function signP2SHTransaction(network, source, destination, unsignedTx, prevTx, c
         cwKey      = new CWPrivateKey(privKey),
         keyPair    = bitcoinjs.ECPair.fromWIF(cwKey.getWIF(), network),
         dataTx     = bitcoinjs.Transaction.fromHex(unsignedTx), // The unsigned second part of the 2 part P2SH transactions
-        preTx      = bitcoinjs.Transaction.fromHex(prevTx),     // The previous transaction in raw hex in its entirety
         sigType    = bitcoinjs.Transaction.SIGHASH_ALL;         // This shouldn't be changed unless you REALLY know what you're doing
     // Loop through all inputs and sign
     for (let i=0; i < dataTx.ins.length; i++) {
