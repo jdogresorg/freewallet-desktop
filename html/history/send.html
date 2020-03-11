@@ -83,7 +83,7 @@
                 $.getJSON('https://api.blockcypher.com/v1/btc/' + net + '/txs/' + tx, function(o){
                     if(o.hash){
                         $('#source').html(o.inputs[0].addresses[0]);
-                        $('#destination').html('-');
+                        $('#destination').html(FW.WALLET_ADDRESS);
                         $('#asset').html('<img src="images/icons/btc.png" class="asset-icon-sm pull-left">BTC');
                         $('#tx-hash').html(o.hash);
                         $('#quantity').text(numeral(o.outputs[0].value).multiply(0.00000001).format('0,0.00000000'));
