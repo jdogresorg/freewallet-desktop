@@ -4180,12 +4180,14 @@ function displayContextMenu(event){
                 loadPage('exchange'); 
             }
         }));
-        mnu.append(new nw.MenuItem({ 
-            label: 'View ' + asset + ' Dispensers',
-            click: function(){ 
-                loadPage('dispensers'); 
-            }
-        }));
+        if(asset!='BTC'){
+            mnu.append(new nw.MenuItem({ 
+                label: 'View ' + asset + ' Dispensers',
+                click: function(){ 
+                    loadPage('dispensers'); 
+                }
+            }));
+        }
         mnu.append(new nw.MenuItem({ type: 'separator' }));
         mnu.append(new nw.MenuItem({ 
             label: 'Send ' + asset + ' to...',
