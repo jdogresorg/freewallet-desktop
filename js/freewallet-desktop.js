@@ -2222,7 +2222,7 @@ function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, qua
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
                             // Create unsigned send transaction
-                            createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, 1000, txid, function(o){
+                            createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, function(o){
                                 if(o && o.result){
                                     // Sign the transaction
                                     signP2SHTransaction(network, source, destination, o.result, function(signedTx){
