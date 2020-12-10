@@ -134,7 +134,7 @@ $(document).ready(function(){
                     give_sat   = (vals['escrow-amount'].indexOf('.')!=-1) ? numeral(vals['give-amount']).multiply(100000000).format('0') : numeral(vals['give-amount']).format('0'),
                     btc_sat    = parseInt(numeral(vals['btc-amount']).multiply(100000000).value()),
                     fee_sat    = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
-                    asset      = FW.ASSET_INFO.asset, // Force using the true asset name until the API is updated to support subasset names
+                    asset      = vals.name, 
                     status     = 0; // Hardcode to open for creating a dispenser... can close via dispensers interface
                 cpDispenser(network, vals.source, asset, escrow_sat, give_sat, btc_sat, status, fee_sat, doneCb);
             }
