@@ -646,7 +646,8 @@ $(document).ready(function(){
                 assets = String(FW.MARKET_NAME).split('/'),
                 asset1 = assets[0],
                 asset2 = assets[1],
-                errors = [];
+                errors = [],
+                minbtc = 0.00001; // Minimum BTC order amount
             console.log('FW.ASSET_DIVISIBLE=',FW.ASSET_DIVISIBLE);
             console.log('FW.MARKET_NAME=',FW.MARKET_NAME);
             // Verify price/amount/total are greater than 0
@@ -680,6 +681,16 @@ $(document).ready(function(){
             // Verify that the sell amount is less than the balance
             if(id=='sell' && numeral(vals[id + '-amount']).value() > numeral(vals[id + '-balance']).value()){
                 errors.push('Your ' + id + ' amount is more than your available balance!');
+                $('#' + id + '-amount').closest('.form-group').addClass('has-error has-danger');
+            }
+            // Verify order total over BTC order minimum
+            if(asset2=='BTC' && numeral(vals[id + '-total']).value() < minbtc ){
+                errors.push('Order total is below order minimum of ' + numeral(minbtc).format('0.00000000') + ' BTC')                
+                $('#' + id + '-total').closest('.form-group').addClass('has-error has-danger');
+            }
+            // Verify order amount over BTC order minimum
+            if(asset1=='BTC' && numeral(vals[id + '-amount']).value() < minbtc ){
+                errors.push('BTC amount is below order minimum of ' + numeral(minbtc).format('0.00000000') + ' BTC')                
                 $('#' + id + '-amount').closest('.form-group').addClass('has-error has-danger');
             }
             // Display any error message
