@@ -1784,7 +1784,7 @@ function getHistoryHtml(data){
         src = 'images/icons/dividend.png';
     } else if(type=='cancel'){
         src = 'images/icons/cancel.png';
-    } else if((type=='send'||type=='order'||type=='issuance') && data.asset!='BTC'){
+    } else if((type=='send'||type=='order'||type=='issuance'||type=='destruction') && data.asset!='BTC'){
         src = FW.XCHAIN_API + '/icon/'  + String(data.icon).toUpperCase() + '.png';
     } else if(type=='sweep'){
         src = 'images/icons/sweep.png';
@@ -1809,10 +1809,12 @@ function getHistoryHtml(data){
         str = 'Order - Buy ';
     } else if(type=='cancel'){
         str = 'Cancel Order ';
+    } else if(type=='destruction'){
+        str = 'Destroyed ';
     } else if(type=='sweep'){
         str = 'Sweep Address ';
     }
-    if(type=='send'||type=='bet'||type=='burn'||type=='order')
+    if(type=='send'||type=='bet'||type=='burn'||type=='order'||type=='destruction')
         str += amt;
     var amount = str;
     // Determine correct class to use
@@ -4494,7 +4496,7 @@ function displayContextMenu(event){
     }
     // Display menu at event location
     if(menu)
-        menu.popup(event.clientX, event.clientY);
+        menu.popup(parseInt(event.clientX), parseInt(event.clientY));
 }
 
 // Handle extracting hostname from a url
@@ -5474,4 +5476,13 @@ function updateTransactionStatus(status, statusText){
             html = '<i class="fa fa-lg ' + iconCss + '"></i> ' + html;
         el.removeClass('red green').addClass(textCss).html(html);
     }
+}
+
+// Function to handle converting from hex to a string
+function hex2string(hexx) {
+    var hex = hexx.toString();//force conversion
+    var str = '';
+    for (var i = 0; (i < hex.length && hex.substr(i, 2) !== '00'); i += 2)
+        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    return str;
 }
