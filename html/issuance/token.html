@@ -47,6 +47,7 @@
     <div class="form-group" id="tx-fee-field">
         <!-- Transaction Fee Field -->
     </div>
+    <div id="transaction-status"></div>
     <div class="text-right">
         <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
         <div id="btn-submit" class="btn btn-success "><i class="fa fa-lg fa-fw fa-plus-circle"></i> Create Token</div>
@@ -268,7 +269,7 @@ $(document).ready(function(){
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-create-token');
-                    dialogMessage('<i class="fa fa-lg fa-check"></i> Issuance Successful', '<center>Your issuance has been broadcast to the network and your token should be create shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-plus-circle"></i> Token Creation Successful', '<center>Your issuance has been broadcast to the network and your token should be create shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }

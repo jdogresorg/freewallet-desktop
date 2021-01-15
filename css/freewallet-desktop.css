@@ -1125,3 +1125,13 @@ a.red:hover {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* Transaction status area in forms (next to action buttons) */
+#transaction-status {
+    float: left;
+    width: 300px;
+    margin-top: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

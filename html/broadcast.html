@@ -34,6 +34,7 @@
     <div class="form-group" id="tx-fee-field">
         <!-- Transaction Fee Field -->
     </div>
+    <div id="transaction-status" style="width: 280px !important; "></div>
     <div class="text-right">
         <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
         <div id="btn-submit" class="btn btn-success "><i class="fa fa-lg fa-fw fa-bullhorn"></i> Broadcast Message</div>
@@ -128,7 +129,7 @@ $(document).ready(function(){
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-broadcast-message');
-                    dialogMessage('<i class="fa fa-lg fa-check"></i> Broadcast Successful', '<center>Your broadcast has been sent to the network and should be included to a block shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-bullhorn"></i> Broadcast Successful', '<center>Your broadcast has been sent to the network and should be included to a block shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }

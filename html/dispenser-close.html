@@ -8,6 +8,7 @@
     <div class="form-group" id="tx-fee-field">
         <!-- Transaction Fee Field -->
     </div>
+    <div id="transaction-status"></div>
     <div class="text-right">
         <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-thumbs-down"></i> No</div>
         <div id="btn-submit" class="btn btn-success"><i class="fa fa-lg fa-fw fa-thumbs-up"></i> Yes</div>
@@ -88,7 +89,7 @@ $(document).ready(function(){
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-close-dispenser');
-                    dialogMessage('<i class="fa fa-lg fa-truck"></i> Close Dispenser Successful', '<center>Your dispenser transaction has been sent to the network and should be included to a block shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-ban"></i> Close Dispenser Successful', '<center>Your dispenser transaction has been sent to the network and should be included to a block shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }

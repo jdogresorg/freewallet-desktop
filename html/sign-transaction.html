@@ -22,6 +22,7 @@
             <textarea type="text" class="form-control" id="signed-transaction" name="signed-transaction" placeholder="Signed Transaction" rows="3" readonly></textarea>
         </div>
     </div>
+    <div id="transaction-status" style="width: 260px !important;"></div>
     <div class="text-right">
         <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
         <div id="btn-submit" class="btn btn-success"><i class="fa fa-lg fa-fw fa-file-text"></i> Sign </div>
@@ -66,6 +67,11 @@ $(document).ready(function(){
         dialogClose('dialog-sign-transaction');
     }));
 
+    // Clear status messages when new unsigned transaction changes
+    $('#sign-transaction').keyup(function(){
+        updateTransactionStatus('clear');
+    });
+
     // Verify if transaction is signed, then confirm broadcast
     $('#btn-broadcast').click($.debounce(100,function(e){
         var signedTx = $('#signed-transaction').val();
@@ -83,11 +89,14 @@ $(document).ready(function(){
             // Callback to run if user confirms action
             var confirmCb = function(){
                 var network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
+                updateTransactionStatus('pending', 'Broadcasting transaction...');
                 // Broadcast the transaction
                 broadcastTransaction(network, signedTx, function(txid){
                     if(txid){
+                        updateTransactionStatus('success', 'Transaction successfully broadcast!');
                         doneCb(txid);
                     } else {
+                        updateTransactionStatus('error', 'Error broadcasting transaction!');
                         cbError('Error while trying to broadcast transaction. Please try again.', doneCb);
                     }
                 });
@@ -117,17 +126,21 @@ $(document).ready(function(){
             errors.push('You must enter a transaction to sign! ');
             $('#sign-transaction').closest('.form-group').addClass('has-error has-danger');
         }
+        updateTransactionStatus('clear');
         // Display any error message
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
             // Handle signing the message and populating the 'Signed' box
             var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
+            updateTransactionStatus('pending', 'Signing transaction...');
             signTransaction(network, vals.source, vals.source, vals.transaction, function(tx){
                 var val = '';
                 if(tx){
+                    updateTransactionStatus('success', 'Transaction successfully signed!');
                     val = tx;
                 } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
                     dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', 'Error while trying to sign transaction! Please try again.' );
                 }
                 $('#signed-transaction').val(val);

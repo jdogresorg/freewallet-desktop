@@ -34,6 +34,7 @@
                 <div class="form-group" id="tx-fee-field">
                     <!-- Transaction Fee Field -->
                 </div>
+                <div id="transaction-status"></div>
                 <div id="btn-submit" class="btn btn-success pull-right"><i class="fa fa-lg fa-fw fa-paper-plane"></i> Send Funds</div>
                 <div id="btn-cancel" class="btn btn-danger pull-right margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
             </div>
@@ -180,7 +181,7 @@ $(document).ready(function(){
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-send');
-                    dialogMessage('<i class="fa fa-lg fa-check"></i> Send Successful', '<center>Your send has been broadcast to the network and should complete shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-send"></i> Send Successful', '<center>Your send has been broadcast to the network and should complete shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }

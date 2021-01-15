@@ -12,6 +12,7 @@
     <div class="form-group" id="tx-fee-field">
         <!-- Transaction Fee Field -->
     </div>
+    <div id="transaction-status" style="width: 280px !important"></div>
     <div class="text-right">
         <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
         <div id="btn-submit" class="btn btn-success "><i class="fa fa-lg fa-fw fa-edit"></i> Change Description</div>
@@ -97,7 +98,7 @@ $(document).ready(function(){
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-change-description');
-                    dialogMessage('<i class="fa fa-lg fa-check"></i> Issuance Successful', '<center>Your issuance has been broadcast to the network and your token description should be updated shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-edit"></i> Description Change Successful', '<center>Your issuance has been broadcast to the network and your token description should be updated shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }

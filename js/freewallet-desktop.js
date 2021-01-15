@@ -1551,7 +1551,10 @@ function updateNetworkInfo( force ){
 
 // Display error message and run callback (if any)
 function cbError(msg, callback){
-    dialogMessage(null, msg, true);
+    dialogMessage(null, msg, true, true, function(){
+        // Clear out transaction status after user clicks OK
+        updateTransactionStatus('clear');
+    });
     if(typeof callback === 'function')
         callback();
 }
@@ -2183,26 +2186,33 @@ function array2Object(arr){
 // Handle generating a send transaction
 function cpSend(network, source, destination, memo, memo_is_hex, currency, amount, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createSend(network, source, destination, memo, memo_is_hex, currency, getSatoshis(amount), fee, function(o){
         if(o && o.result){
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
             signTransaction(network, source, destination, o.result, function(signedTx){
                 if(signedTx){
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
                             if(cb)
                                 cb(txid);
                         } else {
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
                             cbError('Error while trying to broadcast send transaction', cb);
                         }
                     });
                 } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
                     cbError('Error while trying to sign send transaction',cb);
                 }
             });
         } else {
+            updateTransactionStatus('error', 'Error generating transaction!');
             var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create send transaction';
             cbError(msg, cb);
         }
@@ -2212,50 +2222,63 @@ function cpSend(network, source, destination, memo, memo_is_hex, currency, amoun
 // Handle generating a multi-peer-multi-asset (MPMA) send transaction
 function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating first counterparty transaction...');
     // Create unsigned send transaction
     createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, 1000, null, function(o){
         if(o && o.result){
+            updateTransactionStatus('pending', 'Signing first counterparty transaction...');
             // Sign the transaction
             signTransaction(network, source, destination, o.result, function(signedTx){
                 if(signedTx){
+                    updateTransactionStatus('pending', 'Broadcasting first counterparty transaction...');
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
+                            updateTransactionStatus('pending', 'Generating second counterparty transaction...');
                             // Create unsigned send transaction
                             createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, function(o){
                                 if(o && o.result){
+                                    updateTransactionStatus('pending', 'Signing second counterparty transaction...');
                                     // Sign the transaction
                                     signP2SHTransaction(network, source, destination, o.result, function(signedTx){
                                         if(signedTx){
+                                            updateTransactionStatus('pending', 'Broadcasting second counterparty transaction...');
                                             // Broadcast the transaction
                                             FW.BROADCAST_LOCK = false;
                                             broadcastTransaction(network, signedTx, function(txid){
                                                 if(txid){
+                                                    updateTransactionStatus('success', 'Transactions signed and broadcast!');
                                                     if(cb)
                                                         cb(txid);
                                                 } else {
-                                                    cbError('Error while trying to broadcast send transaction', cb);
+                                                    updateTransactionStatus('error', 'Error broadcasting second transaction!');
+                                                    cbError('Error while trying to broadcast second transaction', cb);
                                                 }
                                             });
                                         } else {
-                                            cbError('Error while trying to sign send transaction',cb);
+                                            updateTransactionStatus('error', 'Error signing second transaction!');
+                                            cbError('Error while trying to sign second transaction',cb);
                                         }
                                     });
                                 } else {
-                                    var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create pretx transaction';
+                                    updateTransactionStatus('error', 'Error generating second transaction!');
+                                    var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create second transaction';
                                     cbError(msg, cb);
                                 }
                             });
                         } else {
-                            cbError('Error while trying to broadcast pretx transaction', cb);
+                            updateTransactionStatus('error', 'Error broadcasting first transaction!');
+                            cbError('Error while trying to broadcast first transaction', cb);
                         }
                     });
                 } else {
-                    cbError('Error while trying to sign pretx transaction',cb);
+                    updateTransactionStatus('error', 'Error signing first transaction!');
+                    cbError('Error while trying to sign first transaction',cb);
                 }
             });
         } else {
-            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create pretx transaction';
+            updateTransactionStatus('error', 'Error generating first transaction!');
+            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create first transaction';
             cbError(msg, cb);
         }
     });
@@ -2264,26 +2287,33 @@ function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, qua
 // Handle creating/signing/broadcasting an 'Issuance' transaction
 function cpIssuance(network, source, asset, quantity, divisible, description, destination, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createIssuance(network, source, asset, quantity, divisible, description, destination, fee, function(o){
         if(o && o.result){
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
             signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
                             if(cb)
                                 cb(txid);
                         } else {
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
                             cbError('Error while trying to broadcast issuance transaction. Please try again.', cb);
                         }
                     });
                 } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
                     cbError('Error while trying to sign issuance transaction. Please try again.',cb);
                 }
             });
         } else {
+            updateTransactionStatus('error', 'Error generating transaction!');
             var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create issuance transaction';
             cbError(msg, cb);
         }
@@ -2293,26 +2323,33 @@ function cpIssuance(network, source, asset, quantity, divisible, description, de
 // Handle creating/signing/broadcasting an 'Broadcast' transaction
 function cpBroadcast(network, source, text, value, feed_fee, timestamp, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createBroadcast(network, source, text, value, feed_fee, timestamp, fee, function(o){
         if(o && o.result){
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
             signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
                             if(cb)
                                 cb(txid);
                         } else {
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
                             cbError('Error while trying to broadcast transaction. Please try again.', cb);
                         }
                     });
                 } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
                     cbError('Error while trying to sign broadcast transaction. Please try again.',cb);
                 }
             });
         } else {
+            updateTransactionStatus('error', 'Error generating transaction!');
             var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create broadcast transaction';
             cbError(msg, cb);
         }
@@ -2322,26 +2359,33 @@ function cpBroadcast(network, source, text, value, feed_fee, timestamp, fee, cal
 // Handle creating/signing/broadcasting an 'Dividend' transaction
 function cpDividend(network, source, asset, dividend_asset, quantity_per_unit, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createDividend(network, source, asset, dividend_asset, quantity_per_unit, fee, function(o){
         if(o && o.result){
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
             signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
                             if(cb)
                                 cb(txid);
                         } else {
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
                             cbError('Error while trying to broadcast transaction. Please try again.', cb);
                         }
                     });
                 } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
                     cbError('Error while trying to sign dividend transaction. Please try again.',cb);
                 }
             });
         } else {
+            updateTransactionStatus('error', 'Error generating transaction!');
             var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create dividend transaction';
             cbError(msg, cb);
         }
@@ -2351,26 +2395,33 @@ function cpDividend(network, source, asset, dividend_asset, quantity_per_unit, f
 // Handle creating/signing/broadcasting an 'Cancel' transaction
 function cpCancel(network, source, tx_hash, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createCancel(network, source, tx_hash, fee, function(o){
         if(o && o.result){
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
             signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
                             if(cb)
                                 cb(txid);
                         } else {
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
                             cbError('Error while trying to broadcast transaction. Please try again.', cb);
                         }
                     });
                 } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
                     cbError('Error while trying to sign cancel transaction. Please try again.',cb);
                 }
             });
         } else {
+            updateTransactionStatus('error', 'Error generating transaction!');
             var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create a cancel transaction';
             cbError(msg, cb);
         }
@@ -2380,27 +2431,34 @@ function cpCancel(network, source, tx_hash, fee, callback){
 // Handle creating/signing/broadcasting an 'BTCpay' transaction
 function cpBtcpay(network, source, order_match_id, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createBtcpay(network, source, order_match_id, fee, function(o){
         if(o && o.result){
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
             signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
                     FW.BROADCAST_LOCK = false;
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
                             if(cb)
                                 cb(txid);
                         } else {
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
                             cbError('Error while trying to broadcast transaction. Please try again.', cb);
                         }
                     });
                 } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
                     cbError('Error while trying to sign btcpay transaction. Please try again.',cb);
                 }
             });
         } else {
+            updateTransactionStatus('error', 'Error generating transaction!');
             var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create a btcpay transaction';
             cbError(msg, cb);
         }
@@ -2410,27 +2468,33 @@ function cpBtcpay(network, source, order_match_id, fee, callback){
 // Handle generating a send transaction
 function cpOrder(network, source, get_asset, give_asset, get_quantity, give_quantity, expiration, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createOrder(network, source, get_asset, give_asset, getSatoshis(get_quantity), getSatoshis(give_quantity), expiration, fee, function(o){
         if(o && o.result){
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
             signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
-                    // console.log('signed Tx=',signedTx);
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
                             if(cb)
                                 cb(txid);
                         } else {
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
                             cbError('Error while trying to broadcast order transaction', cb);
                         }
                     });
                 } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
                     cbError('Error while trying to sign order transaction',cb);
                 }
             });
         } else {
+            updateTransactionStatus('error', 'Error generating transaction!');
             var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create order transaction';
             cbError(msg, cb);
         }
@@ -2440,26 +2504,33 @@ function cpOrder(network, source, get_asset, give_asset, get_quantity, give_quan
 // Handle creating/signing/broadcasting an 'Burn' transaction
 function cpBurn(network, source, quantity, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createBurn(network, source, quantity, fee, function(o){
         if(o && o.result){
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
             signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
                             if(cb)
                                 cb(txid);
                         } else {
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
                             cbError('Error while trying to broadcast transaction. Please try again.', cb);
                         }
                     });
                 } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
                     cbError('Error while trying to sign burn transaction. Please try again.',cb);
                 }
             });
         } else {
+            updateTransactionStatus('error', 'Error generating transaction!');
             var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create burn transaction';
             cbError(msg, cb);
         }
@@ -2469,26 +2540,33 @@ function cpBurn(network, source, quantity, fee, callback){
 // Handle creating/signing/broadcasting an 'Destroy' transaction
 function cpDestroy(network, source, asset, quantity, memo, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createDestroy(network, source, asset, quantity, memo, fee, function(o){
         if(o && o.result){
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
             signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
                             if(cb)
                                 cb(txid);
                         } else {
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
                             cbError('Error while trying to broadcast transaction. Please try again.', cb);
                         }
                     });
                 } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
                     cbError('Error while trying to sign destroy transaction. Please try again.',cb);
                 }
             });
         } else {
+            updateTransactionStatus('error', 'Error generating transaction!');
             var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create destroy transaction';
             cbError(msg, cb);
         }
@@ -2498,26 +2576,33 @@ function cpDestroy(network, source, asset, quantity, memo, fee, callback){
 // Handle creating/signing/broadcasting an 'Sweep' transaction
 function cpSweep(network, source, destination, flags, memo, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createSweep(network, source, destination, flags, memo, fee, function(o){
         if(o && o.result){
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
             signTransaction(network, source, destination, o.result, function(signedTx){
                 if(signedTx){
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
                             if(cb)
                                 cb(txid);
                         } else {
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
                             cbError('Error while trying to broadcast transaction. Please try again.', cb);
                         }
                     });
                 } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
                     cbError('Error while trying to sign sweep transaction. Please try again.',cb);
                 }
             });
         } else {
+            updateTransactionStatus('error', 'Error generating transaction!');
             var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create sweep transaction';
             cbError(msg, cb);
         }
@@ -2528,26 +2613,33 @@ function cpSweep(network, source, destination, flags, memo, fee, callback){
 // Handle creating/signing/broadcasting an 'Dispenser' transaction
 function cpDispenser(network, source, asset, escrow_amount, give_amount, btc_amount, status, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createDispenser(network, source, asset, escrow_amount, give_amount, btc_amount, status, fee, function(o){
         if(o && o.result){
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
             signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
                             if(cb)
                                 cb(txid);
                         } else {
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
                             cbError('Error while trying to broadcast transaction. Please try again.', cb);
                         }
                     });
                 } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
                     cbError('Error while trying to sign dispenser transaction. Please try again.',cb);
                 }
             });
         } else {
+            updateTransactionStatus('error', 'Error generating transaction!');
             var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create dispenser transaction';
             cbError(msg, cb);
         }
@@ -2937,7 +3029,7 @@ function signTransaction(network, source, destination, unsignedTx, callback){
             var utxoCb = function(data){
                 var utxoMap = {};
                 data.forEach(utxo => {
-                    utxoMap[utxo.txId] = utxo;
+                    utxoMap[utxo.txid] = utxo;
                 });
                 if(sourceIsBech32){
                     var input = bitcoinjs.payments.p2wpkh({ pubkey: keypair.publicKey, network: network });
@@ -2949,7 +3041,8 @@ function signTransaction(network, source, destination, unsignedTx, callback){
                     // We get reversed tx hashes somehow after parsing
                     var txhash = tx.ins[i].hash.reverse().toString('hex');
                     var prev = utxoMap[txhash];
-                    txb.addInput(tx.ins[i].hash.toString('hex'), prev.vout, null, input.output);
+                    if(prev)
+                        txb.addInput(tx.ins[i].hash.toString('hex'), prev.vout, null, input.output);
                 }
                 // Handle adding outputs
                 for(var i=0; i < tx.outs.length; i++){
@@ -2972,11 +3065,17 @@ function signTransaction(network, source, destination, unsignedTx, callback){
                     } else {
                         // Throw error that we couldn't sign tx
                         console.log("Failed to sign transaction: " + "Incomplete SegWit inputs");
-                        return;
+                        // return;
                     }
                 }
-                var signedHex = txb.build().toHex();
-                cb(null, signedHex);
+                var signedHex = false,
+                    error     = false;
+                try {
+                    signedHex = txb.build().toHex();
+                } catch(e){
+                    error = e;
+                }
+                cb(error, signedHex);
             }
             // Get list of utxo
             getUTXOs(net, source, utxoCb);
@@ -3018,8 +3117,7 @@ function getUTXOs(network, address, callback){
     $.getJSON(FW.XCHAIN_API +  '/api/utxos/' + address, function(o){
         if(o && o.data){
             o.data.forEach(function(utxo){
-                if(utxo.confirmations>=1)
-                    utxos.push(utxo);
+                utxos.push(utxo);
             });
         }
         if(callback)
@@ -5352,4 +5450,28 @@ function autoCollapseWatchlistTabs(rerun=false){
     // If the tab bar is taller than 50 pixels, we are too tall, re-run the logic
     if(tabs.height()>50 && !rerun)
         autoCollapseWatchlistTabs(true);
+}
+
+// Function to handle updating transaction status area with status messages
+function updateTransactionStatus(status, statusText){
+    var el      = $('#transaction-status'),
+        html    = statusText,
+        iconCss = '',
+        textCss = '';
+    if(el){
+        if(status=='error'){
+            iconCss = 'fa-exclamation-triangle';
+            textCss = 'red';
+        } else if(status=='success'){
+            iconCss = 'fa-check';
+            textCss = 'green';
+        } else if(status=='pending') {
+            iconCss = 'fa-spinner fa-spin';
+        } else if(status=='clear'){
+            html = '';
+        }
+        if(iconCss!='')
+            html = '<i class="fa fa-lg ' + iconCss + '"></i> ' + html;
+        el.removeClass('red green').addClass(textCss).html(html);
+    }
 }

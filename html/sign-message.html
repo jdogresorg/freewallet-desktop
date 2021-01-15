@@ -20,6 +20,7 @@
             <textarea type="text" class="form-control" id="signed-message" name="signed-message" placeholder="Message Signature" rows="3" readonly></textarea>
         </div>
     </div>
+    <div id="transaction-status"></div>
     <div class="text-right">
         <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
         <div id="btn-submit" class="btn btn-success"><i class="fa fa-lg fa-fw fa-envelope"></i> Sign Message</div>
@@ -82,12 +83,24 @@ $(document).ready(function(){
             $('#sign-message').closest('.form-group').addClass('has-error has-danger');
         }
         // Display any error message
+        updateTransactionStatus('clear');
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
+            updateTransactionStatus('pending', 'Signing message...');
             // Handle signing the message and populating the 'Signed' box
             var network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                signature = null;
+            try {
                 signature = signMessage(network, vals.source, vals.message);
+            } catch(e){
+                console.log('error=',e);
+            }
+            if(signature){
+                updateTransactionStatus('success', 'Message successfully signed!');
+            } else {
+                updateTransactionStatus('error', 'Error signing message!');
+            }
             $('#signed-message').val(signature);
         }
     })
