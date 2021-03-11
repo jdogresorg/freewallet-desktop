@@ -150,10 +150,10 @@ $(document).ready(function(){
             }
             // Verify that the memo is below the max allowed characters
             if(vals['memo'] && vals['memo']!=''){
-                var type = vals['memo-type'],
-                    max  = (type=='data') ? 68 : 34;
+                var memotype = vals['memo-type'],
+                    max      = (memotype=='data') ? 68 : 34;
                 if(vals['memo'].length>max){
-                    errors.push('Maximum memo length for a ' + type + ' memo is ' + max + ' characters!');
+                    errors.push('Maximum memo length for a ' + memotype + ' memo is ' + max + ' characters!');
                     $('#memo').closest('.form-group').addClass('has-error has-danger');
                 }
             }
