@@ -53,20 +53,20 @@ FW.WALLET_HISTORY  = JSON.parse(ls.getItem('walletHistory'))  || [];
 // Define default server info
 FW.WALLET_SERVER_INFO = {
     mainnet: {
-        host: 'public.coindaddy.io',
-        port: 4001,                 
-        user: 'rpc',                
-        pass: '1234',               
-        ssl: true,
+        host: 'api.counterparty.io',
+        port: 4000,
+        user: 'rpc',
+        pass: 'rpc',
+        ssl: false,
         api_host: 'xchain.io',
         api_ssl: true
     },
     testnet: {
-        host: 'public.coindaddy.io',
-        port: 14001,                
-        user: 'rpc',                
-        pass: '1234',               
-        ssl: true,
+        host: 'api.counterparty.io',
+        port: 14000,
+        user: 'rpc',
+        pass: 'rpc',
+        ssl: false,
         api_host: 'testnet.xchain.io',
         api_ssl: true
     }
@@ -3115,17 +3115,24 @@ function signP2SHTransaction(network, source, destination, unsignedTx, callback)
 // Handle getting a list of raw UTXOs for a given address
 function getUTXOs(network, address, callback){
     var utxos = [];
-    // Make call to indexd to get list of UTXOs
-    $.getJSON(FW.XCHAIN_API +  '/api/utxos/' + address, function(o){
-        if(o && o.data){
-            o.data.forEach(function(utxo){
+    var data = {
+       method: "get_unspent_txouts",
+       params: {
+            address: address,
+            unconfirmed: true
+        },
+        jsonrpc: "2.0",
+        id: 0
+    };
+    cpRequest(network, data, function(o){
+        if(o && o.result){
+            o.result.forEach(function(utxo){
                 utxos.push(utxo);
             });
         }
         if(callback)
             callback(utxos);
     });
-
 }
 
 // Handle signing a message and returning the signature
