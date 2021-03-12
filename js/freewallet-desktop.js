@@ -2236,38 +2236,8 @@ function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, qua
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
-                            updateTransactionStatus('pending', 'Generating second counterparty transaction...');
-                            // Create unsigned send transaction
-                            createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, function(o){
-                                if(o && o.result){
-                                    updateTransactionStatus('pending', 'Signing second counterparty transaction...');
-                                    // Sign the transaction
-                                    signP2SHTransaction(network, source, destination, o.result, function(signedTx){
-                                        if(signedTx){
-                                            updateTransactionStatus('pending', 'Broadcasting second counterparty transaction...');
-                                            // Broadcast the transaction
-                                            FW.BROADCAST_LOCK = false;
-                                            broadcastTransaction(network, signedTx, function(txid){
-                                                if(txid){
-                                                    updateTransactionStatus('success', 'Transactions signed and broadcast!');
-                                                    if(cb)
-                                                        cb(txid);
-                                                } else {
-                                                    updateTransactionStatus('error', 'Error broadcasting second transaction!');
-                                                    cbError('Error while trying to broadcast second transaction', cb);
-                                                }
-                                            });
-                                        } else {
-                                            updateTransactionStatus('error', 'Error signing second transaction!');
-                                            cbError('Error while trying to sign second transaction',cb);
-                                        }
-                                    });
-                                } else {
-                                    updateTransactionStatus('error', 'Error generating second transaction!');
-                                    var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create second transaction';
-                                    cbError(msg, cb);
-                                }
-                            });
+                            // Start trying to generate the second MPMA transaction
+                            cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee,  txid, 1, callback);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting first transaction!');
                             cbError('Error while trying to broadcast first transaction', cb);
@@ -2284,6 +2254,67 @@ function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, qua
             cbError(msg, cb);
         }
     });
+}
+
+// Handle generating the second MPMA transaction necessary for MPMA sends
+// We have this in a separate function so we can detect when an API call fails and try again after X seconds up to Y times
+// Sometimes the first mpma tx has not propagated to mempool before second mpma tx is generated, resulting in API error when tx is not found
+// Now we retry the second mpma tx after a brief delay, to let the first tx propagate a bit
+function cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, count, callback){
+    var cb  = (typeof callback === 'function') ? callback : false;
+        cnt = (count) ? count : 1,
+        max = 4;
+    // Try to generate the transaction until max tries
+    if(count <= max){
+        updateTransactionStatus('pending', 'Generating second counterparty transaction...');
+        // Create unsigned send transaction
+        createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, function(o){
+            if(o && o.result){
+                updateTransactionStatus('pending', 'Signing second counterparty transaction...');
+                // Sign the transaction
+                signP2SHTransaction(network, source, destination, o.result, function(signedTx){
+                    if(signedTx){
+                        updateTransactionStatus('pending', 'Broadcasting second counterparty transaction...');
+                        // Broadcast the transaction
+                        FW.BROADCAST_LOCK = false;
+                        broadcastTransaction(network, signedTx, function(txid){
+                            if(txid){
+                                updateTransactionStatus('success', 'Transactions signed and broadcast!');
+                                if(cb)
+                                    cb(txid);
+                            } else {
+                                updateTransactionStatus('error', 'Error broadcasting second transaction!');
+                                cbError('Error while trying to broadcast second transaction', cb);
+                            }
+                        });
+                    } else {
+                        updateTransactionStatus('error', 'Error signing second transaction!');
+                        cbError('Error while trying to sign second transaction',cb);
+                    }
+                });
+            } else if(o.error){
+                var error = o.error.data.message;
+                console.log('error=',error);
+                // Retry if error is missing tx from mempool (wait a bit for it to propagate)
+                if(error.indexOf('No such mempool or blockchain transaction')){
+                    cnt++;
+                    updateTransactionStatus('pending', 'Preparing to generate second transaction...');
+                    // Retry in 2 seconds
+                    setTimeout(function(){
+                        cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee,  txid, cnt, callback);
+                    },2000);
+                } else {
+                    updateTransactionStatus('error', 'Error generating second transaction!');
+                    var msg = (o.error.message) ? o.error.message : 'Error while trying to create second transaction';
+                    cbError(msg, cb);
+                }
+            }
+        });
+    } else {
+        // Maxed out on tries... Throw error to user
+        updateTransactionStatus('error', 'Error generating second transaction!');
+        cbError('Error while trying to generate second transaction', cb);
+    }
 }
 
 // Handle creating/signing/broadcasting an 'Issuance' transaction
