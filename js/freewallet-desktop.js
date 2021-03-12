@@ -2263,7 +2263,7 @@ function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, qua
 function cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, count, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
         cnt = (count) ? count : 1,
-        max = 4;
+        max = 5;
     // Try to generate the transaction until max tries
     if(count <= max){
         updateTransactionStatus('pending', 'Generating second counterparty transaction...');
@@ -2294,7 +2294,6 @@ function cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asse
                 });
             } else if(o.error){
                 var error = o.error.data.message;
-                console.log('error=',error);
                 // Retry if error is missing tx from mempool (wait a bit for it to propagate)
                 if(error.indexOf('No such mempool or blockchain transaction')){
                     cnt++;
@@ -2683,7 +2682,7 @@ function cpDispenser(network, source, asset, escrow_amount, give_amount, btc_amo
 function cpRequest(network, data, callback){
     var net  = (network=='testnet') ? 'testnet' : 'mainnet',
         info = FW.WALLET_SERVER_INFO[net],
-        url  = ((info.ssl) ? 'https' : 'http') + '://' + info.host + ':' + info.port + '/api/',
+        url  = ((info.ssl) ? 'https' : 'http') + '://' + info.host + ':' + info.port,
         auth = $.base64.btoa(info.user + ':' + info.pass);
         // console.log('info=',info);
         // console.log('url=',url);
