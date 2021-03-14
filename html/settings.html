@@ -120,6 +120,18 @@
                                 <option>Custom</option>
                             </select>
                         </div>                
+                        <div class="form-group">
+                            <label for="minimum-tx-fee" class="col-sm-3 control-label no-right-padding">
+                                Minimum Fee
+                                <a href="#" data-toggle="tooltip" title='This is the minimum transaction fee you want to pay on any transaction' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" name="minimum-tx-fee" id="minimum-tx-fee" placeholder="Minimum Transaction Fee">
+                                    <a href="#" class="input-group-addon" id="reset-min-fee">Reset</a>
+                                </div>
+                            </div>
+                        </div>
                     </fieldset>            
                 </div>
                 <!-- API Keys -->
@@ -322,6 +334,9 @@ $(document).ready(function(){
     var val = ls.getItem('feePriority') || 'High';
     $('#current-priority').val(val);
 
+    var fee = numeral(FW.MINIMUM_TX_FEE * 0.00000001).format('0.00000000');
+    $('#minimum-tx-fee').val(fee);
+
     // Restore any API keys
     $('#api-key-pastebin').val(ls.getItem('apiKeyPastebin'));
 
@@ -342,6 +357,42 @@ $(document).ready(function(){
     $('#api-key-pastebin').change(function(){
         var val = $(this).val();
         ls.setItem('apiKeyPastebin', val);
+    });
+
+    // Handle resetting the minimum fee
+    $('#reset-min-fee').click(function(){
+        FW.MINIMUM_TX_FEE = FW.MINIMUM_TX_FEE_DEFAULT;
+        var fee = numeral(FW.MINIMUM_TX_FEE * 0.00000001).format('0.00000000');
+        $('#minimum-tx-fee').val(fee);
+        ls.removeItem('feeMinimum');
+    });
+
+    // Handle making sure minimum fee is within sane ranges (1000-10,000 satoshis)
+    $('#minimum-tx-fee').change(function(){
+        var el   = $(this);
+            val  = el.val(),
+            sats = numeral(numeral(val).format('0.00000000').split('.')[1]).format('0'),
+            min  = 1000,
+            max  = 10000;
+        // Force format to 0.00000000
+        el.val(numeral(val).format('0.00000000'));
+        var errors = [];
+        if(sats < min)
+            errors.push('Minimum Fee is below minmum of ' + numeral(min).format('0,0') + ' satoshis!');
+        if(sats > max)
+            errors.push('Minimum Fee is above maximum of ' + numeral(max).format('0,0') + ' satoshis!');
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>'));
+            // Reset displayed fee to current setting
+            var fee = numeral(FW.MINIMUM_TX_FEE * 0.00000001).format('0.00000000');
+            $('#minimum-tx-fee').val(fee);
+        } else {
+            // Update minimum fee and save setting
+            FW.MINIMUM_TX_FEE = sats;
+            ls.setItem('feeMinimum', sats);
+            dialogMessage('<i class="fa fa-lg fa-fw fa-floppy-o"></i> Minimum Fee Saved', 'Your minimum fee information has been successfully saved.');
+        }
     });
 
     // Handle form validation

@@ -27,6 +27,10 @@ FW.NETWORK_INFO =  JSON.parse(ls.getItem('networkInfo')) || {};
 // Wallet format (0=Counterwallet, 1=BIP39)
 FW.WALLET_FORMAT = ls.getItem('walletFormat') || 0;
 
+// Minimum transaction fee
+FW.MINIMUM_TX_FEE_DEFAULT = 1350;
+FW.MINIMUM_TX_FEE = ls.getItem('feeMinimum') || FW.MINIMUM_TX_FEE_DEFAULT;
+
 // Load current wallet address and address label
 FW.WALLET_ADDRESS       = ls.getItem('walletAddress') || null;
 FW.WALLET_ADDRESS_LABEL = ls.getItem('walletAddressLabel') || null;
@@ -2226,7 +2230,7 @@ function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, qua
     var cb  = (typeof callback === 'function') ? callback : false;
     updateTransactionStatus('pending', 'Generating first counterparty transaction...');
     // Create unsigned send transaction
-    createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, 1000, null, function(o){
+    createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, FW.MINIMUM_TX_FEE, null, function(o){
         if(o && o.result){
             updateTransactionStatus('pending', 'Signing first counterparty transaction...');
             // Sign the transaction
@@ -2263,7 +2267,8 @@ function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, qua
 function cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, count, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
         cnt = (count) ? count : 1,
-        max = 5;
+        max = 10,   // Max number of retries
+        ms  = 3000; // Sleep time in milliseconds
     // Try to generate the transaction until max tries
     if(count <= max){
         updateTransactionStatus('pending', 'Generating second counterparty transaction...');
@@ -2301,7 +2306,7 @@ function cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asse
                     // Retry in 2 seconds
                     setTimeout(function(){
                         cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee,  txid, cnt, callback);
-                    },2000);
+                    },ms);
                 } else {
                     updateTransactionStatus('error', 'Error generating second transaction!');
                     var msg = (o.error.message) ? o.error.message : 'Error while trying to create second transaction';

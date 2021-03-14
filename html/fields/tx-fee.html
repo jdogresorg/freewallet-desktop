@@ -55,18 +55,24 @@ $(document).ready(function(){
             fee = ((o.low_priority + o.optimal) / 2); // Medium fee is between high and low
         // Calculate the actual fee cost for this transaction
         var cost = numeral(((fee / 1000) * avg) * 0.00000001).format('0.00000000');
-        // Do nothing for custom fees
+        // Set fee to minimum if user selects Custom
         if(val=='Custom')
-            cost = '0.00000000';
+            cost = numeral(FW.MINIMUM_TX_FEE * 0.00000001).format('0.00000000');
         $('#fee-amount').val(cost);
         $('#fee-amount').change();
         updateTxFeeValue(cost);
     }));
 
-    // Make sure BTC value is in correct format
+    // Validate that fee amount is not below minimum tx fee, and force BTC value to correct 0,0.00000000 format
     $('#fee-amount').change(function(e){
-        var amt = String($(this).val()).replace(/[^0-9.]/g,'');
+        var min = numeral(FW.MINIMUM_TX_FEE * 0.00000001).format('0.00000000'),
+            amt = numeral(String($(this).val()).replace(/[^0-9.]/g,'')).format('0,0.00000000');
+        if(amt < min){
+            amt = min;
+            dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Error', 'Transaction fee is below minumum transaction fee!<br>You can edit minimum transaction fee at Settings->Preferences->Minimum Fee');
+        }
         $(this).val(numeral(amt).format('0,0.00000000'));
+        updateTxFeeValue(amt);
     });
 
     // When user changes fee, update fee fiat
