@@ -71,13 +71,17 @@ $(document).ready(function(){
         dialogClose('dialog-about');
     }));
 
-    // When a user clicks the donate now button, save bounty address and launch 'Send Funds' window
+    // When a user clicks 'Buy FULLACCESS' button, throw dispenser buy dialog to purchase from official dispenser
     $('#btn-buy').click($.debounce(100, function(e){
         FW.DIALOG_DATA = {
-            token: 'FULLACCESS'
+            name: 'FULLACCESS',
+            asset: 'FULLACCESS',
+            give_quantity: '1',
+            give_remaining: '10', // Prevent people from buying more than 10
+            satoshirate: '0.00200000',
+            destination: 'bc1q50kxp76j9l0k9jgwasvcz4mcz0v03fv2y5pdxx'
         };
-        loadPage('dispensers');
-        dialogClose('dialog-about');
+        dialogDispenserBuy();
     }));
 
 

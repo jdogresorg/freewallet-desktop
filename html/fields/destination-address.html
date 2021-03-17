@@ -1,6 +1,6 @@
 <!-- Destination Address Field -->
 <label class="col-sm-3 control-label text-left" for="destination-address">
-    Destination
+    <span id="destination-address-label">Destination</span>
     <a href="#" data-toggle="tooltip" title='This is the destination address you would like to use' class="pull-right" id="destination-address-tooltip"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
 </label>            
 <div class="col-sm-9">
@@ -24,6 +24,13 @@ $(document).ready(function(){
     //     // do something elese here
     // }
 
+    if(type=='dispenser'){
+        $('#destination-address-label').text('Dispenser');
+        $('#destination-address').attr('placeholder','Dispenser Address')
+        // Set destination address to current wallet address
+        $('#destination-address').val(FW.WALLET_ADDRESS);
+    }
+
     // Wait a brief moment to allow things to initialize
     setTimeout(function(){
 
@@ -33,6 +40,8 @@ $(document).ready(function(){
             txt = 'This is the address which will be receiving funds from you';
         if(type=='transfer-ownership')
             txt = 'This is the address which you are transferring token ownership to';
+        if(type=='dispenser')
+            txt = 'This is the address where the dispenser will be setup';
         if(txt)
             tip.attr('data-original-title',txt);
 
@@ -42,7 +51,6 @@ $(document).ready(function(){
         var me  = $(this),
             val = String(me.val()).trim();
             me.val(val);
-
     });
 
     // Display 'Address Book' when user clicks address book link

@@ -352,9 +352,7 @@ function addNewWalletAddress(net=1, type='normal'){
         if(item.type==addrtype && item.network==net && item.index>idx)
             idx = item.index;
     });
-    console.log('idx A=',idx);
     idx++; // Increase index for new address
-    console.log('idx B=',idx);
     // Generate new address
     var w = getWallet(),
         n = bc.Networks[network],
@@ -2648,11 +2646,11 @@ function cpSweep(network, source, destination, flags, memo, fee, callback){
 
 
 // Handle creating/signing/broadcasting an 'Dispenser' transaction
-function cpDispenser(network, source, asset, escrow_amount, give_amount, btc_amount, status, fee, callback){
+function cpDispenser(network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
-    createDispenser(network, source, asset, escrow_amount, give_amount, btc_amount, status, fee, function(o){
+    createDispenser(network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, function(o){
         if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
@@ -2966,8 +2964,8 @@ function createSweep(network, source, destination, flags, memo, fee, callback){
 
 
 // Handle creating dispenser transaction
-function createDispenser(network, source, asset, escrow_amount, give_amount, btc_amount, status, fee, callback){
-    // console.log('createDispenser=',network, source, asset, escrow_amount, give_amount, btc_amount, status, fee, callback);
+function createDispenser(network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, callback){
+    // console.log('createDispenser=',network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, callback);
     var data = {
        method: "create_dispenser",
        params: {
@@ -2983,6 +2981,11 @@ function createDispenser(network, source, asset, escrow_amount, give_amount, btc
         jsonrpc: "2.0",
         id: 0
     };
+    // Handle opening dispensers on empty addresses by changing status=1 and passing open_address
+    if(source!=destination){
+        data.params.open_address = destination;
+        data.params.status = 1;
+    }
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
@@ -3192,6 +3195,7 @@ function broadcastTransaction(network, tx, callback){
             FW.BROADCAST_LOCK = false;
         }, 5000);
     }
+    console.log('signed transaction=', tx);
     var net  = (network=='testnet') ? 'BTCTEST' : 'BTC';
     // First try to broadcast using the XChain API
     $.ajax({

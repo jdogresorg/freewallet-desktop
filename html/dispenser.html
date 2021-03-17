@@ -3,6 +3,9 @@
     <div class="form-group" id="source-address-field">
         <!-- Source Address Field -->
     </div>
+    <div class="form-group" id="destination-address-field">
+        <!-- Destination Address Field -->
+    </div>
     <div class="form-group" id="token-name-select-field">
         <!-- Token Name Field  -->
     </div>
@@ -30,10 +33,51 @@
 
 
 <script>
+
+// Callback to run after broadcasting transaction
+function doneCb(tx){
+    if(tx){
+        dialogClose('dialog-dispenser');
+        dialogMessage('<i class="fa fa-lg fa-arrows-h"></i> Create Dispenser Successful', '<center>Your dispenser transaction has been sent to the network and should be included to a block shortly.' +
+                      '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+    }
+}
+
+// Handle confirming action with user
+function confirmCreateDispenser(vals){
+    // Callback to run if user confirms action
+    var confirmCb = function(){
+        var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+            escrow_sat = (vals['escrow-amount'].indexOf('.')!=-1) ? numeral(vals['escrow-amount']).multiply(100000000).format('0') : numeral(vals['escrow-amount']).format('0'),
+            give_sat   = (vals['escrow-amount'].indexOf('.')!=-1) ? numeral(vals['give-amount']).multiply(100000000).format('0') : numeral(vals['give-amount']).format('0'),
+            btc_sat    = parseInt(numeral(vals['btc-amount']).multiply(100000000).value()),
+            fee_sat    = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
+            asset      = vals.name, 
+            status     = 0; // Hardcode to open for creating a dispenser... can close via dispensers interface
+        cpDispenser(network, vals.source, vals.destination, asset, escrow_sat, give_sat, btc_sat, status, fee_sat, doneCb);
+    }
+    // Confirm the action with the user
+    var title = '<i class="fa fa-lg fa-fw fa-arrows-h"></i> Confirm Create Dispenser?',
+        msg   = 'Escrow <b>' + vals['escrow-amount'] + ' ' + vals.name + '</b> in a dispenser at';
+        msg  += '<br>Dispense <b>' + vals['give-amount'] + ' ' + vals.name + '</b> for <b>' + vals['btc-amount'] + ' BTC</b> each?';
+    dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+}
+
+// Handle throwing a scary warning to discourage people from setting up multiple dispensers on the same address
+// This should hopefully prevent some users from losing funds because they do not understand that a single BTC payment can trigger multiple dispensers
+function dialogWarnMultipleDispensers(vals){
+    var message = '<div class="alert alert-danger" role="alert"><strong><center>There is already a dispenser setup at this address!<br><br>Setting up multiple dispensers on the same address is not suggested, and can result in dispensing tokens unexpectedly and loss of funds!</center></strong></div>';
+    message += '<center>Are you sure you want to continue setting up this dispenser?'
+    dialogConfirm('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Warning', message, false, true, function(){
+        confirmCreateDispenser(vals);
+    });
+}
+
 $(document).ready(function(){
 
     // Load any field content
     $('#source-address-field').load('html/fields/source-address.html');
+    $('#destination-address-field').load('html/fields/destination-address.html');
     $('#token-name-select-field').load('html/fields/token-name-select.html');
     $('#available-field').load('html/fields/available.html');
     $('#escrow-amount-field').load('html/fields/amount-escrow.html');
@@ -92,6 +136,12 @@ $(document).ready(function(){
         // Remove error indicators from any fields 
         $('.form-group').removeClass('has-error has-danger');
 
+        // Verify we have a valid dispenser address
+        if(!isValidAddress(vals.destination)){
+            errors.push('You must enter a valid dispenser address!');
+            $('#destination-address').closest('.form-group').addClass('has-error has-danger');
+        }
+
         // Verify we have valid escrow amount 
         if(numeral(vals['escrow-amount']).value()==0){
             errors.push('You must enter an escrow amount which is greater than 0!');
@@ -120,33 +170,35 @@ $(document).ready(function(){
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            // Callback to run after broadcasting send
-            var doneCb = function(tx){
-                if(tx){
-                    dialogClose('dialog-dispenser');
-                    dialogMessage('<i class="fa fa-lg fa-arrows-h"></i> Create Dispenser Successful', '<center>Your dispenser transaction has been sent to the network and should be included to a block shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+            // Check if user has any dispensers setup on this address already
+            $.getJSON(FW.XCHAIN_API + '/api/dispensers/' + vals.destination, function(o){
+                var found = false
+                o.data.forEach(function(item){
+                    if(item.status==0)
+                        found = true;
+                });
+                // If open dispensers are found, throw warning about multiple dispensers
+                if(found){
+                    dialogWarnMultipleDispensers(vals);
+                } else {
+                    // So far so good, now lets check mempool for any pending dispenser transactions
+                    $.getJSON(FW.XCHAIN_API + '/api/mempool/' + vals.destination, function(o){
+                        var found = false
+                        o.data.forEach(function(item){
+                            if(item.tx_type=='Dispenser')
+                                found = true;
+                        });
+                        // If we have pending dispenser transaction, throw warning... otherwise, proceed to confirmation
+                        if(found){
+                            dialogWarnMultipleDispensers(vals);
+                        } else {
+                            confirmCreateDispenser(vals);
+                        }
+                    });
                 }
-            }
-            // Callback to run if user confirms action
-            var confirmCb = function(){
-                var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                    escrow_sat = (vals['escrow-amount'].indexOf('.')!=-1) ? numeral(vals['escrow-amount']).multiply(100000000).format('0') : numeral(vals['escrow-amount']).format('0'),
-                    give_sat   = (vals['escrow-amount'].indexOf('.')!=-1) ? numeral(vals['give-amount']).multiply(100000000).format('0') : numeral(vals['give-amount']).format('0'),
-                    btc_sat    = parseInt(numeral(vals['btc-amount']).multiply(100000000).value()),
-                    fee_sat    = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
-                    asset      = vals.name, 
-                    status     = 0; // Hardcode to open for creating a dispenser... can close via dispensers interface
-                cpDispenser(network, vals.source, asset, escrow_sat, give_sat, btc_sat, status, fee_sat, doneCb);
-            }
-            // Confirm the action with the user
-            var title = '<i class="fa fa-lg fa-fw fa-arrows-h"></i> Confirm Create Dispenser?',
-                msg   = 'Escrow <b>' + vals['escrow-amount'] + ' ' + vals.name + '</b> in a dispenser and';
-                msg  += '<br>Dispense <b>' + vals['give-amount'] + ' ' + vals.name + '</b> for <b>' + vals['btc-amount'] + ' BTC</b> each?';
-            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+            });
         }
     })
-
 
 });
 </script>
