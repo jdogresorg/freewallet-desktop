@@ -57,6 +57,7 @@ $(document).ready(function(){
         $('#amount-max').hide();
         $('#amount').addClass('input-rounded-right');
     } else if(type=='dispenser-buy'){
+        // Update quantity to give_quantity
         $('#amount').val(FW.DIALOG_DATA.give_quantity);
     }
 
@@ -79,6 +80,10 @@ $(document).ready(function(){
             txt = 'This is the amount of ' + FW.DIALOG_DATA.name +' that you would like to buy';
         if(txt)
             tip.attr('data-original-title',txt);
+
+        // Trigger change to calculate USD prices
+        if(type=='dispenser-buy')
+            $('#amount').change();
 
     },750);
 
@@ -103,9 +108,9 @@ $(document).ready(function(){
             // Force maximum quantity to what is available in the dispenser
             if(amt > max)
                 amt = max;
-            // Force quantity to a multiple of what the dispenser is offering
-            if(amt % min && amt < max)
-                amt = (amt - (amt % min));
+            // Force quantity to a multiple of what the dispenser is offering (disable for now, got some complaints of issues)
+            // if(amt % min && amt < max)
+            //     amt = (amt - (amt % min));
             // Update the BTC amount to be based off the quantity
             var btc = numeral((amt / min) * sat).format('0,0.00000000');
             $('#btc-amount').val(btc);
