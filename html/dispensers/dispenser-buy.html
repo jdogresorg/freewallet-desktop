@@ -110,12 +110,6 @@ $(document).ready(function(){
             var msg  = 'Buy <b>' + vals.amount + ' ' + data.name + '</b>';
                 msg += ' <br/>for <b>' + vals['btc-amount'] + ' BTC</b>';
             dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
-
-            // var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-            //     source   = FW.WALLET_ADDRESS,
-            //     status   = 10, // 10 = Close Dispenser
-            //     fee_sat  = parseInt(numeral(vals['fee-amount']).multiply(100000000).value());
-            // cpDispenser(network, source, vals.asset, 0, 0, 0, status, fee_sat, doneCb);
         }
     })
 
