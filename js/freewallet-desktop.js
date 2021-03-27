@@ -4445,8 +4445,8 @@ function displayContextMenu(event){
                 dialogViewAddress(addr);
             }
         }));
-        // Don't display 'View Private Key' option for watch-only addresses
-        if([1,2].indexOf(info.type)!=-1){
+        // Display 'View Private Key' for certain addresses (1=normal, 2=imported, 7=segwit)
+        if([1,2,7].indexOf(info.type)!=-1){
             mnu.append(new nw.MenuItem({ 
                 label: 'View Private Key',
                 click: function(){ 
