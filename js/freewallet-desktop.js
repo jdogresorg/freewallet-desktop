@@ -3383,6 +3383,7 @@ function dialogRemoveWalletAddress(address){
 
 // View Private key for current address
 function dialogViewPrivateKey(address){
+    var address = (address) ? address : FW.WALLET_ADDRESS;
     // Make sure wallet is unlocked before showing send dialog box
     if(!ss.getItem('wallet')){
         dialogMessage('Wallet Locked!', 'You will need to unlock your wallet before you can view the private key', true);
@@ -3392,7 +3393,7 @@ function dialogViewPrivateKey(address){
         type: 'type-default',
         cssClass: 'dialog-view-privkey',
         closeByBackdrop: false,
-        title: '<i class="fa fa-lg fa-fw fa-user-secret"></i> Private Key for ' + FW.WALLET_ADDRESS,
+        title: '<i class="fa fa-lg fa-fw fa-user-secret"></i> Private Key for ' + address,
         message: function(dialog){
             var msg  = $('<div class=""></div>'),
                 net  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
