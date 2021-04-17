@@ -73,6 +73,16 @@ function dialogWarnMultipleDispensers(vals){
     });
 }
 
+
+// Handle throwing a scary warning to discourage people from setting up dispensers on everyday use addresses
+function dialogWarnSameAddress(vals){
+    var message = '<div class="alert alert-danger" role="alert"><strong><center>Setting up a dispenser on an address you commonly use is not advised and can result in dispensing tokens unexpectedly and loss of funds!</center><br>Example: Withdrawing BTC from an exchange or sending BTC to this address from another address you control could trigger an unexpected dispense.</strong></div>';
+    message += '<center>Are you sure you want to continue setting up this dispenser?'
+    dialogConfirm('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Warning', message, false, true, function(){
+        confirmCreateDispenser(vals);
+    });
+}
+
 $(document).ready(function(){
 
     // Load any field content
@@ -188,11 +198,11 @@ $(document).ready(function(){
                             if(item.tx_type=='Dispenser')
                                 found = true;
                         });
-                        // If we have pending dispenser transaction, throw warning... otherwise, proceed to confirmation
+                        // Handle throwing warnings to steer users away from pitfalls of dispenser use
                         if(found){
                             dialogWarnMultipleDispensers(vals);
                         } else {
-                            confirmCreateDispenser(vals);
+                            dialogWarnSameAddress(vals);
                         }
                     });
                 }
