@@ -532,6 +532,15 @@ li.history-list-received .history-list-amount {
 .btc-wallet-address .modal-dialog {
     max-width: 350px;
 }
+#showhide {
+    display: block;
+    position: relative;
+}
+.toggle-icon {
+    position: absolute;
+    bottom: 18px;
+    right: 20px;
+}
 
 .normal-page-content {
     height: calc(100vh - 82px);
