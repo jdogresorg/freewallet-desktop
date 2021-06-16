@@ -5,7 +5,7 @@
 
     <!--  new markup to show eye of sauron  -->
     <div class="showhide">
-        <i id="toggleIcon" class="fa fa-2x fa-inverse fa-eye-slash" style="bottom:58px; right:20px; position:absolute;"></i>
+        <i id="toggle-icon" class="fa fa-2x fa-inverse fa-eye-slash" style="bottom:58px; right:20px; position:absolute;"></i>
     </div>
  
 
@@ -71,15 +71,15 @@ $(document).ready(function(){
     });
 
     // Allow user to toggle passphrase display
-    $("#toggleIcon").click(function(){
+    $("#toggle-icon").click(function(){
         var addOrRemove = $("#manualPassphrase").hasClass('active');
 
         // set input type to text or password and toggle icon
         if(addOrRemove) {
-            $("#toggleIcon").removeClass('fa-eye').addClass('fa-eye-slash');
+            $("#toggle-icon").removeClass('fa-eye').addClass('fa-eye-slash');
             $("#manualPassphrase").attr("type", "text");
         } else {
-            $("#toggleIcon").removeClass('fa-eye-slash').addClass('fa-eye');
+            $("#toggle-icon").removeClass('fa-eye-slash').addClass('fa-eye');
             $('#manualPassphrase').attr("type", "password");
         }
         $('#manualPassphrase').toggleClass( 'active');
