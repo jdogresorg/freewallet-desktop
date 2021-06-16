@@ -1,10 +1,14 @@
 <div id="existing-passphrase" class="center">
     <p>Please enter your existing 12-word wallet passphrase and click 'Ok'</p>
-    <input type="password" class="btc-wallet-passphrase" id="manualPassphrase" autocomplete="off" >
-    <div id="showhide">
-        <i id="toggle-icon" class="fa fa-2x fa-inverse fa-eye-slash"></i>
+    <input type="text" class="btc-wallet-passphrase" id="manualPassphrase" autocomplete="off" >
+
+
+    <!--  new markup to show eye of sauron  -->
+    <div class="showhide">
+        <i id="toggleIcon" class="fa fa-2x fa-inverse fa-eye-slash" style="bottom:58px; right:20px; position:absolute;"></i>
     </div>
  
+
     <div class="input-group pull-left" style="width:180px" id="amount-value-wrapper">
         <label class="input-group-addon">Format</label>
         <select id="format-select" name="format" class="selectpicker">
@@ -66,17 +70,20 @@ $(document).ready(function(){
         }
     });
 
-    // Allow user to toggle display of passphrase
-    $("#toggle-icon).click(function(){
+    // Allow user to toggle passphrase display
+    $("#toggleIcon").click(function(){
         var addOrRemove = $("#manualPassphrase").hasClass('active');
+
+        // set input type to text or password and toggle icon
         if(addOrRemove) {
-            $("#toggle-icon").removeClass('fa-eye').addClass('fa-eye-slash');
+            $("#toggleIcon").removeClass('fa-eye').addClass('fa-eye-slash');
             $("#manualPassphrase").attr("type", "text");
         } else {
-            $("#toggle-icon").removeClass('fa-eye-slash').addClass('fa-eye');
+            $("#toggleIcon").removeClass('fa-eye-slash').addClass('fa-eye');
             $('#manualPassphrase').attr("type", "password");
         }
         $('#manualPassphrase').toggleClass( 'active');
+
     });
 
 });
