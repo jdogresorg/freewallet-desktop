@@ -536,7 +536,7 @@ li.history-list-received .history-list-amount {
     display: block;
     position: relative;
 }
-.toggle-icon {
+#toggle-icon {
     position: absolute;
     bottom: 18px;
     right: 20px;
