@@ -67,15 +67,15 @@ $(document).ready(function(){
     });
 
     // Allow user to toggle passphrase display
-    $("#toggle-icon").click(function(){
+    $("#showhide-icon").click(function(){
         var addOrRemove = $("#manualPassphrase").hasClass('active');
 
         // set input type to text or password and toggle icon
         if(addOrRemove) {
-            $("#toggle-icon").removeClass('fa-eye').addClass('fa-eye-slash');
+            $("#showhide-icon").removeClass('fa-eye').addClass('fa-eye-slash');
             $("#manualPassphrase").attr("type", "text");
         } else {
-            $("#toggle-icon").removeClass('fa-eye-slash').addClass('fa-eye');
+            $("#showhide-icon").removeClass('fa-eye-slash').addClass('fa-eye');
             $('#manualPassphrase').attr("type", "password");
         }
         $('#manualPassphrase').toggleClass( 'active');
