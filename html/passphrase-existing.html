@@ -1,10 +1,12 @@
 <div id="existing-passphrase" class="center">
     <p>Please enter your existing 12-word wallet passphrase and click 'Ok'</p>
-    <input type="text" class="btc-wallet-passphrase" id="manualPassphrase" autocomplete="off" >
-    <div class="showhide">
-        <i id="toggle-icon" class="fa fa-2x fa-inverse fa-eye-slash"></i>
+    <input type="password" class="btc-wallet-passphrase" id="manualPassphrase" autocomplete="off" >
+    <div id="passphrase-icon-wrapper">
+        <i id="passphase-icon" class="fa fa-2x fa-inverse fa-eye-slash"></i>
     </div>
- 
+    <div class="alert alert-info">
+        <center>Click the eye icon to the right to reveal the passphrase while typing</center>
+    </div>
     <div class="input-group pull-left" style="width:180px" id="amount-value-wrapper">
         <label class="input-group-addon">Format</label>
         <select id="format-select" name="format" class="selectpicker">
@@ -24,8 +26,8 @@ $(document).ready(function(){
     var isBip39    = FW.WALLET_FORMAT,
         passphrase = null;
 
-    // Focus the passphrase immediately
-    $('#manualPassphrase').focus();
+    // Focus the passphrase after 1/2 a second to let things initialize
+    setTimeout(function(){ $('#manualPassphrase').focus(); }, 500);
 
     // Initialize the passphrase format picker and default to counterwallet's funky format
     $('#format-select').selectpicker({ width: '100%' }).selectpicker("refresh");
@@ -67,18 +69,18 @@ $(document).ready(function(){
     });
 
     // Allow user to toggle passphrase display
-    $("#showhide-icon").click(function(){
-        var addOrRemove = $("#manualPassphrase").hasClass('active');
-
+    $("#passphase-icon").click(function(){
+        var visible = $("#manualPassphrase").hasClass('show-passphrase');
+console.log('click');
         // set input type to text or password and toggle icon
-        if(addOrRemove) {
-            $("#showhide-icon").removeClass('fa-eye').addClass('fa-eye-slash');
-            $("#manualPassphrase").attr("type", "text");
+        if(visible) {
+            $("#passphase-icon").removeClass('fa-eye').addClass('fa-eye-slash');
+            $("#manualPassphrase").attr("type", "password");
         } else {
-            $("#showhide-icon").removeClass('fa-eye-slash').addClass('fa-eye');
-            $('#manualPassphrase').attr("type", "password");
+            $("#passphase-icon").removeClass('fa-eye-slash').addClass('fa-eye');
+            $('#manualPassphrase').attr("type", "text");
         }
-        $('#manualPassphrase').toggleClass( 'active');
+        $('#manualPassphrase').toggleClass( 'show-passphrase');
 
     });
 

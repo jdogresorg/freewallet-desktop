@@ -532,11 +532,11 @@ li.history-list-received .history-list-amount {
 .btc-wallet-address .modal-dialog {
     max-width: 350px;
 }
-#showhide {
+#passphrase-icon-wrapper {
     display: block;
     position: relative;
 }
-#showhide-icon {
+#passphrase-icon-wrapper > i {
     position: absolute;
     bottom: 18px;
     right: 20px;
