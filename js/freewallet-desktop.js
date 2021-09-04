@@ -5372,7 +5372,7 @@ function removeDispenserWatchlist(asset){
     // Handle removing from base pairs 
     if(FW.BASE_DISPENSERS.indexOf(asset)!=-1){
         // Remove market from FW.BASE_DISPENSERS
-        FW.BASE_DISPENSERS.splice(FW.BASE_DISPENSERS.indexOf(FW.BASE_DISPENSERS),1);
+        FW.BASE_DISPENSERS.splice(FW.BASE_DISPENSERS.indexOf(asset),1);
         // Save data to localStorage
         ls.setItem('walletDispensers', JSON.stringify(FW.BASE_DISPENSERS));
     }
