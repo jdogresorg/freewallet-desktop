@@ -173,13 +173,15 @@ FW.MARKETS_DATATABLE_CONFIG = {
 $(document).ready(function(){
 
     // Set last row count
-    var last = getMarketsRowCount();
+    var last  = getMarketsRowCount(),
+        first = FW.BASE_MARKETS.slice(0,1);
 
     // Populate base market tables/tabs
     FW.BASE_MARKETS.forEach(function(market){ addMarket(market); });
 
-    // Set BTC as the active tab (also hides all the non-active tab content panels we added)
-    $('#markets-tabs a[href="#BTC"]').tab('show');
+    // Set first asset as active tab (also hides all the non-active tab content panels we added)
+    if(first)
+        $('#markets-tabs a[href="#' + first + '"]').tab('show');
 
     // Initialize the datatables
     $('.datatable').DataTable(FW.MARKETS_DATATABLE_CONFIG);
