@@ -122,6 +122,9 @@ $(document).ready(function(){
 
     // Calculate the fiat value as the user types the amount
     $('#amount').keyup($.debounce(100,function(e){
+        // Ignore tabs
+        if(e.keyCode==9)
+            return;
         var amt = String($(this).val()).replace(/[^0-9.]/g,'');
         updateSendValue(amt);
     }));
@@ -135,6 +138,9 @@ $(document).ready(function(){
 
     // Calculate the crypto value as the user types the fiat amount
     $('#amount-value').keyup($.debounce(100,function(e){
+        // Ignore tabs
+        if(e.keyCode==9)
+            return;
         var amt = String($(this).val()).replace(/[^0-9.]/g,'');
         updateSendAmount(amt);
     }));

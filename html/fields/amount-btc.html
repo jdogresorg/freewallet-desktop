@@ -90,6 +90,9 @@ $(document).ready(function(){
 
     // Calculate the fiat value as the user types the amount
     $('#btc-amount').keyup($.debounce(100,function(e){
+        // Ignore tabs
+        if(e.keyCode==9)
+            return;
         var amt = String($(this).val()).replace(/[^0-9.]/g,'');
         updateBTCValue(amt);
     }));
@@ -103,6 +106,9 @@ $(document).ready(function(){
 
     // Calculate the crypto value as the user types the fiat amount
     $('#btc-amount-value').keyup($.debounce(100,function(e){
+        // Ignore tabs
+        if(e.keyCode==9)
+            return;
         var amt = String($(this).val()).replace(/[^0-9.]/g,'');
         updateBTCAmount(amt);
     }));
