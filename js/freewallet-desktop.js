@@ -4472,14 +4472,12 @@ function displayContextMenu(event){
     if(el.length!=0){
         var mnu    = new nw.Menu(),
             market = el.attr('data-market');
-        if(market!='XCP' && market!='BTC'){
             mnu.append(new nw.MenuItem({ 
                 label: 'Remove Market',
                 click: function(){ 
                     removeMarket(market);
                 }
             }));
-        }
         menu = mnu;
     }    
 
@@ -4510,7 +4508,7 @@ function displayContextMenu(event){
     if(el.length!=0){
         var mnu   = new nw.Menu(),
             asset = el.attr('data-asset');
-        if(asset!='XCP' && asset!='my-dispensers'){
+        if(asset!='my-dispensers'){
             mnu.append(new nw.MenuItem({ 
                 label: 'Remove Watchlist',
                 click: function(){ 
