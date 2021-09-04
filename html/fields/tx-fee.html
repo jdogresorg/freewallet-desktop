@@ -23,7 +23,8 @@
 
 <script>
 $(document).ready(function(){
-    var ls = localStorage;
+    var ls = localStorage,
+    doMinimumFeeAlert = false;
 
     btc_info = getAssetPrice('BTC',true);
 
@@ -60,7 +61,6 @@ $(document).ready(function(){
             cost = numeral(FW.MINIMUM_TX_FEE * 0.00000001).format('0.00000000');
         $('#fee-amount').val(cost);
         $('#fee-amount').change();
-        updateTxFeeValue(cost);
     }));
 
     // Validate that fee amount is not below minimum tx fee, and force BTC value to correct 0,0.00000000 format
@@ -69,7 +69,8 @@ $(document).ready(function(){
             amt = numeral(String($(this).val()).replace(/[^0-9.]/g,'')).format('0,0.00000000');
         if(amt < min){
             amt = min;
-            dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Error', 'Transaction fee is below minumum transaction fee!<br>You can edit minimum transaction fee at Settings->Preferences->Minimum Fee');
+            if(doMinimumFeeAlert)
+                dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Error', 'Transaction fee has been adjusted to minimum transaction fee!<br>You can edit minimum transaction fee at Settings->Preferences->Minimum Fee');
         }
         $(this).val(numeral(amt).format('0,0.00000000'));
         updateTxFeeValue(amt);
@@ -90,6 +91,10 @@ $(document).ready(function(){
 
     // Trigger a change on the priority field so we re-calculate price
     $('#fee-priority').change();
+
+    // Don't throw a minimum fee alert when form first loads.. give 500ms then can start throwing minimum fee alerts
+    setTimeout(function(){ doMinimumFeeAlert = true; },500);
+
 
 });
 </script>

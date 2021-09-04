@@ -367,12 +367,12 @@ $(document).ready(function(){
         ls.removeItem('feeMinimum');
     });
 
-    // Handle making sure minimum fee is within sane ranges (1000-10,000 satoshis)
+    // Handle making sure minimum fee is within sane ranges (250-10,000 satoshis)
     $('#minimum-tx-fee').change(function(){
         var el   = $(this);
             val  = el.val(),
             sats = numeral(numeral(val).format('0.00000000').split('.')[1]).format('0'),
-            min  = 1000,
+            min  = 250,
             max  = 10000;
         // Force format to 0.00000000
         el.val(numeral(val).format('0.00000000'));

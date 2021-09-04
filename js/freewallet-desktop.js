@@ -28,7 +28,7 @@ FW.NETWORK_INFO =  JSON.parse(ls.getItem('networkInfo')) || {};
 FW.WALLET_FORMAT = ls.getItem('walletFormat') || 0;
 
 // Minimum transaction fee
-FW.MINIMUM_TX_FEE_DEFAULT = 1350;
+FW.MINIMUM_TX_FEE_DEFAULT = 1000;
 FW.MINIMUM_TX_FEE = ls.getItem('feeMinimum') || FW.MINIMUM_TX_FEE_DEFAULT;
 
 // Load current wallet address and address label
