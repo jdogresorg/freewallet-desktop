@@ -80,14 +80,13 @@ FW.WALLET_SERVER_INFO = {
 FW.DEFAULT_MARKETS = ['BTC','XCP','BITCRYSTALS','PEPECASH','WILLCOIN'];
 FW.BASE_MARKETS    = JSON.parse(ls.getItem('walletMarkets')) || FW.DEFAULT_MARKETS;
 FW.MARKET_OPTIONS  = JSON.parse(ls.getItem('walletMarketOptions')) || [1,2]; // 1=named, 2=subasset, 3=numeric 
+FW.BASE_MARKETS    = FW.BASE_MARKETS.slice(0, 10); // Limit exchange market list to 10
 
 // Define default dispenser watchlist assets
 FW.DEFAULT_DISPENSERS = ['XCP','PEPECASH'];
 FW.BASE_DISPENSERS    = JSON.parse(ls.getItem('walletDispensers')) || FW.DEFAULT_DISPENSERS;
 FW.DISPENSER_OPTIONS  = JSON.parse(ls.getItem('walletDispenserOptions')) || []; // 1=hide closed 
-
-// Limit dispenser watchlist to 10
-FW.BASE_DISPENSERS = FW.BASE_DISPENSERS.slice(0, 10);
+FW.BASE_DISPENSERS    = FW.BASE_DISPENSERS.slice(0, 10); // Limit dispenser watchlist to 10
 
 // Define arrays to hold BTCPay information
 FW.BTCPAY_ORDERS  = JSON.parse(ls.getItem('btcpayOrders'))  || {}; // array of order tx_hashes to monitor for BTCpay transactions
