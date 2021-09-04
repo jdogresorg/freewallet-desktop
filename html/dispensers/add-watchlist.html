@@ -50,6 +50,10 @@ $(document).ready(function(){
             errors.push('You must enter a token name to add!');
             $('#token-name').closest('.form-group').addClass('has-error has-danger');
         }
+        // Limit dispenser watchlist to 10
+        var cnt = FW.BASE_DISPENSERS.length;
+        if(cnt>=10)
+            errors.push('You can only create 10 dispenser watchlists!');
         // Display any error message
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );

@@ -86,6 +86,9 @@ FW.DEFAULT_DISPENSERS = ['XCP','PEPECASH'];
 FW.BASE_DISPENSERS    = JSON.parse(ls.getItem('walletDispensers')) || FW.DEFAULT_DISPENSERS;
 FW.DISPENSER_OPTIONS  = JSON.parse(ls.getItem('walletDispenserOptions')) || []; // 1=hide closed 
 
+// Limit dispenser watchlist to 10
+FW.BASE_DISPENSERS = FW.BASE_DISPENSERS.slice(0, 10);
+
 // Define arrays to hold BTCPay information
 FW.BTCPAY_ORDERS  = JSON.parse(ls.getItem('btcpayOrders'))  || {}; // array of order tx_hashes to monitor for BTCpay transactions
 FW.BTCPAY_MATCHES = JSON.parse(ls.getItem('btcpayMatches')) || {}; // array of order matches that have seen/processed
