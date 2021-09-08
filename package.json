@@ -2,7 +2,7 @@
   "main": "index.html",
   "name": "FreeWallet",
   "description": "Freewallet is a free open source desktop wallet that supports Bitcoin and Counterparty",
-  "version": "0.9.18",
+  "version": "0.9.19",
   "author": "Jeremy Johnson <j-dog@j-dog.net>",
   "license": "MIT",
   "user-agent": "%name %ver (%osinfo)",
