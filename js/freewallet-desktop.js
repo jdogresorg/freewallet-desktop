@@ -3350,10 +3350,22 @@ function dialogViewAddress(address){
             var msg = $('<div class="text-center"></div>');
             addr = (address) ? address : getWalletAddress();
             msg.qrcode({ text: addr });
-            msg.append('<div style="margin-top:10px" class="btc-wallet-blackbox">' + addr + '</div>');
+            msg.append('<div style="margin-top:10px" class="btc-wallet-blackbox" id="viewAddress">' + addr + '</div>');
             return msg;
         },
         buttons:[{
+            label: 'Copy',
+            icon: 'fa fa-lg fa-fw fa-save',       
+            cssClass: 'btn-info', 
+            action: function(dialog){
+                // Handle copying the address to the system clipboard
+                var address = $('#viewAddress').html();
+                if(typeof nw != 'undefined'){
+                    var clipboard = nw.Clipboard.get();
+                    clipboard.set(address, 'text');
+                }
+            }
+        },{
             label: 'Cancel',
             icon: 'fa fa-lg fa-fw fa-thumbs-down',       
             cssClass: 'btn-danger', 
