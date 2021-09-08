@@ -47,10 +47,24 @@ $(document).ready(function(){
 
     },750);
 
+    // Do some additional cleanup and checks on destination
     $('#destination-address').change(function(){
-        var me  = $(this),
-            val = String(me.val()).trim();
-            me.val(val);
+        var me   = $(this),
+            addr = String(me.val()).trim();
+        // If a valid address was not entered, try to lookup destination using username or asset name
+        if(!isValidAddress(addr) && addr.length >= 4){
+            var asset = addr.toUpperCase();
+            // Detect USER.BTC usernames and translate to BTCTAG.USER asset name
+            if(addr.toUpperCase().endsWith('.BTC'))
+                asset = 'BTCTAG.' + addr.toUpperCase().replace(/\.BTC/i,'');
+            // Try to lookup asset and then use owner address as destination address
+            $.getJSON(FW.XCHAIN_API + '/api/asset/' + asset, function(o){
+                if(o.owner)
+                    me.val(o.owner);
+            });
+        } else {
+            me.val(addr);
+        }
     });
 
     // Display 'Address Book' when user clicks address book link
