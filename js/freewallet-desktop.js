@@ -580,13 +580,20 @@ function addWalletPrivkey(key){
     var net     = FW.WALLET_NETWORK,                // Numeric
         network = (net==2) ? 'testnet' : 'mainnet', // Text
         ls      = localStorage,
-        n       = bc.Networks[network],
-        address = false;
+        n       = false,
+        address = false,
+        sanitizedKey = key.replace('p2wpkh:', '');
     // Try to generate a public key and address using the key
     try {
-        privkey = new bc.PrivateKey.fromWIF(key);
+        privkey = new bc.PrivateKey.fromWIF(sanitizedKey);
         pubkey  = privkey.toPublicKey();
-        address = pubkey.toAddress(n).toString();
+        if (key.includes('p2wpkh:')){
+            n = bitcoinjs.networks[network];
+            address = bitcoinjs.payments.p2wpkh({ pubkey: pubkey.toBuffer(), network: n }).address;
+        }else{
+            n = bc.Networks[network];
+            address = pubkey.toAddress(n).toString();
+        }
     } catch (e){
         console.log('error : ',e);
     }
@@ -607,7 +614,7 @@ function addWalletPrivkey(key){
             // Save wallet addresses info to disk
             ls.setItem('walletAddresses', JSON.stringify(FW.WALLET_ADDRESSES));
             // Add address and private key to keys array
-            FW.WALLET_KEYS[address] = key;
+            FW.WALLET_KEYS[address] = sanitizedKey;
             // Re-encrypt the wallet with the last known valid password
             encryptWallet(getWalletPassword(), true);
         }
@@ -1586,10 +1593,14 @@ function isBech32(addr) {
 function getPrivateKey(network, address, prepend=false){
     var wallet = getWallet(),
         net    = (network=='testnet') ? 'testnet' : 'livenet',
-        priv   = false;
+        priv   = false,
+        prependStr = 'p2wpkh:';
     // Check any we have a match in imported addresses
-    if(FW.WALLET_KEYS[address])
+    if(FW.WALLET_KEYS[address]){
         priv = FW.WALLET_KEYS[address];
+        if(prepend && isBech32(address))
+            priv = prependStr + priv;
+    }
     // Loop through HD addresses trying to find private key
     if(!priv){
         var key = bc.HDPrivateKey.fromSeed(wallet, bc.Networks[net]),
@@ -1609,7 +1620,7 @@ function getPrivateKey(network, address, prepend=false){
                 if(a==address){
                     priv = d.privateKey.toWIF();
                     if(prepend)
-                        priv = 'p2wpkh:' + d.privateKey.toWIF();
+                        priv = prependStr + priv;
                 }
             } else {
                 priv = d.privateKey.toWIF();
