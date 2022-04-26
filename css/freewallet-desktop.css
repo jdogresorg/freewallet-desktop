@@ -171,6 +171,9 @@ body:before {
     background-color: #eaeaea;
     border-bottom: 1px solid #e5e5e5;
 }
+.indented {
+    padding-left: 12px;
+}
 .highlight-search-term {
   background-color: yellow;
 }
@@ -370,6 +373,30 @@ body:before {
 }
 .balances-list li > a img {
     margin-right: 1px;
+}
+.balances-list-subasset {
+    background-color: #fff;
+}
+.balances-list-subasset.striped {
+    background-color: #f8f8f8;
+}
+.balances-list-collapsible {
+    display: block;
+    text-align: center;
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    line-height: 14px;
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none !important;
+    border-radius: 10px;
+    background-color: #bbb;
+    color: #fff;
+}
+.balances-list-collapsible:hover, .balances-list-collapsible:focus {
+    background-color: #999;
+    color: #fff;
 }
 
 
