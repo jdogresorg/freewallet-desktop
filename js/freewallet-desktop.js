@@ -1662,7 +1662,7 @@ function updateBalancesList(){
                 var asset   = (item.asset_longname!='') ? item.asset_longname : item.asset,
                     fmt     = (item.quantity.indexOf('.')!=-1) ? '0,0.00000000' : '0,0'
                     subOf   = (asset.indexOf('.')!=-1) ? asset.split(".")[0] : '',
-                    grail   = display.find(o => o.asset === subOf) ? subOf : ''; // Only if grail exists
+                    parent   = display.find(o => o.asset === subOf) ? subOf : ''; // Only if parent exists
                     
                 display.push({ 
                     asset: asset, 
@@ -1670,40 +1670,36 @@ function updateBalancesList(){
                     quantity: numeral(item.quantity).format(fmt), 
                     value: numeral(item.estimated_value.usd).format(fmt_usd), 
                     collapsed: typeof item.collapsed != 'undefined' ? item.collapsed : false,
-                    grail: grail,
+                    parent: parent,
                     cls: '' 
                 });
             }
         });
         display.forEach(function(item){
             var asset = item.asset,
-                isGrail = display.find(o => o.grail === asset) ? true : false;
-
-            if(isGrail){
-                item.isGrail = isGrail;
-
+                isParent = display.find(o => o.parent === asset) ? true : false;
+            if(isParent){
+                item.isParent = isParent;
                 // Init cache for the asset and cache the collapsed state
                 if(!FW.ASSET_INFO[asset])
                     FW.ASSET_INFO[asset] = {};
                 FW.ASSET_INFO[asset].collapsed = item.collapsed;
             }
-
             var show = (filter!='') ? false : true;
+            item.isSearch = (filter!='') ? true : false;
             if(filter!='')
                 show = (asset.search(new RegExp(filter, "i")) != -1) ? true : false;
             if(show){
                 // Striping based on whether it's a regular asset or a subasset with grail card
-                if(typeof item.grail == 'undefined' || item.grail === ''){
+                if(typeof item.parent == 'undefined' || item.parent === ''){
                     if(cnt % 2)
                         item.cls += ' striped'
-
                     cnt++;
                     subCnt = 0;
-                }else{
+                } else {
                     item.cls += ' balances-list-subasset'
                     if(subCnt % 2)
                         item.cls += ' striped'
-                    
                     subCnt++;
                 }
                 html += getBalanceHtml(item);
@@ -1717,10 +1713,9 @@ function updateBalancesList(){
     $('.balances-list ul li').click($.debounce(100,function(e){
         var target = $(e.target);
         if (target.is('a.balances-list-collapsible')) {
-            var grail = $(this).attr('data-asset'),
-                isCollapsed = FW.ASSET_INFO[grail].collapsed,
-                subs = $('.balances-list ul li[data-grail="' + grail + '"]');
-
+            var parent = $(this).attr('data-asset'),
+                isCollapsed = FW.ASSET_INFO[parent].collapsed,
+                subs = $('.balances-list ul li[data-parent="' + parent + '"]');
             if (isCollapsed) {
                 subs.hide();
                 target.text('+');
@@ -1729,15 +1724,12 @@ function updateBalancesList(){
                 target.html('&#8211;');
             }
             info.data.filter(obj => {
-                if (obj.asset == grail) {
+                if (obj.asset == parent) {
                     obj.collapsed = !obj.collapsed;
-                    FW.ASSET_INFO[grail].collapsed = obj.collapsed;
+                    FW.ASSET_INFO[parent].collapsed = obj.collapsed;
                 }
             });
             ls.setItem('walletBalances',JSON.stringify(FW.WALLET_BALANCES));
-
-            console.log('test')
-            
         } else {
             $('.balances-list ul li').removeClass('active');
             $(this).addClass('active');
@@ -1749,20 +1741,24 @@ function updateBalancesList(){
 
 // Handle returning html for a asset balance item
 function getBalanceHtml(data){
-    var value = (data.value!='0.00') ? '$' + data.value : '';
-    var isCollapsed = data.collapsed ? '&#8211;' : '+';
-    var isGrail = data.isGrail;
-    var grail = data.grail;
-    var grailInfo = FW.ASSET_INFO[grail];
-    var html_collapse = isGrail ? '            <td align="right"><a href="#" class="balances-list-collapsible" >' + isCollapsed + '</a></td>' : '';
-    var html =  '<li class="balances-list-item ' + data.cls + '" data-asset="' + data.asset + '" data-grail="' + grail + '" style="' + (grail && (grailInfo && grailInfo.collapsed == false) ? 'display: none;' : '') + '">' +
-                '    <div class="balances-list-icon' + (grailInfo ? ' indented' : '') + '">' +
+    var value       = (data.value!='0.00') ? '$' + data.value : '',
+        isCollapsed = data.collapsed ? '&#8211;' : '+',
+        isParent    = data.isParent,
+        isSearch    = data.isSearch,
+        parent      = data.parent,
+        parentInfo  = FW.ASSET_INFO[parent];
+    // Define collapse html for parent assets with subasset children
+    var html_collapse = (isParent && !isSearch) ? '<td align="right"><a href="#" class="balances-list-collapsible" >' + isCollapsed + '</a></td>' : '';
+    // Don't display the item if this is a subasset and the parent asset is collapsed (unless we are doing a search)
+    var html_style    = (parent && parentInfo && parentInfo.collapsed == false && !isSearch) ? 'display: none;' : '';
+    var html =  '<li class="balances-list-item ' + data.cls + '" data-asset="' + data.asset + '" data-parent="' + parent + '" style="' + html_style + '">' +
+                '    <div class="balances-list-icon' + ((parentInfo && data.isSearch != true) ? ' indented' : '') + '">' +
                 '        <img src="' + FW.XCHAIN_API + '/icon/' + data.icon + '.png" >' +
                 '    </div>' +
                 '    <div class="balances-list-info">' +
                 '        <table width="100%">' +
                 '        <tr>' +
-                '            <td class="balances-list-asset" colspan="' + (isGrail ? 1 : 2) + '">' + data.asset + '</td>' + 
+                '            <td class="balances-list-asset" colspan="' + (isParent ? 1 : 2) + '">' + data.asset + '</td>' + 
                             html_collapse + 
                 '        <tr>' +
                 '            <td class="balances-list-amount">' + data.quantity + '</td>' +
