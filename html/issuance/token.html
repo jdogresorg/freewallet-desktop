@@ -213,7 +213,7 @@ $(document).ready(function(){
         } else if(type=='Named'){
             // Verify length
             if(vals.name.length<4 || vals.name.length>12)
-                errors.push('Token name must be between 4 and 14 characters!');
+                errors.push('Token name must be between 4 and 12 characters!');
             // Verify only contains A-Z
             if(!/^[A-Z]+$/i.test(vals.name))
                 errors.push('Token name must only contain <b><i>upper-case alphabetical</i></b> characters!');
