@@ -160,11 +160,6 @@ $(document).ready(function(){
         }
         // VALIDATION - Multi-Send (MPMA)
         if(type=='multiple'){
-            // Disable MPMA Sends for segwit addresses until 
-            if(vals.source.substring(0,3)=='bc1'){
-                errors.push('Multi-Send (MPMA) is currently disabled on segwit addresses to prevent loss of BTC. <br>Please use simple send instead for now.');
-                $('#send-list').closest('.form-group').addClass('has-error has-danger');
-            }
             // Require a send list
             if(vals['send-list']==''){
                 errors.push('You must enter a list of addresses, assets, and quantities!');
