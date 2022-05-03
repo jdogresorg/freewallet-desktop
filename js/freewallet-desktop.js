@@ -5520,8 +5520,11 @@ function updateDispensersList(query, page, callback){
     var page  = (page) ? page : 1,
         limit = 100,
         count = (page==1) ? 0 : ((page-1)*limit),
-        url   = FW.XCHAIN_API + '/api/dispensers/' + query ;
-    $.getJSON(url + '/' + page + '/' + limit, function(o){
+        url   = FW.XCHAIN_API + '/api/dispensers/' + query + '/' + page + '/' + limit;
+    // Only display open dispensers for asset watchlists
+    if(!isValidAddress(query))
+        url += '?status=open';
+    $.getJSON(url, function(o){
         // Bail out if we encountered any error (prevents looping requests)
         if(o.error)
             return;
