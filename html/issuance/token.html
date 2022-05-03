@@ -259,8 +259,12 @@ $(document).ready(function(){
             errors.push('You must enter a fee which is greater than 0.00000000!');
             $('#fee-amount').closest('.form-group').addClass('has-error has-danger');
         }
-        // Verify that the user has enough XCP balance to cover the fee
-
+        // Verify token description is 200 characters or less
+        var maxlength = 200;
+        if(vals.description.length > maxlength){
+            errors.push('Maximum token description length is ' + maxlength + ' characters!');
+            $('#token-description').closest('.form-group').addClass('has-error has-danger');
+        }
         // Display any error message
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );

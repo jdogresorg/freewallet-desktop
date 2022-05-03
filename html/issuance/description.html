@@ -80,9 +80,10 @@ $(document).ready(function(){
             errors.push('You must enter a token name!');
             $('#token-name').closest('.form-group').addClass('has-error has-danger');
         }
-        // Verify token description is  52 characters or less
-        if(vals.description.length>52){
-            errors.push('Maximum token description length is 52 characters!');
+        // Verify token description is 200 characters or less
+        var maxlength = 200;
+        if(vals.description.length > maxlength){
+            errors.push('Maximum token description length is ' + maxlength + ' characters!');
             $('#token-description').closest('.form-group').addClass('has-error has-danger');
         }
         // Verify we have valid fee amount 
