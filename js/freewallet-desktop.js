@@ -2297,7 +2297,7 @@ function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, qua
     var cb  = (typeof callback === 'function') ? callback : false;
     updateTransactionStatus('pending', 'Generating first counterparty transaction...');
     // Create unsigned send transaction
-    createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, FW.MINIMUM_TX_FEE, null, function(o){
+    createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, null, function(o){
         if(o && o.result){
             updateTransactionStatus('pending', 'Signing first counterparty transaction...');
             // Sign the transaction
@@ -3258,7 +3258,7 @@ function broadcastTransaction(network, tx, callback){
     if(FW.BROADCAST_LOCK==true){
         cbError('Broadcasting another transaction too quickly',callback);
         return;
-    } else {1665207
+    } else {
         FW.BROADCAST_LOCK = true;
         setTimeout(function(){ 
             FW.BROADCAST_LOCK = false;
