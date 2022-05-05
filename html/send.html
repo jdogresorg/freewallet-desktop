@@ -243,6 +243,8 @@ $(document).ready(function(){
                 // Create unsigned send transaction
                 createMultiSend(network, vals.source, vals.destination, vals.memo, vals.memo_is_hex, vals.asset, vals.quantity, fee_sat, null, function(o){
                     if(o && o.result){
+                        // Clear status message 
+                        updateTransactionStatus('clear', '');
                         //decode the transaction
                         var tx  = bitcoinjs.Transaction.fromHex(o.result),
                             btc = getAssetPrice('BTC',true),
