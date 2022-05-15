@@ -23,5 +23,12 @@ $(document).ready(function(){
         $('#token-description').val(desc);
     }); 
 
+    // Trim any leading and trailing whitespace from description
+    $('#token-description').change(function(){
+        var el  = $(this),
+            val = el.val();
+        el.val(val.trim());
+    });
+
 });
 </script>
