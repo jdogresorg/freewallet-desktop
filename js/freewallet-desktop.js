@@ -1591,6 +1591,13 @@ function isBech32(addr) {
     }
 }
 
+// Get public key for a given network and address
+function getPublicKey(network, address){
+    var privkey = getPrivateKey(network, address),
+        pubkey  = bc.PrivateKey.fromWIF(privkey).toPublicKey().toString();
+    return pubkey;
+}
+
 // Get private key for a given network and address
 function getPrivateKey(network, address, prepend=false){
     var wallet = getWallet(),
@@ -2823,8 +2830,13 @@ function createMultiSend(network, source, destination, memo, memo_is_hex, asset,
         jsonrpc: "2.0",
         id: 0
     };
+    // Pass forward txid if given (used in MPMA sends to reference pre-tx)
     if(txid)
         data.params.p2sh_pretx_txid = txid;
+    // Pass forward public key
+    var pubkey = getPublicKey(network, source);
+    if(pubkey)
+        data.params.pubkey = pubkey;
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
