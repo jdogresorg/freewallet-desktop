@@ -21,6 +21,7 @@ $(document).ready(function(){
 
         var lines  = String($(this).val()).split('\n'),
             errors = [],
+            sends  = [],
             value  = '';
         lines.forEach(function(line, idx){
             var info     = line.trim().split(','),
@@ -57,6 +58,15 @@ $(document).ready(function(){
             value += address + ', ' + asset + ', ' + quantity;
             if(memo!='')
                 value += ', "' + memo + '"';
+            // Throw error if address/asset combo is used more than once
+            var id = address + '-' + asset;
+            if(sends[id])
+                errors.push('Duplicate address / asset on line ' + (idx+1)  + ' :<br>&emsp;' + address +  ' / ' + asset);
+            else 
+                sends[id] = true;
+            // Throw error if address list contains source address
+            if(address==FW.WALLET_ADDRESS)
+                errors.push('Source address cannot be in send destination list!');
         });
         // Display any error message
         if(errors.length){
