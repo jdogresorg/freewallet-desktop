@@ -97,7 +97,7 @@ $(document).ready(function(){
                         doneCb(txid);
                     } else {
                         updateTransactionStatus('error', 'Error broadcasting transaction!');
-                        cbError('Error while trying to broadcast transaction. Please try again.', doneCb);
+                        cbError(false, 'Error while trying to broadcast transaction', doneCb);
                     }
                 });
             }
@@ -141,7 +141,7 @@ $(document).ready(function(){
                     val = tx;
                 } else {
                     updateTransactionStatus('error', 'Error signing transaction!');
-                    dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', 'Error while trying to sign transaction! Please try again.' );
+                    dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', 'Error while trying to sign transaction!' );
                 }
                 $('#signed-transaction').val(val);
             });            

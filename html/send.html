@@ -257,6 +257,7 @@ $(document).ready(function(){
                         dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
                     } else {
                         updateTransactionStatus('error', 'Error communicating with the Counterparty API!');
+                        cbError(o,'Error communicating with the Counterparty API');
                     }
                 });
 

@@ -1563,8 +1563,9 @@ function updateNetworkInfo( force ){
 }
 
 // Display error message and run callback (if any)
-function cbError(msg, callback){
-    dialogMessage(null, msg, true, true, function(){
+function cbError(o, msg, callback){
+    var error = getCpErrorMessage(o, msg);
+    dialogMessage(null, error, true, true, function(){
         // Clear out transaction status after user clicks OK
         updateTransactionStatus('clear');
     });
@@ -2261,6 +2262,19 @@ function array2Object(arr){
     return vals;
 }
 
+// Handle extracting error message from Counterparty API response 
+function getCpErrorMessage(o, defaultMessage){
+    var msg = defaultMessage;
+    if(o && o.error){
+        if(o.error.data && o.error.data.message){
+            msg = o.error.data.message;
+        } else if(o.error.message){
+            msg = o.error.message;
+        }
+    }
+    return msg;
+}
+
 /*
  * Counterparty related functions
  */
@@ -2285,18 +2299,17 @@ function cpSend(network, source, destination, memo, memo_is_hex, currency, amoun
                                 cb(txid);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError('Error while trying to broadcast send transaction', cb);
+                            cbError(o,'Error while trying to broadcast send transaction', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing transaction!');
-                    cbError('Error while trying to sign send transaction',cb);
+                    cbError(o,'Error while trying to sign send transaction', cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating transaction!');
-            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create send transaction';
-            cbError(msg, cb);
+            cbError(o,'Error while trying to create send transaction', cb);
         }
     });
 }
@@ -2320,18 +2333,17 @@ function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, qua
                             cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee,  txid, 1, callback);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting first transaction!');
-                            cbError('Error while trying to broadcast first transaction', cb);
+                            cbError(o, 'Error while trying to broadcast first transaction', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing first transaction!');
-                    cbError('Error while trying to sign first transaction',cb);
+                    cbError(o,'Error while trying to sign first transaction', cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating first transaction!');
-            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create first transaction';
-            cbError(msg, cb);
+            cbError(o,'Error while trying to create first transaction', cb);
         }
     });
 }
@@ -2365,12 +2377,12 @@ function cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asse
                                     cb(txid);
                             } else {
                                 updateTransactionStatus('error', 'Error broadcasting second transaction!');
-                                cbError('Error while trying to broadcast second transaction', cb);
+                                cbError(o, 'Error while trying to broadcast second transaction', cb);
                             }
                         });
                     } else {
                         updateTransactionStatus('error', 'Error signing second transaction!');
-                        cbError('Error while trying to sign second transaction',cb);
+                        cbError(o, 'Error while trying to sign second transaction', cb);
                     }
                 });
             } else if(o.error){
@@ -2385,15 +2397,14 @@ function cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asse
                     },ms);
                 } else {
                     updateTransactionStatus('error', 'Error generating second transaction!');
-                    var msg = (o.error.message) ? o.error.message : 'Error while trying to create second transaction';
-                    cbError(msg, cb);
+                    cbError(o, 'Error while trying to create second transaction', cb);
                 }
             }
         });
     } else {
         // Maxed out on tries... Throw error to user
         updateTransactionStatus('error', 'Error generating second transaction!');
-        cbError('Error while trying to generate second transaction', cb);
+        cbError(o, 'Error while trying to generate second transaction', cb);
     }
 }
 
@@ -2417,18 +2428,17 @@ function cpIssuance(network, source, asset, quantity, divisible, description, de
                                 cb(txid);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError('Error while trying to broadcast issuance transaction. Please try again.', cb);
+                            cbError(o, 'Error while trying to broadcast issuance transaction', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing transaction!');
-                    cbError('Error while trying to sign issuance transaction. Please try again.',cb);
+                    cbError(o, 'Error while trying to sign issuance transaction',cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating transaction!');
-            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create issuance transaction';
-            cbError(msg, cb);
+            cbError(o, 'Error while trying to create issuance transaction',cb);
         }
     });
 }
@@ -2453,18 +2463,17 @@ function cpBroadcast(network, source, text, value, feed_fee, timestamp, fee, cal
                                 cb(txid);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError('Error while trying to broadcast transaction. Please try again.', cb);
+                            cbError(o, 'Error while trying to broadcast transaction', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing transaction!');
-                    cbError('Error while trying to sign broadcast transaction. Please try again.',cb);
+                    cbError(o, 'Error while trying to sign broadcast transaction',cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating transaction!');
-            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create broadcast transaction';
-            cbError(msg, cb);
+            cbError(o, 'Error while trying to create broadcast transaction',cb);
         }
     });
 }
@@ -2489,18 +2498,17 @@ function cpDividend(network, source, asset, dividend_asset, quantity_per_unit, f
                                 cb(txid);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError('Error while trying to broadcast transaction. Please try again.', cb);
+                            cbError(o, 'Error while trying to broadcast transaction', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing transaction!');
-                    cbError('Error while trying to sign dividend transaction. Please try again.',cb);
+                    cbError(o, 'Error while trying to sign dividend transaction',cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating transaction!');
-            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create dividend transaction';
-            cbError(msg, cb);
+            cbError(o, 'Error while trying to create dividend transaction',cb);
         }
     });
 }
@@ -2525,18 +2533,17 @@ function cpCancel(network, source, tx_hash, fee, callback){
                                 cb(txid);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError('Error while trying to broadcast transaction. Please try again.', cb);
+                            cbError(o, 'Error while trying to broadcast transaction', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing transaction!');
-                    cbError('Error while trying to sign cancel transaction. Please try again.',cb);
+                    cbError(o, 'Error while trying to sign cancel transaction',cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating transaction!');
-            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create a cancel transaction';
-            cbError(msg, cb);
+            cbError(o, 'Error while trying to create a cancel transaction',cb);
         }
     });
 }
@@ -2562,18 +2569,17 @@ function cpBtcpay(network, source, order_match_id, fee, callback){
                                 cb(txid);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError('Error while trying to broadcast transaction. Please try again.', cb);
+                            cbError(o, 'Error while trying to broadcast transaction', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing transaction!');
-                    cbError('Error while trying to sign btcpay transaction. Please try again.',cb);
+                    cbError(o, 'Error while trying to sign btcpay transaction',cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating transaction!');
-            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create a btcpay transaction';
-            cbError(msg, cb);
+            cbError(o, 'Error while trying to create a btcpay transaction',cb);
         }
     });
 }
@@ -2598,18 +2604,17 @@ function cpOrder(network, source, get_asset, give_asset, get_quantity, give_quan
                                 cb(txid);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError('Error while trying to broadcast order transaction', cb);
+                            cbError(o, 'Error while trying to broadcast order transaction', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing transaction!');
-                    cbError('Error while trying to sign order transaction',cb);
+                    cbError(o, 'Error while trying to sign order transaction',cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating transaction!');
-            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create order transaction';
-            cbError(msg, cb);
+            cbError(o, 'Error while trying to create order transaction',cb);
         }
     });
 }
@@ -2634,18 +2639,17 @@ function cpBurn(network, source, quantity, fee, callback){
                                 cb(txid);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError('Error while trying to broadcast transaction. Please try again.', cb);
+                            cbError(o, 'Error while trying to broadcast transaction', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing transaction!');
-                    cbError('Error while trying to sign burn transaction. Please try again.',cb);
+                    cbError(o, 'Error while trying to sign burn transaction',cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating transaction!');
-            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create burn transaction';
-            cbError(msg, cb);
+            cbError(o, 'Error while trying to create burn transaction',cb);
         }
     });
 }
@@ -2670,18 +2674,17 @@ function cpDestroy(network, source, asset, quantity, memo, fee, callback){
                                 cb(txid);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError('Error while trying to broadcast transaction. Please try again.', cb);
+                            cbError(o, 'Error while trying to broadcast transaction', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing transaction!');
-                    cbError('Error while trying to sign destroy transaction. Please try again.',cb);
+                    cbError(o, 'Error while trying to sign destroy transaction',cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating transaction!');
-            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create destroy transaction';
-            cbError(msg, cb);
+            cbError(o, 'Error while trying to create destroy transaction',cb);
         }
     });
 }
@@ -2706,18 +2709,17 @@ function cpSweep(network, source, destination, flags, memo, fee, callback){
                                 cb(txid);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError('Error while trying to broadcast transaction. Please try again.', cb);
+                            cbError(o, 'Error while trying to broadcast transaction', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing transaction!');
-                    cbError('Error while trying to sign sweep transaction. Please try again.',cb);
+                    cbError(o, 'Error while trying to sign sweep transaction',cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating transaction!');
-            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create sweep transaction';
-            cbError(msg, cb);
+            cbError(o, 'Error while trying to create sweep transaction',cb);
         }
     });
 }
@@ -2743,18 +2745,17 @@ function cpDispenser(network, source, destination, asset, escrow_amount, give_am
                                 cb(txid);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError('Error while trying to broadcast transaction. Please try again.', cb);
+                            cbError(o, 'Error while trying to broadcast transaction.', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing transaction!');
-                    cbError('Error while trying to sign dispenser transaction. Please try again.',cb);
+                    cbError(o, 'Error while trying to sign dispenser transaction',cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating transaction!');
-            var msg = (o.error && o.error.message) ? o.error.message : 'Error while trying to create dispenser transaction';
-            cbError(msg, cb);
+            cbError(o, 'Error while trying to create dispenser transaction',cb);
         }
     });
 }
@@ -3270,7 +3271,7 @@ function broadcastTransaction(network, tx, callback){
     // Temporary solution to prevent issue where occasionally duplicate transaction is created and broadcast
     // Remove this hack fix once we have determined why duplicate transaction is being created
     if(FW.BROADCAST_LOCK==true){
-        cbError('Broadcasting another transaction too quickly',callback);
+        cbError(false, 'Broadcasting another transaction too quickly',callback);
         return;
     } else {
         FW.BROADCAST_LOCK = true;
@@ -3314,7 +3315,7 @@ function broadcastTransaction(network, tx, callback){
                             if(txid)
                                 console.log('Broadcast transaction tx_hash=',txid);
                         } else {
-                            cbError('Error while trying to broadcast signed transaction',callback);
+                            cbError(o, 'Error while trying to broadcast signed transaction',callback);
                         }
                     }
                 });                
