@@ -219,7 +219,7 @@ $(document).ready(function(){
                     if(memo!='')
                         memo = String(info.slice(3,info.length).join(',')).trim().replace(/^"|"$/g,'');
                     if(quantity.indexOf('.')!=-1){
-                        quantity = parseInt(numeral(quantity).multiply(100000000).value());
+                        quantity = parseInt(quantity.replace('.',''));
                     } else {
                         quantity = parseInt(quantity);
                     }
