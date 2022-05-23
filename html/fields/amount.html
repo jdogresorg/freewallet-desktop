@@ -147,7 +147,14 @@ $(document).ready(function(){
 
     // When user clicks 'Max' button, set amount to max available
     $('#amount-max').click($.debounce(100,function(e){
-        var max = String($('#available').val()).replace(/[^0-9.,]/g,'');
+        var max   = String($('#available').val()).replace(/[^0-9.,]/g,''),
+            asset = $('#token-name-select').val();
+        // Deduct any miners fee from the max BTC send amount
+        if(asset=='BTC'){
+            var avail = numeral(max).format('0.00000000'),
+                fee   = numeral($('#fee-amount').val()).format('0.00000000'),
+                max   = numeral(avail).subtract(fee).format('0.00000000');
+        }
         // For dispenser buys, force max to be max available in dispenser
         if(type=='dispenser-buy')
             max = FW.DIALOG_DATA.give_remaining;
