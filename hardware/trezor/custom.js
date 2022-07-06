@@ -1,15 +1,15 @@
 // Handle adding an address to the selection screen
 function addAddress(address, path){
-    console.log('address=',address);
     var html = '<tr address=' + address + '>' +
-               '     <td>' +
+               '     <td class="text-nowrap">' +
                '         <div class="checkbox">' +
-               '             <label><input type="checkbox" name="address" value="' + address + '" data-path="' + path + '" readonly> ' + address + '</label>' +
+               '             <label><input type="checkbox" name="address" value="' + address + '" data-path="' + path + '" readonly><div class="import-trezor-address text-nowrap">' + address + '</div></label>' +
                '         </div>' +
                '     </td>' +
-               '     <td class="text-right status">Loading...</td>' +
+               '     <td class="text-nowrap">' + path + '</td>' +
+               '     <td class="text-center status">Loading...</td>' +
                '</tr>';
-    $('#addresslist tbody').append(html);
+    $('#addressList tbody').append(html);
     checkAddressBalance(address);
 }
 

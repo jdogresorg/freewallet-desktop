@@ -7,9 +7,9 @@
     <link type="text/css"  rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>        
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-    <script src="https://connect.trezor.io/4/connect.js"></script>
-    <script src="custom.js" type="text/javascript"></script>
-    <script src="app.js" type="text/javascript"></script>
+    <script src="https://connect.trezor.io/8/trezor-connect.js"></script>
+    <script src="custom.js"></script>
+    <script src="app.js"></script>
 </head> 
 <body>
     <div class="container" style="margin-top: 15px">
@@ -24,7 +24,6 @@
                             <div id="intro"><p>FreeWallet would now like you to sign a send transaction using your Trezor.</p></div>
                             <div class="alert alert-info" id="trezor-status">
                                 Please click the button below to get started
-                            
                             </div>
                             <button class="btn btn-success margin-bottom-10" id="connect">Connect to Trezor</button>
                             <div class="alert alert-warning no-bottom-margin" id="popups"><b>Note:</b> You need to allow popups from freewallet.io to sign transactions</div>
@@ -45,10 +44,14 @@
 </style>
 <script>
 $(document).ready(function(){
+
     var qs     = parseQueryString(),
         tx     = (qs.tx) ? qs.tx : false,
         status = $('#trezor-status');
         host   = (qs.network=='testnet') ? 'testnet.xchain.io' : 'xchain.io';
+
+    // Initialize connection to the Trezor
+    trezor.initTrezor();
 
     // Connect to trezor device when user clicks 'Connect' button
     $('#connect').click(function(){
@@ -58,8 +61,8 @@ $(document).ready(function(){
             trezor.signTx(qs.network, qs.address, decodeURIComponent(qs.path), tx,  function(data){
                 console.log('data=',data);
                 if(data.success){
-                    console.log('Serialized TX:', data.serialized_tx); // tx in hex
-                    console.log('Signatures:', data.signatures); // array of signatures, in hex
+                    console.log('Serialized TX:', data.payload.serializedTx); // tx in hex
+                    console.log('Signatures:', data.payload.signatures); // array of signatures, in hex
                     // Handle broadcasting the transaction
                     trezor.broadcastTx(qs.network, data.serialized_tx, function(txid){
                         if(txid){

@@ -21,30 +21,33 @@
 </style>
 
 <script>
+// Simple function to notify users that they are being taken to an external URL to import addresses
+function displayConfirmation(url){
+    // Display message 
+    dialogConfirm('Import Hardware wallet addresses', 'You will now be taken to freewallet.io to import addresses from your hardware device.', false, false, function(confirm){
+        if(confirm){
+            console.log('sending user to url:', url);
+            // Close all open dialog boxes
+            dialogClose();
+            // Open external window to sign the transaction
+            if(is_nwjs()){
+                var nw   = require('nw.gui');
+                nw.Shell.openExternal(url);
+            } else {
+                window.open(url,'_blank');
+            }
+        }
+    });
+}
+
 $(document).ready(function(){
 
-    // Simple function to notify users that they are being taken to an external URL to import addresses
-    function displayConfirmation(url){
-        // Display message 
-        dialogConfirm('Import Hardware wallet addresses', 'You will now be taken to freewallet.io to import addresses from your hardware device.', false, false, function(confirm){
-            if(confirm){
-                console.log('sending user to url:', url);
-                // Close all open dialog boxes
-                dialogClose();
-                // Open external window to sign the transaction
-                if(is_nwjs()){
-                    var nw   = require('nw.gui');
-                    nw.Shell.openExternal(url);
-                } else {
-                    window.open(url,'_blank');
-                }
-            }
-        });
-    }
+    // Determine which network we are on
+    var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
 
     // Trezor
     $('#btn-trezor').click(function(){
-        displayConfirmation('https://freewallet.io/hardware/trezor/import.html');
+        displayConfirmation('https://freewallet.io/hardware/trezor/import.html?network=' + network );
     });
 
     // Ledger
