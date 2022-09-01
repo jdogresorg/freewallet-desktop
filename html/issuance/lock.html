@@ -106,7 +106,7 @@ $(document).ready(function(){
                 var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
                     fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
                     info    = FW.ASSET_INFO;
-                cpIssuance(network, vals.source, vals.name, 0, info.divisible, 'LOCK', null, fee_sat, doneCb);
+                cpIssuance(network, vals.source, vals.name, 0, info.divisible, 'LOCK', null, fee_sat, false, doneCb);
             }
             // Confirm the action with the user
             var title = '<i class="fa fa-lg fa-fw fa-exchange"></i> Confirm Lock Supply?',

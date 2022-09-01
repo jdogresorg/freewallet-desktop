@@ -1,0 +1,46 @@
+<!-- Token Amount Field -->
+<label class="col-sm-3 control-label text-left" for="token-amount">
+    Quantity
+    <a href="#" data-toggle="tooltip" title='This is the amount of supply you would like to issue' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>
+<div class="col-sm-9">
+    <input type="text" class="form-control pull-left" name="amount"  id="token-amount" placeholder="0.00000000" style="width:224px" value="0">
+    <div class="input-group pull-right" style="width:180px;margin-left:14px;">
+        <span class="input-group-addon">Divisible</span>
+        <select id="asset-divisible" name="divisible" class="selectpicker">
+            <option>Yes</option>
+            <option>No</option>
+        </select>
+    </div>
+</div>
+
+<script>
+
+$(document).ready(function(){
+    var type     = getFormType();
+
+    // Make sure token amount stays in correct format
+    $('#token-amount').change(function(e){
+        var amt = String($(this).val()).replace(/[^0-9.]/g,''),
+            fmt = ($('#asset-divisible').val()=='Yes') ? '0,0.00000000' : '0,0';
+        $(this).val(numeral(amt).format(fmt));
+    });
+
+    // Make sure token amount stays in correct format
+    $('#asset-divisible').change(function(e){
+        var amt = String($('#token-amount').val()).replace(/[^0-9.]/g,''),
+            fmt = ($(this).val()=='Yes') ? '0,0.00000000' : '0,0';
+        $('#token-amount').val(numeral(amt).format(fmt));
+    });
+
+    // Trigger change on token amount so we format it correctly
+    $('#token-amount').change();
+
+    // Default to non-divisible 
+    $('#asset-divisible').selectpicker('val','No');
+    $('#asset-divisible').change();
+
+
+});
+</script>
+

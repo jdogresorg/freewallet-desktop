@@ -1,13 +1,13 @@
-<!-- Issue Token Supply Form -->
-<form class="form-horizontal" id="issue-supply-form" data-toggle="validator" role="form">
+<!-- Reset Token Supply Form -->
+<form class="form-horizontal" id="reset-supply-form" data-toggle="validator" role="form">
     <div class="form-group" id="source-address-field">
         <!-- Source Address Field -->
     </div>
     <div class="form-group" id="token-name-field">
         <!-- Token Name Field -->
     </div>
-    <div class="form-group" id="amount-field">
-        <!-- Amount Field -->
+    <div class="form-group" id="amount-token-field">
+        <!-- Token Amount Field -->
     </div>
     <div class="form-group" id="tx-fee-field">
         <!-- Transaction Fee Field -->
@@ -15,7 +15,7 @@
     <div id="transaction-status"></div>
     <div class="text-right">
         <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
-        <div id="btn-submit" class="btn btn-success "><i class="fa fa-lg fa-fw fa-bank"></i> Issue Supply</div>
+        <div id="btn-submit" class="btn btn-success "><i class="fa fa-lg fa-fw fa-refresh"></i> Reset Supply</div>
     </div>
 </form>
 
@@ -26,12 +26,8 @@ $(document).ready(function(){
     // Load any field content
     $('#source-address-field').load('html/fields/source-address.html');
     $('#token-name-field').load('html/fields/token-name-suggest.html');
-    $('#amount-field').load('html/fields/amount.html');
+    $('#amount-token-field').load('html/fields/amount-token.html');
     $('#tx-fee-field').load('html/fields/tx-fee.html');
-
-    // Stash current price info on BTC and XCP
-    var btc_info   = getAssetPrice('BTC',true),
-        xcp_info   = getAssetPrice('XCP',true);
 
     // Delay initializing some fields to give things a chance to load
     setTimeout(function(){
@@ -53,7 +49,7 @@ $(document).ready(function(){
         }); 
 
         // Remove any error indicators when user changes a field value
-        $('#issue-supply-form input').change(function(e){
+        $('#reset-supply-form input').change(function(e){
             $(this).closest('.form-group').removeClass('has-error has-danger');
         });
 
@@ -61,16 +57,16 @@ $(document).ready(function(){
 
     // Hide the form if users clicks 'Cancel' button
     $('#btn-cancel').click($.debounce(100,function(e){
-        dialogClose('dialog-issue-supply');
+        dialogClose('dialog-reset-supply');
     }));
 
     // Submit form when user clicks 'Submit' button
     $('#btn-submit').click($.debounce(100,function(e){
-        $('#issue-supply-form').submit()
+        $('#reset-supply-form').submit()
     }));
 
     // Handle form validation and displaying any errors
-    $('#issue-supply-form').validator().on('submit', function(e){
+    $('#reset-supply-form').validator().on('submit', function(e){
         // prevent form submission
         e.preventDefault(); 
         // Get object with form values
@@ -94,7 +90,6 @@ $(document).ready(function(){
             errors.push('You must enter an amount which is greater than 0!');
             $('#amount').closest('.form-group').addClass('has-error has-danger');
         }
-        console.log('FW.ASSET_INFO=',FW.ASSET_INFO);
         // Display any error message
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
@@ -102,8 +97,8 @@ $(document).ready(function(){
             // Callback to run after broadcasting send
             var doneCb = function(tx){
                 if(tx){
-                    dialogClose('dialog-issue-supply');
-                    dialogMessage('<i class="fa fa-lg fa-bank"></i> Issue Supply Successful', '<center>Your issuance has been broadcast to the network and your additional supply should be available shortly.' +
+                    dialogClose('dialog-reset-supply');
+                    dialogMessage('<i class="fa fa-lg fa-refresh"></i> Reset Supply Successful', '<center>Your issuance has been broadcast to the network and your additional supply should be available shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
@@ -113,12 +108,12 @@ $(document).ready(function(){
                     amt_sat = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
                     fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
                     info    = FW.ASSET_INFO;
-                cpIssuance(network, vals.source, vals.name, amt_sat, info.divisible, info.description, null, fee_sat, false, doneCb);
+                cpIssuance(network, vals.source, vals.name, amt_sat, info.divisible, info.description, null, fee_sat, true, doneCb);
             }
             // Confirm the action with the user
-            var title = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Issuance?',
-                fmt   = (FW.ASSET_INFO.divisible) ? '0,0.00000000' : '0,0',
-                msg   = 'Issue  <b>' + numeral(vals.amount).format(fmt) + ' ' + vals.name + '</b>?';
+            var title = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Reset?',
+                fmt   = (vals.divisible=='Yes') ? '0,0.00000000' : '0,0',
+                msg   = 'Destroy any existing supply and<br>Issue  <b>' + numeral(vals.amount).format(fmt) + ' ' + vals.name + '</b>?';
             dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
         }
     })

@@ -60,6 +60,7 @@
                             <li><a href="#" id="action-asset-create"><i class="fa fa-lg fa-plus-circle"></i> Create a Token</a></li>
                             <li><a href="#" id="action-asset-description"><i class="fa fa-lg fa-edit"></i> Change Description</a></li>
                             <li><a href="#" id="action-asset-supply"><i class="fa fa-lg fa-bank"></i> Issue Supply</a></li>
+                            <li><a href="#" id="action-asset-reset"><i class="fa fa-lg fa-refresh"></i> Reset Supply</a></li>
                             <li><a href="#" id="action-asset-destroy"><i class="fa fa-lg fa-trash"></i> Destroy Supply</a></li>
                             <li><a href="#" id="action-asset-transfer"><i class="fa fa-lg fa-exchange"></i> Transfer Ownership</a></li>
                             <li><a href="#" id="action-asset-lock"><i class="fa fa-lg fa-lock"></i> Lock Token Supply</a></li>
@@ -247,6 +248,7 @@
             $('#action-asset-create').click($.debounce(100,function(e){         dialogCreateToken();        }));
             $('#action-asset-description').click($.debounce(100,function(e){    dialogChangeDescription();  }));
             $('#action-asset-supply').click($.debounce(100,function(e){         dialogIssueSupply();        }));
+            $('#action-asset-reset').click($.debounce(100,function(e){          dialogResetSupply();        }));
             $('#action-asset-destroy').click($.debounce(100,function(e){        dialogDestroy();            }));
             $('#action-asset-transfer').click($.debounce(100,function(e){       dialogTransferOwnership();  }));
             $('#action-asset-lock').click($.debounce(100,function(e){           dialogLockSupply();         }));

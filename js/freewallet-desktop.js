@@ -2413,11 +2413,11 @@ function cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asse
 }
 
 // Handle creating/signing/broadcasting an 'Issuance' transaction
-function cpIssuance(network, source, asset, quantity, divisible, description, destination, fee, callback){
+function cpIssuance(network, source, asset, quantity, divisible, description, destination, fee, reset, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
-    createIssuance(network, source, asset, quantity, divisible, description, destination, fee, function(o){
+    createIssuance(network, source, asset, quantity, divisible, description, destination, fee, reset, function(o){
         if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
@@ -2849,7 +2849,7 @@ function createMultiSend(network, source, destination, memo, memo_is_hex, asset,
 }
 
 // Handle creating issuance transaction
-function createIssuance(network, source, asset, quantity, divisible, description, destination, fee, callback){
+function createIssuance(network, source, asset, quantity, divisible, description, destination, fee, reset, callback){
     // console.log('createIssuance=', network, source, asset, quantity, divisible, description, destination, fee, callback);
     var data = {
        method: "create_issuance",
@@ -2860,6 +2860,7 @@ function createIssuance(network, source, asset, quantity, divisible, description
             divisible: (divisible) ? 1 : 0,
             description:  (description) ? description : null,
             transfer_destination: (destination) ? destination : null,
+            reset: (reset) ? true : false,            
             fee: parseInt(fee),
             allow_unconfirmed_inputs: true
         },
@@ -3924,6 +3925,20 @@ function dialogIssueSupply(){
         closeByBackdrop: false,
         title: '<i class="fa fa-fw fa-bank"></i> Issue Supply',
         message: $('<div></div>').load('html/issuance/supply.html'),
+    });
+}
+
+// 'Reset Supply' dialog box
+function dialogResetSupply(){
+    // Make sure wallet is unlocked
+    if(dialogCheckLocked('reset token supply'))
+        return;
+    BootstrapDialog.show({
+        type: 'type-default',
+        id: 'dialog-reset-supply',
+        closeByBackdrop: false,
+        title: '<i class="fa fa-fw fa-refresh"></i> Reset Supply',
+        message: $('<div></div>').load('html/issuance/reset.html'),
     });
 }
 

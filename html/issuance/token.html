@@ -25,21 +25,8 @@
             <input type="text" class="form-control" id="token-name" name="name" placeholder="Token Name" data-minlength="4" required>
         </div>
     </div>
-    <div class="form-group">
-        <label class="col-sm-3 control-label text-left" for="token-amount">
-            Quantity
-            <a href="#" data-toggle="tooltip" title='This is the amount of supply you would like to issue' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
-        </label>
-        <div class="col-sm-9">
-            <input type="text" class="form-control pull-left" name="amount"  id="token-amount" placeholder="0.00000000" style="width:224px" value="0">
-            <div class="input-group pull-right" style="width:180px;margin-left:14px;">
-                <span class="input-group-addon">Divisible</span>
-                <select id="asset-divisible" name="divisible" class="selectpicker">
-                    <option>Yes</option>
-                    <option>No</option>
-                </select>
-            </div>
-        </div>
+    <div class="form-group" id="token-amount-field">
+        <!-- Token Amount Field -->
     </div>
     <div class="form-group" id="token-description-field">
         <!-- Token Description Field -->
@@ -61,6 +48,7 @@ $(document).ready(function(){
     // Load any field content
     $('#tx-fee-field').load('html/fields/tx-fee.html');
     $('#source-address-field').load('html/fields/source-address.html');
+    $('#token-amount-field').load('html/fields/amount-token.html');
     $('#token-description-field').load('html/fields/token-description.html');
 
     // Stash current price info on BTC and XCP
@@ -83,20 +71,6 @@ $(document).ready(function(){
 
     },100);
 
-    // Make sure token amount stays in correct format
-    $('#token-amount').change(function(e){
-        var amt = String($(this).val()).replace(/[^0-9.]/g,''),
-            fmt = ($('#asset-divisible').val()=='Yes') ? '0,0.00000000' : '0,0';
-        $(this).val(numeral(amt).format(fmt));
-    });
-
-    // Make sure token amount stays in correct format
-    $('#asset-divisible').change(function(e){
-        var amt = String($('#token-amount').val()).replace(/[^0-9.]/g,''),
-            fmt = ($(this).val()=='Yes') ? '0,0.00000000' : '0,0';
-        $('#token-amount').val(numeral(amt).format(fmt));
-    });
-
     // Handle updating asset name when token type changes
     $('#token-type').change(function(e){
         var val = $(this).val();
@@ -113,10 +87,6 @@ $(document).ready(function(){
 
     // Make selectpicker dropdowns work
     $('#token-type').selectpicker({ width: '100%' });
-    $('#asset-divisible').selectpicker();
-
-    // Trigger change on token amount so we format it correctly
-    $('#token-amount').change();
 
     // Submit form when user 'Create Token' button
     $('#btn-submit').click($.debounce(100,function(e){
@@ -290,7 +260,7 @@ $(document).ready(function(){
                     amt_sat   = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
                     fee_sat   = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
                     divisible = (vals.divisible=='Yes') ? true : false;
-                cpIssuance(network, vals.source, vals.name, amt_sat, divisible, vals.description, null, fee_sat, doneCb);
+                cpIssuance(network, vals.source, vals.name, amt_sat, divisible, vals.description, null, fee_sat, false, doneCb);
             }
             // Confirm the action with the user
             var title = '<i class="fa fa-lg fa-fw fa-question-circle"></i> Confirm  Issuance?',
