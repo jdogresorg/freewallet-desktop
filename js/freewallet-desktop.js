@@ -182,7 +182,10 @@ function setXChainAPI( network ){
 
 // Handle checking for an updated wallet version
 function checkWalletUpgrade(version, message){
-    $.get('https://freewallet.io/releases/current', function(current){
+    $.ajax({
+        url: "https://freewallet.io/releases/current",
+        cache: false
+    }).done(function(current){
         // Only proceed if we have a response/version
         if(current){
             var a  = version.trim().split('.'),
@@ -201,10 +204,8 @@ function checkWalletUpgrade(version, message){
                 dialogUpdateAvailable(current.trim());
             else if(message)
                 dialogMessage('Current Release', 'You are running the latest version of FreeWallet', false, true);
-
         }
-
-    })
+    });
 }
 
 // Handle loading content into the main panel
