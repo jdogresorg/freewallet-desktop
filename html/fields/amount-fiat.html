@@ -1,0 +1,78 @@
+<!-- Fiat Amount Field -->
+<label class="col-sm-3 control-label text-left" for="fiat-amount">
+    <span class="fiat-code"></span> Amount
+    <a href="#" data-toggle="tooltip" title='This is the amount of FIAT you would like to charge per dispense' class="pull-right" id="fiat-amount-tooltip"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>
+<div class="col-sm-9">
+    <div class="input-group pull-left" style="width:223px" id="fiat-amount-wrapper">
+        <input type="text" class="form-control" name="fiat-amount" id="fiat-amount" placeholder="0.00"  data-minlength="1" required>
+        <div class="input-group-addon fiat-code" id="fiat-code"></div>
+    </div>
+    <div class="input-group pull-right" style="width:180px" id="fiat-amount-descriptin-wrapper" st>
+        <input type="text" class="form-control" name="fiat-amount-description" id="fiat-amount-description" placeholder="" value="" readonly style="border-radius: 4px; text-align: center;">
+    </div>
+
+
+<!--
+    <div class="input-group" id="fiat-amount-value-wrapper">
+        <input type="text" class="form-control" name="value" id="fiat-amount-value" placeholder="0.00"  style="width:169px">
+        <a class="input-group-addon" style="width:249px" id="fiat-amount-description"></a>
+    </div>
+-->
+</div>
+
+<script>
+function updateFiatInfo(){
+    var addr = $('#oracle-select').val(),
+        fiat = '',
+        desc  = '',
+        tip  = 'This is the amount you would like to charge per dispense';
+    if(addr!='' && addr!='other'){
+        var info = getOracleInfo(addr);
+        pair = info.name.split('-');
+        fiat = (pair[1]) ? pair[1] : '';
+        desc = info.description;
+        tip  = 'This is the amount of ' + fiat + ' you would like to charge per dispense';
+    }
+    if(addr=='other'){
+        $('#fiat-code').hide();
+        $('#fiat-amount-value').attr('style','border-radius:4px;');
+    }
+    $('.fiat-code').text(fiat);
+    $('#fiat-amount-description').val(desc);
+    $('#fiat-amount-tooltip').attr('data-original-title',tip);
+    // tip.attr('data-original-title',txt);
+    //  $('#fiat-amount-tooltip').tooltip('dispose');
+    //  $('#fiat-amount-tooltip').tooltip({ 
+    //     html: true,
+    //     placement: 'bottom'
+    // }); 
+}
+
+$(document).ready(function(){
+
+    // Delay initializing some fields to give things a chance to load
+    setTimeout(function(){
+
+        // Initialize any tooltips
+        updateFiatInfo()
+
+    },100);
+
+
+    // Make sure fiat value is in correct format
+    $('#fiat-amount-value').change(function(e){
+        var val = String($(this).val()).replace(/[^0-9.]/g,'');
+        $(this).val(numeral(val).format('0,0.00'));
+    });
+
+    $('fiat-amount-description').val('USD');
+
+    // Make sure fiat value is in correct format
+    $('#fiat-amount').change(function(e){
+        var val = String($(this).val()).replace(/[^0-9.]/g,'');
+        $(this).val(numeral(val).format('0,0.00'));
+    });
+
+});
+</script>

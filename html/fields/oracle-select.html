@@ -1,0 +1,112 @@
+<!-- Oracle Field (select) -->
+<label class="col-sm-3 control-label text-left" for="oracle-select">
+    <span id="oracle-select-label">Oracle</span>
+    <a href="#" data-toggle="tooltip" title='This is the oracle you would like to use' class="pull-right" id="oracle-select-tooltip"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+</label>
+<div class="col-sm-9">
+    <div class="input-group" id="oracle-address-wrapper" style="display:none;">
+        <input type="text" class="form-control" name="oracle-address-other" id="oracle-address-other" placeholder="Oracle Address">
+        <a class="input-group-addon" id="refresh-oracle-list" data-toggle="tooltip" title='<div class="nowrap">Refresh Oracle List</div>'><i class="fa fa-refresh"></i></a>
+    </div>
+    <div id="oracle-select-wrapper">
+        <select id="oracle-select" name="oracle-address" class="selectpicker">
+        </select>
+    </div>
+</div>
+
+<script>
+$(document).ready(function(){
+
+    // Grab the most current oracle list from xcp.finance
+    var html = '',
+        el   = $('#oracle-select')
+
+    // Add default option and update list immediately
+    html += '<option data-content="None"></option>';
+    el.html(html);
+    el.selectpicker({ width: '100%' });
+    el.selectpicker("refresh");
+
+    // Get a list of oracles and update the list 
+    var oracles = getOracleList();
+    oracles.forEach(function(oracle){
+        var pair = oracle.name.split('-');
+        html += '<option data-content="' + oracle.name + ' -  ' + oracle.description + ' (' + pair[1] +')" value="' + oracle.address + '">' + oracle.address + '</option>';
+    });
+    html += '<option data-content="Other">other</option>';
+    el.html(html);
+    el.selectpicker({ width: '100%' });
+    el.selectpicker("refresh");
+
+    // Detect a click on the refresh button and reset the oracle list
+    $('#refresh-oracle-list').click(function(e){
+        $('#oracle-address-wrapper').hide();
+        $('#oracle-select-wrapper').show();
+        $('#oracle-select').val('');
+        el.selectpicker("refresh");
+        $('#oracle-select').change();
+    })
+
+    // Detect an oracle selection change and update to use appropriate field
+    $('#oracle-select').change(function(e){
+        var val = $(this).val();
+        console.log('val=',val);
+        if(val==''){
+            $('#btc-amount-field').show();
+            $('#fiat-amount-field').hide();
+        } else {
+            updateFiatInfo();
+            $('#fiat-amount-field').show();
+            $('#btc-amount-field').hide();
+            if(val=='other'){
+                $('#oracle-address-wrapper').show();
+                $('#oracle-select-wrapper').hide();
+            }
+
+        }
+
+    //     // Update the available amount if the function exist
+    //     if(typeof updateAvailableQuantity === 'function')
+    //         updateAvailableQuantity();
+    //     // Callback function to handle saving current asset information
+    //     var cb = function(o){
+    //         FW.ASSET_INFO = o;
+    //         btc_info = getAssetPrice('BTC',true);
+    //         xcp_info = getAssetPrice('XCP',true);
+    //         // Handle enabling/disabling the fiat field based on if we detect some estimated BTC value
+    //         if(o.estimated_value.btc=='0.00000000'){
+    //             $('#amount-value').prop('disabled',true);
+    //             $('#escrow-amount-value').prop('disabled',true);
+    //             $('#give-amount-value').prop('disabled',true);
+    //         } else {
+    //             $('#amount-value').prop('disabled',false);
+    //             $('#escrow-amount-value').prop('disabled',false);
+    //             $('#give-amount-value').prop('disabled',false);
+    //         }
+    //     }
+    //     // If this is BTC, hardcode the values and skip getting asset info
+    //     if(val=='BTC'){
+    //         cb({
+    //             asset: "BTC",
+    //             estimated_value: {
+    //                 btc: '1.00000000',
+    //                 usd: numeral(btc_info.price_usd).format('0.00'),
+    //                 xcp: numeral(xcp_info.price_btc).format('0.00000000'),
+    //             },
+    //         });
+    //         // Disable the memo
+    //         $('#memo').attr('disabled', true);
+    //         $('#memo').val('');
+    //     } else {
+    //         $('#memo').attr('disabled', false);
+    //         // Get asset info and run callback
+    //         getAssetInfo(val, cb);
+    //     }
+    });
+
+
+    // Trigger a change on the field, so we initialize asset info
+    // $('#oracle-select').change();
+
+});
+</script>

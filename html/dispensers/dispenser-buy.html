@@ -155,8 +155,8 @@ $(document).ready(function(){
         }
 
         // Throw error if amount is below dust amount
-        if(numeral(vals['btc-amount']).multiply(100000000).value()<=5430){
-            errors.push('BTC Amount must be greater than dust (0.00005430 BTC)!');
+        if(numeral(vals['btc-amount']).multiply(100000000).value() < 546){
+            errors.push('BTC Amount must be greater than dust (0.00000546 BTC)!');
             $('#btc-amount').closest('.form-group').addClass('has-error has-danger');
         }
 

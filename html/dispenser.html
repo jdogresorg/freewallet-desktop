@@ -6,6 +6,9 @@
     <div class="form-group" id="destination-address-field">
         <!-- Destination Address Field -->
     </div>
+    <div class="form-group" id="oracle-select-field">
+        <!-- Oracle Field  -->
+    </div>
     <div class="form-group" id="token-name-select-field">
         <!-- Token Name Field  -->
     </div>
@@ -20,6 +23,9 @@
     </div>
     <div class="form-group" id="btc-amount-field">
         <!-- BTC Amount Field -->
+    </div>
+    <div class="form-group" id="fiat-amount-field" style="display:none;">
+        <!-- Fiat Amount Field -->
     </div>
     <div class="form-group" id="tx-fee-field">
         <!-- Transaction Fee Field -->
@@ -45,22 +51,38 @@ function doneCb(tx){
 
 // Handle confirming action with user
 function confirmCreateDispenser(vals){
+    var oracle_address = getOracleAddress(vals);
     // Callback to run if user confirms action
     var confirmCb = function(){
         var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
             escrow_sat = (vals['escrow-amount'].indexOf('.')!=-1) ? numeral(vals['escrow-amount']).multiply(100000000).format('0') : numeral(vals['escrow-amount']).format('0'),
             give_sat   = (vals['escrow-amount'].indexOf('.')!=-1) ? numeral(vals['give-amount']).multiply(100000000).format('0') : numeral(vals['give-amount']).format('0'),
-            btc_sat    = parseInt(numeral(vals['btc-amount']).multiply(100000000).value()),
+            btc_sat    = (oracle_address!='') ? parseInt(numeral(vals['fiat-amount']).multiply(100).value()) : parseInt(numeral(vals['btc-amount']).multiply(100000000).value()),
             fee_sat    = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
             asset      = vals.name, 
             status     = 0; // Hardcode to open for creating a dispenser... can close via dispensers interface
-        cpDispenser(network, vals.source, vals.destination, asset, escrow_sat, give_sat, btc_sat, status, fee_sat, doneCb);
+        cpDispenser(network, vals.source, vals.destination, asset, escrow_sat, give_sat, btc_sat, status, fee_sat, oracle_address, doneCb);
     }
     // Confirm the action with the user
     var title = '<i class="fa fa-lg fa-fw fa-arrows-h"></i> Confirm Create Dispenser?',
         msg   = 'Escrow <b>' + vals['escrow-amount'] + ' ' + vals.name + '</b> in a dispenser at <br><b>' + vals.destination + '</b>';
+    // Finally if this is an oracled dispenser, Lookup the oracle fee and display confirmation to user.
+    if(oracle_address!=""){
+        $.getJSON(FW.XCHAIN_API + '/api/broadcasts/' + oracle_address + '/1/1', function(o){
+            var rec = o.data[0];
+            var total_fiat     = numeral(vals['fiat-amount']).value() * numeral(vals['escrow-amount']).value(),
+                total_fiat_fee = numeral(total_fiat).value() * numeral(rec.fee).value(),
+                total_btc_fee  = numeral(Math.ceil(((1 / numeral(rec.value).value()) * total_fiat_fee) * 100000000)).multiply(0.00000001).format('0,0.00000000');
+                fiat           = rec.text.replace('BTC-','');
+            msg += '<br>Dispense <b>' + vals['give-amount'] + ' ' + vals.name + '</b> for <b>' + vals['fiat-amount'] + ' ' + fiat +'</b> each?';
+            msg += '<br><br><div class="alert alert-warning" role="alert">This includes an oracle usage fee of ' + (rec.fee * 100) + '% or ' + numeral(total_fiat_fee).format('0,0.00') + ' ' + fiat + ' (' + total_btc_fee + ' BTC). <br>Oracle usage fees are charged whenever a dispenser is created or refilled.</div>';
+            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+        });
+    } else {
         msg  += '<br>Dispense <b>' + vals['give-amount'] + ' ' + vals.name + '</b> for <b>' + vals['btc-amount'] + ' BTC</b> each?';
-    dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+        dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+    }   
+
 }
 
 // Handle throwing a scary warning to discourage people from setting up multiple dispensers on the same address
@@ -83,16 +105,29 @@ function dialogWarnSameAddress(vals){
     });
 }
 
+// Handle returning the oracle address
+function getOracleAddress(vals){
+    var addr  = vals['oracle-address'];
+        valid = isValidAddress(addr);
+    if(!valid && addr=='other')
+        addr = vals['oracle-address-other'];
+    if(isValidAddress(addr))
+        return addr;
+    return '';
+}
+
 $(document).ready(function(){
 
     // Load any field content
     $('#source-address-field').load('html/fields/source-address.html');
     $('#destination-address-field').load('html/fields/destination-address.html');
+    $('#oracle-select-field').load('html/fields/oracle-select.html');
     $('#token-name-select-field').load('html/fields/token-name-select.html');
     $('#available-field').load('html/fields/available.html');
     $('#escrow-amount-field').load('html/fields/amount-escrow.html');
     $('#give-amount-field').load('html/fields/amount-give.html');
     $('#btc-amount-field').load('html/fields/amount-btc.html');
+    $('#fiat-amount-field').load('html/fields/amount-fiat.html');
     $('#tx-fee-field').load('html/fields/tx-fee.html');
 
     // Delay initializing some fields to give things a chance to load
@@ -152,6 +187,15 @@ $(document).ready(function(){
             $('#destination-address').closest('.form-group').addClass('has-error has-danger');
         }
 
+        // Verify we have a valid oracle address
+        if(vals['oracle-address']!=""){
+            var addr = getOracleAddress(vals);
+            if(!isValidAddress(addr)){
+                errors.push('You must enter a valid oracle address!');
+                $('#oracle-address-other').closest('.form-group').addClass('has-error has-danger');
+            }
+        }
+
         // Verify we have valid escrow amount 
         if(numeral(vals['escrow-amount']).value()==0){
             errors.push('You must enter an escrow amount which is greater than 0!');
@@ -164,10 +208,17 @@ $(document).ready(function(){
             $('#give-amount').closest('.form-group').addClass('has-error has-danger');
         }
 
-        // Verify we have valid BTC amount 
-        if(numeral(vals['btc-amount']).value()==0){
-            errors.push('You must enter an BTC amount which is greater than 0!');
-            $('#btc-amount').closest('.form-group').addClass('has-error has-danger');
+        // Make sure we have a FIAT or BTC quantity
+        if(vals['oracle-address']!=""){
+            if(numeral(vals['fiat-amount']).value()==0){
+                errors.push('You must enter a fiat amount which is greater than 0!');
+                $('#fiat-amount').closest('.form-group').addClass('has-error has-danger');
+            }
+        } else {
+            if(numeral(vals['btc-amount']).value()==0){
+                errors.push('You must enter an BTC amount which is greater than 0!');
+                $('#btc-amount').closest('.form-group').addClass('has-error has-danger');
+            }
         }
 
         // Verify we have valid fee amount 
@@ -202,6 +253,7 @@ $(document).ready(function(){
                         if(found){
                             dialogWarnMultipleDispensers(vals);
                         } else {
+                            // Throw warning about not using dispensers on commonly used addresses
                             dialogWarnSameAddress(vals);
                         }
                     });

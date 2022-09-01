@@ -129,6 +129,8 @@ FW.MARKET_DATA = {};
 //     chart:     {}, // Chart data
 // }
 
+// Define cache for oracles
+FW.ORACLES = {}; 
 
 // Start loading the wallet 
 $(document).ready(function(){
@@ -244,6 +246,8 @@ function initWallet(){
     // Check every 60 seconds if we should update the wallet information
     setInterval(checkUpdateWallet, 60000);
     updateWalletOptions();
+    // Populate the oracle list
+    updateOracleList();
 }
 
 // Reset/Remove wallet
@@ -2726,11 +2730,11 @@ function cpSweep(network, source, destination, flags, memo, fee, callback){
 
 
 // Handle creating/signing/broadcasting an 'Dispenser' transaction
-function cpDispenser(network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, callback){
+function cpDispenser(network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, oracle_address, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
-    createDispenser(network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, function(o){
+    createDispenser(network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, oracle_address, function(o){
         if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
@@ -3048,8 +3052,8 @@ function createSweep(network, source, destination, flags, memo, fee, callback){
 
 
 // Handle creating dispenser transaction
-function createDispenser(network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, callback){
-    // console.log('createDispenser=',network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, callback);
+function createDispenser(network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, oracle_address, callback){
+    // console.log('createDispenser=',network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, oracle_address, callback);
     var data = {
        method: "create_dispenser",
        params: {
@@ -3070,6 +3074,9 @@ function createDispenser(network, source, destination, asset, escrow_amount, giv
         data.params.open_address = destination;
         data.params.status = 1;
     }
+    // Handle setting up an oracled dispenser by passing forward the oracle address
+    if(oracle_address!='')
+        data.params.oracle_address = oracle_address;
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
@@ -5496,7 +5503,7 @@ function updateDispensersView(id, query, force){
                 return;
             var asset = (o.asset_longname || o.asset) + '|' + o.asset,
                 name  = (!isAddr) ? o.source : asset;
-            data.push([name, o.escrow_quantity, o.give_quantity, o.give_remaining, o.satoshirate, o.status, o.tx_hash, asset, o.source]);
+            data.push([name, o.escrow_quantity, o.give_quantity, o.give_remaining, o.satoshi_price, o.status, o.tx_hash, asset, o.source]);
         });
         try {
             var table = $(tid + ' table.datatable').DataTable(FW.DISPENSERS_DATATABLE_CONFIG);
@@ -5629,4 +5636,32 @@ function hex2string(hexx) {
     for (var i = 0; (i < hex.length && hex.substr(i, 2) !== '00'); i += 2)
         str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
     return str;
+}
+
+// Function to handle creating/updating the oracle list
+function updateOracleList(){
+    ['mainnet','testnet'].forEach(function(net){
+        var coin = (net=='testnet') ? 'tbtc' : 'btc';
+        $.getJSON('https://xcp.finance/api/' + coin, function(o){
+            FW.ORACLES[net] = o.data;
+        });
+    });
+}
+
+// Function to handle getting a list of oracles for a given network
+function getOracleList(network){
+    var network = (network) ? network : FW.WALLET_NETWORK,
+        net = (network==2||network=='testnet') ? 'testnet' : 'mainnet';
+    return FW.ORACLES[net];
+}
+
+// Function to get oracle info using a given oracle address
+function getOracleInfo(address){
+    var info    = false,
+        oracles = getOracleList();
+    oracles.forEach(function(oracle){
+        if(oracle.address==address)
+            info = oracle;
+    });
+    return info;
 }
