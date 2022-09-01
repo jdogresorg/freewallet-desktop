@@ -248,8 +248,14 @@ $(document).ready(function(){
                         //decode the transaction
                         var tx  = bitcoinjs.Transaction.fromHex(o.result),
                             btc = getAssetPrice('BTC',true),
-                            fee = numeral((5430 * 0.00000001) * (tx.outs.length-1)).format('0,0.00000000'), // dust amount * # of outputs (-1 for change)
-                            usd = numeral(fee * btc.price_usd).format('0,0.00');
+                            fee = 0,
+                            usd = 0;
+                        // Loop through outputs and sum up values
+                        tx.outs.slice(0, -1).forEach(function(out){
+                            fee += out.value;
+                        });
+                        fee = numeral(fee * 0.00000001).format('0,0.00000000');
+                        usd = numeral(fee * btc.price_usd).format('0,0.00');
                         // Confirm the action with the user
                         var title = 'Confirm Send?';
                         var msg  = 'Are you sure you want to process the ' + sends.length + ' sends listed below?</b>';
