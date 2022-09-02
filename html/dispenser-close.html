@@ -140,7 +140,7 @@ $(document).ready(function(){
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-close-dispenser');
-                    dialogMessage('<i class="fa fa-lg fa-ban"></i> Close Dispenser Successful', '<center>Your dispenser transaction has been sent to the network and should be included to a block shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-close"></i> Close Dispenser Successful', '<center>Your dispenser transaction has been sent to the network and should be included to a block shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
