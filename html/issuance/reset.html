@@ -98,7 +98,7 @@ $(document).ready(function(){
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-reset-supply');
-                    dialogMessage('<i class="fa fa-lg fa-refresh"></i> Reset Supply Successful', '<center>Your issuance has been broadcast to the network and your additional supply should be available shortly.' +
+                    dialogMessage('<i class="fa fa-lg fa-refresh"></i> Reset Supply Successful', '<center>Your issuance has been broadcast to the network and your new supply should be available shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
@@ -108,7 +108,7 @@ $(document).ready(function(){
                     amt_sat = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
                     fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
                     info    = FW.ASSET_INFO;
-                cpIssuance(network, vals.source, vals.name, amt_sat, info.divisible, info.description, null, fee_sat, true, doneCb);
+                cpIssuance(network, vals.source, vals.name, amt_sat, vals.divisible, info.description, null, fee_sat, true, doneCb);
             }
             // Confirm the action with the user
             var title = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Reset?',
