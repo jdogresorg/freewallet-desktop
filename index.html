@@ -55,6 +55,7 @@
                             <li><a href="#" id="action-broadcast-message"><i class="fa fa-lg fa-bullhorn"></i> Broadcast Message</a></li>
                             <li><a href="#" id="action-burn"><i class="fa fa-lg fa-fire"></i> Burn Funds</a></li>
                             <li><a href="#" id="action-dispenser"><i class="fa fa-lg fa-arrows-h"></i> Create Dispenser</a></li>
+                            <li><a href="#" id="action-close-dispenser"><i class="fa fa-lg fa-close"></i> Close Dispenser</a></li>
                             <li><a href="#" id="action-cancel-order"><i class="fa fa-lg fa-ban"></i> Cancel Order</a></li>
                             <div id="header-token-actions" class="dropdown-menu-header">Token Actions</div>
                             <li><a href="#" id="action-asset-create"><i class="fa fa-lg fa-plus-circle"></i> Create a Token</a></li>
@@ -260,6 +261,7 @@
             $('#action-burn').click($.debounce(100,function(e){                 dialogBurn();               }));
             $('#action-dispenser').click($.debounce(100,function(e){            dialogDispenser();          }));
             $('#action-cancel-order').click($.debounce(100,function(e){         dialogCancelOrder();        }));
+            $('#action-close-dispenser').click($.debounce(100,function(e){      dialogCloseDispenser();     }));
 
             // Detect when running in nwjs and setup some additional listeners
             if(is_nwjs()){

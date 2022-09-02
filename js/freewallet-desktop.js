@@ -4164,7 +4164,7 @@ function dialogCloseDispenser(){
         type: 'type-default',
         id: 'dialog-close-dispenser',
         closeByBackdrop: false,
-        title: '<i class="fa fa-fw fa-ban"></i> Confirm Close Dispenser?',
+        title: '<i class="fa fa-fw fa-close"></i> Confirm Close Dispenser?',
         message: $('<div></div>').load('html/dispenser-close.html')
     });
 }

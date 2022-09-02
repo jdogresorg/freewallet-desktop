@@ -1,9 +1,18 @@
 <!-- Close Dispenser Form -->
 <form class="form-horizontal" id="close-dispenser-form" data-toggle="validator" role="form">
     <input type="hidden" name="asset">
-
-    <div class="col-xs-12 text-center bold" style="margin-bottom: 20px">
+    <div class="col-xs-12 text-center bold" style="margin-bottom: 20px; display: none;" id="confirm-close-message">
         Are you sure you want to close this <span class="asset-name"></span> dispenser?
+    </div>
+    <!-- Dispenser Information -->
+    <div class="form-group" style="display: none;" id="tx-hash-wrapper">
+        <label class="col-sm-3 control-label text-left order-type">
+            Tx Hash
+            <a href="#" data-toggle="tooltip" title='This is the transaction hash of the dispenser which you would like to close' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <input type="text" class="form-control" name="tx_hash" id="tx_hash" placeholder="Dispenser Transaction Hash" autocomplete="off" required>
+        </div>
     </div>
     <div class="form-group" id="tx-fee-field">
         <!-- Transaction Fee Field -->
@@ -24,12 +33,6 @@ $(document).ready(function(){
     $('#close-dispenser-form [name="asset"]').val(FW.DIALOG_DATA.asset);
 
     // Load any field content
-    $('#source-address-field').load('html/fields/source-address.html');
-    $('#token-name-select-field').load('html/fields/token-name-select.html');
-    $('#available-field').load('html/fields/available.html');
-    $('#escrow-amount-field').load('html/fields/amount-escrow.html');
-    $('#give-amount-field').load('html/fields/amount-give.html');
-    $('#btc-amount-field').load('html/fields/amount-btc.html');
     $('#tx-fee-field').load('html/fields/tx-fee.html');
 
     // Delay initializing some fields to give things a chance to load
@@ -41,15 +44,14 @@ $(document).ready(function(){
             placement: 'bottom'
         }); 
 
-        // Detect any asset change and clear the escrow and give amounts
-        $('#token-name-select').change(function(e){
-            $('#escrow-amount').val('');
-            $('#escrow-amount-value').val('');
-            $('#give-amount').val('');
-            $('#give-amount-value').val('');
-        });
-
     },100);
+
+    // Handle showing the dispenser transaction hash field if we dont already know the asset
+    if(!FW.DIALOG_DATA.asset){
+        $('#tx-hash-wrapper').show();
+    } else {
+        $('#confirm-close-message').show();
+    }
 
     // Clear the dialog data
     FW.DIALOG_DATA = {};
@@ -64,16 +66,65 @@ $(document).ready(function(){
         dialogClose('dialog-close-dispenser');
     }));
 
+    // Flag to indicate if we are in the middle of looking up transaction details
+    FW.PENDING_TX_LOOKUP = false;
+
+    // Handle looking up dispenser information based on tx hash
+    $('#tx_hash').change(function(e){
+        var errors = [];
+        var val = $(this).val();
+        if(val.length==64){
+            FW.PENDING_TX_LOOKUP = true;
+            $.getJSON( FW.XCHAIN_API + '/api/tx/' + val, function(data){
+                if(data.tx_type=='Dispenser'){
+                    if(data.status==0){
+                        if(data.source==FW.WALLET_ADDRESS){
+                            var name = (data.asset_longname!='') ? data.asset_longname : data.asset;
+                            $('#close-dispenser-form .asset-name').text(name);
+                            $('#close-dispenser-form [name="asset"]').val(data.asset);
+                            $('#tx-hash-wrapper').hide();
+                            $('#confirm-close-message').show();
+                        } else {
+                            errors.push('Transaction hash points to a dispenser on a different address!');
+                        }
+                    } else if(data.status=='Unconfirmed'){
+                        errors.push('Transaction hash is for an unconfirmed dispenser that is not yet open!');
+                    } else {
+                        errors.push('Transaction hash is for a dispenser that is already closed!');
+                    }
+                } else {
+                    errors.push('Transaction hash is not for a dispenser!');
+                }
+                FW.PENDING_TX_LOOKUP = false;
+                // Display any error message
+                if(errors.length){
+                    $('#tx_hash').val('');
+                    dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+                }
+            });
+        }
+    })
+
     // Handle form validation and displaying any errors
     $('#close-dispenser-form').validator().on('submit', function(e){
         // prevent form submission
-        e.preventDefault(); 
+        e.preventDefault();
         // Get object with form values
         var vals   = array2Object($(this).serializeArray()),
             errors = [];
         console.log('vals=',vals);
         // Remove error indicators from any fields 
         $('.form-group').removeClass('has-error has-danger');
+
+        // Ignore form submissions if we are in the middle of looking up tx details
+        if(FW.PENDING_TX_LOOKUP)
+            return;
+
+        // Verify we have an asset set
+        if(vals.asset==''){
+            errors.push('You must enter a dispenser transaction hash!');
+            $('#tx_hash').closest('.form-group').addClass('has-error has-danger');
+        }
 
         // Verify we have valid fee amount 
         if(numeral(vals['fee-amount']).value()==0){
