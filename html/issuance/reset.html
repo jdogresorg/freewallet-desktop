@@ -109,7 +109,7 @@ $(document).ready(function(){
                     fee_sat   = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
                     divisible = (vals.divisible=='Yes') ? true : false,
                     info      = FW.ASSET_INFO;
-                cpIssuance(network, vals.source, vals.name, amt_sat, divisible, info.description, null, fee_sat, true, doneCb);
+                cpIssuance(network, vals.source, vals.name, amt_sat, divisible, null, null, fee_sat, true, doneCb);
             }
             // Confirm the action with the user
             var title = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Reset?',
