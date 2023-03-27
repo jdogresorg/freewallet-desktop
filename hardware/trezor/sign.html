@@ -64,7 +64,7 @@ $(document).ready(function(){
                     console.log('Serialized TX:', data.payload.serializedTx); // tx in hex
                     console.log('Signatures:', data.payload.signatures); // array of signatures, in hex
                     // Handle broadcasting the transaction
-                    trezor.broadcastTx(qs.network, data.serialized_tx, function(txid){
+                    trezor.broadcastTx(qs.network, data.payload.serializedTx, function(txid){
                         if(txid){
                             status.text('Your transaction has been signed and broadcast to the network!');
                             $('#intro').hide();

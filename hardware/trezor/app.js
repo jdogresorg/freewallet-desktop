@@ -144,8 +144,8 @@ function signTx(net='mainnet', source, path, unsignedTx, callback){
                 coin: 'btc'
             };
             console.log("Trezor Request=",params);
-            var result = await TrezorConnect.signTransaction(params)
-            console.log('Trezor Response=',result);
+            var data = await TrezorConnect.signTransaction(params)
+            console.log('Trezor Response=',data);
             // If the outputs mismatch in any way, the tx is not what is expected and we should throw error
             // This can happen if user entered wrong/different password.
             if(data.payload.serializedTx && !isValidTransaction(unsignedTx, data.payload.serializedTx)){
