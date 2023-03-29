@@ -13,133 +13,293 @@
     </div>
     <!-- Balances Content -->
     <div class="balances-content">
-        <div class="panel panel-default">
 
-            <!-- Basic Information -->
-            <div class="panel-heading">
-                <i class="fa fa-lg fa-info-circle"></i> Basic Information
+        <div class="row">
+            <!-- Basic Asset Information -->
+            <div class="col-xs-12 col-lg-6">
+                <div class="panel panel-primary table-responsive" id="asset-info">
+                    <div class="panel-heading">
+                        <i class="fa fa-lg fa-info-circle"></i> <span class="display-asset-name"></span> Basic Information
+                        <a href="#" class="btn btn-xs btn-success pull-right" id="asset-info-more" target="_blank"><i class="fa fa-info-circle"></i> more info</a>
+                    </div>
+                    <table width="100%" class="table table-condensed table-bordered no-bottom-margin">
+                    <tr>
+                        <td width="75" rowspan="2" valign="middle" align="center" style="vertical-align:middle;"><img src="images/icons/xcp.png" id="asset-icon" border="0"></td>
+                        <th width="*%" class="info">Name</th>
+                    </tr>
+                    <tr>
+                        <td><div class="text-truncate text-nowrap" id="asset-name">SOME.REALLY.LONG.ASSSET.NAME.WHICH.SHOULD.AUTOMATICALLY.TRUNCATE</div></td>
+                    </tr>
+                    </table>
+                    <table class="table table-condensed table-striped table-bordered no-bottom-margin asset-info" style="border-top: 1px solid #ddd;">
+                    <tbody>
+                    <tr>
+                        <th class="no-bottom-border text-nowrap">Total Supply <i id="asset-locked-status" class="fa fa-lg fa-unlock"></i></th>
+                        <td id="asset-total-supply"></td>
+                    </tr>
+                    <tr>
+                        <th class="no-bottom-border text-nowrap">Current Balance</th>
+                        <td id="asset-current-balance"></td>
+                    </tr>
+                    <tr>
+                        <th>Estimated Value</th>
+                        <td class="" style="padding:0px !important;">
+                            <table class="table table-condensed table-striped no-bottom-margin asset-info">
+                            <tr>
+                                <td style="border-right: 1px solid #ddd;">$<span id="asset-value-usd">0.00</span></td>
+                                <td><span id="asset-value-btc">0.00000000</span> BTC</td>
+                            </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    </tbody>
+                    </table>
+                </div>        
             </div>
-            <table width="100%" class="table table-condensed table-bordered no-bottom-margin">
-            <tr>
-                <td width="75" rowspan="2" valign="middle" align="center" style="vertical-align:middle;"><img src="images/icons/xcp.png" id="asset-icon" border="0"></td>
-                <th width="*%" class="info">Name</th>
-                <th width="33%" class="info text-center">Current Balance</th>
-            </tr>
-            <tr>
-                <td id="asset-name">&nbsp;</td>
-                <td id="asset-current-balance" class="text-center">&nbsp;</td>
-            </tr>
-            </table>
 
-            <!-- Estimated Value-->
-            <div class="panel-heading panel-middle">
-                <i class="fa fa-lg fa-money"></i> Estimated Value
+            <!-- Market Information -->
+            <div class="col-xs-12 col-lg-6">
+                <div class="panel panel-primary table-responsive" id="asset-info">
+                    <div class="panel-heading">
+                        <i class="fa fa-lg fa-exchange"></i> <span class="display-asset-name"></span> Market Information
+                    </div>
+                    <div class="panel-content">
+                        <table class="table table-condensed table-striped table-bordered no-bottom-margin no-bottom-border asset-info">
+                        <tbody>
+                        <tr>
+                            <th>Marketcap</th>
+                            <td>$<span id="market-marketcap-usd">0.00</span></td>
+                            <td><span id="market-marketcap-btc">0.00000000</span> BTC</td>
+                        </tr>
+                        <tr>
+                            <th>BTC Price</th>
+                            <td>$<span id="market-btc-price-usd">0.00</span></td>
+                            <td><span id="market-btc-price-btc">0.00000000</span> BTC</td>
+                        </tr>
+                        <tr>
+                            <th>BTC Floor</th>
+                            <td>$<span id="market-btc-floor-usd">0.00</span></td>
+                            <td><span id="market-btc-floor-btc">0.00000000</span> BTC</td>
+                        </tr>
+                        <tr>
+                            <th>XCP Price</th>
+                            <td>$<span id="market-xcp-price-usd">0.00</span></td>
+                            <td><span id="market-xcp-price-xcp">0.00000000</span> XCP</td>
+                        </tr>
+                        <tr>
+                            <th>XCP Floor</th>
+                            <td>$<span id="market-xcp-floor-usd">0.00</span></td>
+                            <td><span id="market-xcp-floor-xcp">0.00000000</span> XCP</td>
+                        </tr>
+                        </tbody>
+                        </table>
+                    </div>
+                </div>        
             </div>
-            <table class="table table-condensed table-striped table-bordered no-bottom-margin table-centered text-center">
-            <thead>
-                <tr class="info">
-                    <th width="33%">Bitcoin (BTC)</th>
-                    <th width="34%">Counterparty (XCP)</th>
-                    <th width="33%">US Dollars (USD)</th>
-                </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td id="asset-value-btc">&nbsp;</td>
-                <td id="asset-value-xcp">&nbsp;</td>
-                <td id="asset-value-usd">&nbsp;</td>
-            </tr>                
-            </tbody>
-            </table>
 
-            <!-- Market Information-->
-            <div class="panel-heading panel-middle">
-                <i class="fa fa-lg fa-bank"></i> Market Information
-            </div>
-            <table class="table table-condensed table-bordered text-center no-bottom-margin">
-            <thead>
-                <tr class="info">
-                    <th width="33%">Total Supply <i id="asset-locked-status" class="fa fa-lg fa-unlock"></i></th>
-                    <th width="34%">Last Trade Price (XCP)</th>
-                    <th width="33%">Market Cap. (USD)</th>
-                </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td id="asset-total-supply">&nbsp;</td>
-                <td id="asset-last-price">&nbsp;</td>
-                <td id="asset-marketcap">&nbsp;</td>
-            </tr>
-            </tbody>
-            </table>
+        </div>
 
-            <!-- Reputation Information-->
-            <div class="panel-heading panel-middle">
-                <i class="fa fa-lg fa-shield"></i> Reputation
-                <a href="https://reputation.coindaddy.io/xcp/asset/{QUERY}" class="btn btn-xs btn-success pull-right" id="asset-reputation-feedback" target="_blank"><i class="fa fa-bullhorn"></i> Feedback</a>
-            </div>
-            <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin text-center">
-            <thead>
-            <tr class="info">
-                <th width="25%">Current Rating</th>
-                <th width="25%">Last 30 Days</th>
-                <th width="25%">6 months ago</th>
-                <th width="25%">1 Year ago</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td id="rating_current">&nbsp;</td>
-                <td id="rating_30day">&nbsp;</td>
-                <td id="rating_6month">&nbsp;</td>
-                <td id="rating_1year">&nbsp;</td>
-            </tr>
-            </tbody>
-            </table>
-
-            <!-- Additional Information-->
-            <div class="panel-heading panel-middle">
-                <i class="fa fa-lg fa-paperclip"></i> Additional Information</a>
-                <a href="#" class="btn btn-xs btn-success pull-right" id="asset-info-more" target="_blank"><i class="fa fa-info-circle"></i> more info</a>
-            </div>
-            <!-- Default page if no enhanced asset info is found-->
-            <div id="asset-info-not-available" class="panel-body" style="display: none">
-                <center>No additional information is available at this time</center>
-            </div>
-            <div id="asset-info" style="display: none">
-                <div id="asset-info-enhanced" style="display: none">
-                    <!-- Name / Website / PGP Signature -->
-                    <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border">
+        <!-- Reputation Information-->
+        <!--
+        <div class="row"  id="reputationInfo">
+            <a name="reputation"></a>
+            <div class="col-xs-12">
+                <div class="panel panel-primary table-responsive">
+                    <div class="panel-heading primary-middle panel-heading-lg centered-icons no-link-arrow">
+                        <i class="fa fa-shield fa-lg"></i> <span class="display-asset-name"></span> Reputation
+                        <a href="https://reputation.coindaddy.io/xcp/asset/{QUERY}" class="btn btn-xs btn-success pull-right"><i class="fa fa-bullhorn"></i> Leave Feedback</a>
+                    </div>
+                    <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin top-border">
                     <thead>
                     <tr class="info">
-                        <th width="33%">Name</th>
-                        <th width="34%">Website</th>
-                        <th width="33%">PGP Signature</th>
+                        <th width="25%" class="text-center">Current Rating</th>
+                        <th width="25%" class="text-center">Last 30 Days</th>
+                        <th width="25%" class="text-center">6 months ago</th>
+                        <th width="25%" class="text-center hidden-xs">1 Year ago</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr>
-                        <td><div id="asset-info-name">&nbsp;</div></td>
-                        <td><div id="asset-info-website">&nbsp;</div></td>
-                        <td><div id="asset-info-pgpsig">&nbsp;</div></td>
+                        <td id="rating_current" class="text-center"></td>
+                        <td id="rating_30day"   class="text-center"></td>
+                        <td id="rating_6month"  class="text-center"></td>
+                        <td id="rating_1year"   class="text-center hidden-xs"></td>
                     </tr>
                     </tbody>
                     </table>
                 </div>
-                <!-- Description  -->
-                <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border">
+            </div>
+        </div>
+        -->
+
+
+        <!-- Additional Information-->
+        <div class="panel panel-primary">
+
+            <!-- Default page if no enhanced asset info is found-->
+            <div id="additionalInfoNotAvailable">
+                <div class="panel-heading panel-middle">
+                    <i class="fa fa-lg fa-paperclip"></i> Additional Information</a>
+                </div>
+                <div class="panel-body">
+                    <center>No additional information is available at this time</center>
+                </div>
+            </div>
+
+            <!-- Official Card Indicator-->
+            <div id="officialCard" style="display: none;" ></div>
+
+            <!-- Digital Artwork  -->
+            <div id="digitalArtInfo" style="display: none;">
+                <div class="panel-heading panel-heading-lg primary-middle" id="artwork-information" style="display:none;"><i class="fa fa-lg fa-info"></i> Artwork Information</div>
+                <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border asset-info asset-info-hide">
                 <thead>
-                <tr class="info">
-                    <th>Description</th>
-                </tr>
+                <tr>
+                    <th> Title</th>
+                    <td id="artwork-title">&nbsp;</td>
+                <tr>
+                <tr>
+                    <th> Project</th>
+                    <td id="artwork-project">&nbsp;</td>
+                <tr>
                 </thead>
+                </table>
+                <div class="panel-heading panel-heading-lg primary-middle" id="video-header" style="display: none;"><i class="fa fa-lg fa-play"></i> Digital Video</div>
+                <div class="video-wrapper" id="video-wrapper" style="display: none;"></div>
+                <div class="video-wrapper-youtube" id="video-wrapper-youtube" style="display: none;"></div>
+                <div class="panel-heading panel-heading-lg primary-middle" id="artwork-header" style="display: none;"><i class="fa fa-lg fa-paint-brush"></i> Digital Image</div>
+                <div class="alert alert-success bold text-center" id="artwork-loader">
+                    <i class="fa fa-spinner fa-pulse fa-fw"></i> Loading...
+                </div>
+                <img src="images/icons/xcp.png" class="img-responsive" id="artwork-image" style="display: none;">
+                <img src="images/icons/XCP.png" class="bitcoin-stamp-pixelated"   id="artwork-bitcoin-stamp" style="display: none;">
+                <div class="panel-heading panel-heading-lg primary-middle" id="audio-header" style="display: none;"><i class="fa fa-lg fa-music"></i> Digital Audio</div>
+                <div class="audio-wrapper" id="audio-wrapper" style="display: none;"></div>
+                <div class="audio-wrapper-soundcloud" id="audio-wrapper-soundcloud" style="display: none;"></div>
+            </div>
+
+            <!-- Extended Information from JSON -->
+            <div id="additionalAssetInfo" style="display:none;">
+                <a name="extended"></a>
+                <div class="panel-heading panel-heading-lg primary-middle"><i class="fa fa-lg fa-id-card"></i> Enhanced Asset Information</div>
+                <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border asset-info asset-info-hide">
                 <tbody>
                 <tr>
-                    <td id="asset-description">&nbsp;</td>
+                    <th>Name</th>
+                    <td id="assetName">&nbsp;</td>
+                </tr>
+                <tr>
+                    <th>Website</th>
+                    <td id="assetWebsite">&nbsp;</td>
+                </tr>
+                <tr>
+                    <th>PGP Signature</th>
+                    <td id="pgpSignature">&nbsp;</td>
+                </tr>
+                <tr>
+                    <th>Category</th>
+                    <td id="assetCategory">&nbsp;</td>
+                </tr>
+                <tr>
+                    <th>Subcategory</th>
+                    <td id="assetSubCategory">&nbsp;</td>
+                </tr>
+                <tr>
+                    <th>Other Category</th>
+                    <td id="assetCategoryOther">&nbsp;</td>
+                </tr>
+                <tr>
+                    <th>Description</th>
+                    <td><div id="assetExtendedDescription" class="text-truncate">&nbsp;</div></td>
                 </tr>
                 </tbody>
                 </table>
             </div>
+
+            <!-- Owner Information -->
+            <div id="ownerInfo" style="display:none;">                        
+                <div class="panel-heading panel-heading-lg primary-middle centered-icons"><i class="fa fa-user fa-lg"></i> Owner Information</div>
+                <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border asset-info asset-info-hide">
+                <tbody>
+                <tr>
+                    <th>Name</th>
+                    <td id="ownerName">&nbsp;</td>
+                </tr>
+                <tr>
+                    <th>Title</th>
+                    <td id="ownerTitle">&nbsp;</td>
+                </tr>
+                <tr>
+                    <th>Organization</th>
+                    <td id="ownerOrganization">&nbsp;</td>
+                </tr>
+                </tbody>
+                </table>
+            </div>
+
+            <!-- Contact Information -->
+            <div id="contactInfo" style="display:none;">
+                <div class="panel-heading panel-heading-lg primary-middle centered-icons"><i class="fa fa-envelope fa-lg"></i> Contact Information</div>
+                <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border asset-info">
+                <tbody>
+                </tbody>
+                </table>
+            </div>
+
+            <!-- Social Media Information -->
+            <div id="socialInfo" style="display:none;">
+                <div class="panel-heading panel-heading-lg primary-middle centered-icons"><i class="fa fa-bullhorn fa-lg"></i> Social Media</div>
+                <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border asset-info">
+                <tbody>
+                </tbody>
+                </table>
+            </div>
+
+            <!-- Images Information -->
+            <div id="imagesInfo" style="display:none;">
+                <div class="panel-heading panel-heading-lg primary-middle centered-icons"><i class="fa fa-image fa-lg"></i> Images</div>
+                <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border asset-info">
+                <tbody>
+                </tbody>
+                </table>
+            </div>
+
+            <!-- Audio Information -->
+            <div id="audioInfo" style="display:none;">
+                <div class="panel-heading panel-heading-lg primary-middle centered-icons"><i class="fa fa-music fa-lg"></i> Audio</div>
+                <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border asset-info">
+                <tbody>
+                </tbody>
+                </table>
+            </div>
+
+            <!-- Video Information -->
+            <div id="videoInfo" style="display:none;">
+                <div class="panel-heading panel-heading-lg primary-middle centered-icons"><i class="fa fa-play fa-lg"></i> Video</div>
+                <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border asset-info">
+                <tbody>
+                </tbody>
+                </table>
+            </div>
+
+            <!-- Files Information -->
+            <div id="fileInfo" style="display:none;">
+                <div class="panel-heading panel-heading-lg primary-middle centered-icons"><i class="fa fa-file fa-lg"></i> Files</div>
+                <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border asset-info">
+                <tbody>
+                </tbody>
+                </table>
+            </div>
+
+            <!-- DNS Information -->
+            <div id="dnsInfo" style="display:none;">
+                <div class="panel-heading panel-heading-lg primary-middle centered-icons"><i class="fa fa-server fa-lg"></i> DNS</div>
+                <table width="100%" class="table table-condensed table-striped table-bordered no-bottom-margin no-top-border asset-info">
+                <tbody>
+                </tbody>
+                </table>
+            </div>
+
         </div>
     </div>
 </div>
@@ -152,6 +312,37 @@ $(document).ready(function(){
 
     // Display BTC asset info
     loadAssetInfo('BTC');
+
+    // Define placeholders
+    var lastWidth  = 0,
+        lastHeight = 0;
+
+    // Unbind the event to prevent duplicate listeners
+    $(window).unbind('resize');
+
+    // Detect any window resizes and resize datatables to fit 
+    $(window).resize($.debounce(10,function(e){
+        var el    = $('#asset-info .panel-heading'),
+            height = el.height(),
+            width  = el.width();
+
+        // Fit max amount of tabs on screen (horizontally)
+        if(width!=lastWidth){
+            // Adjust width on asset name field
+            var w = width - 65; // subtract 65 px for 48x48 icon area
+            $('#asset-name').width(w);
+
+            // Adjust width on description field
+            var width = $('.balances-content').width(),
+                w     = width - 120;
+            $('#assetExtendedDescription').width(w);
+
+        }
+        lastWidth  = width;
+        lastHeight = height;
+    }));
+
+    $(window).resize();
 
     // Handle detecting keyup events and filter the balances list to show matches
     // buffer the event by 250ms so we can allow for additional keystrokes before processing

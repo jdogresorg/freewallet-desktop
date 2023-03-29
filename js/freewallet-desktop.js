@@ -132,6 +132,10 @@ FW.MARKET_DATA = {};
 // Define cache for oracles
 FW.ORACLES = {}; 
 
+// Cache for cards from NFT projects
+FW.NFT_CARDS = []; // placeholder 
+FW.NFT_DATA  = JSON.parse(ls.getItem('nftInfo')) || []; // placeholder for raw NFT data
+
 // Start loading the wallet 
 $(document).ready(function(){
 
@@ -249,6 +253,8 @@ function initWallet(){
     updateWalletOptions();
     // Populate the oracle list
     updateOracleList();
+    // Populate FW.NFT_CARDS 
+    updateNFTCards();
 }
 
 // Reset/Remove wallet
@@ -807,6 +813,7 @@ function checkUpdateWallet(){
         if(typeof updateDispensersLists === 'function')
             updateDispensersLists();
     }
+    updateNFTInfo();
 };
 
 
@@ -1930,18 +1937,63 @@ function getHistoryHtml(data){
 
 // Handle resetting the asset information to a fresh/new state
 function resetAssetInfo(asset){
-    $('#asset-name').text(' ');
-    $('#asset-value-btc').text(' ');
-    $('#asset-value-xcp').text(' ');
-    $('#asset-value-usd').text(' ');    
-    $('#asset-total-supply').text(' ');
-    $('#asset-marketcap').text(' ');
-    $('#asset-last-price').text(' ')
-    $('#rating_current').text('NA');
-    $('#rating_30day').text('NA');
-    $('#rating_6month').text('NA');
-    $('#rating_1year').text('NA');
-    $('#asset-info-enhanced').hide();
+    $('#asset-name').text('');
+    $('#asset-value-btc').text('');
+    $('#asset-value-xcp').text('');
+    $('#asset-value-usd').text('');    
+    $('#asset-total-supply').text('');
+    $('#asset-marketcap').text('');
+    $('#asset-last-price').text('');
+    // Reset Market Information
+    $('#market-xcp-price-xcp').text('');
+    $('#market-xcp-price-usd').text('');
+    $('#market-xcp-floor-xcp').text('');
+    $('#market-xcp-floor-usd').text('');
+    $('#market-btc-price-btc').text('');
+    $('#market-btc-price-usd').text('');
+    $('#market-btc-floor-btc').text('');
+    $('#market-btc-floor-usd').text('');
+    $('#market-marketcap-btc').text('');
+    $('#market-marketcap-usd').text('');
+    // Hide the extended info
+    $('#additionalInfoNotAvailable').show();
+    $('#additionalAssetInfo').hide();
+    $('#ownerInfo').hide();
+    $('#contactInfo').hide();
+    $('#socialInfo').hide();
+    $('#imagesInfo').hide();
+    $('#audioInfo').hide();
+    $('#videoInfo').hide();
+    $('#fileInfo').hide();
+    $('#dnsInfo').hide();
+    $('#ownerInfo').hide();
+    $('#ownerInfo').hide();
+    // Reset the enhanced asset info fields
+    $('#assetName').text('').parent().hide();
+    $('#assetWebsite').text('').parent().hide();
+    $('#pgpSignature').text('').parent().hide();
+    $('#assetCategory').text('').parent().hide();
+    $('#assetSubCategory').text('').parent().hide();
+    $('#assetCategoryOther').text('').parent().hide();
+    $('#assetExtendedDescription').text('').parent().hide();
+    $('#ownerName').text('').parent().hide();
+    $('#ownerTitle').text('').parent().hide();
+    $('#ownerOrganization').text('').parent().hide();
+    // Reset the digital artwork (images/audio/video) fields
+    $('#officialCard').html('').hide();
+    $('#digitalArtInfo').hide();
+    $('#artwork-information').hide();
+    $('#artwork-title').text('').parent().hide();
+    $('#artwork-header').hide();
+    $('#video-header').hide();
+    $('#audio-header').hide();
+    $('#custom-content-header').hide();
+    $('#artwork-image').attr('src','images/icons/xcp.png').hide();
+    $('#artwork-bitcoin-stamp').attr('src','images/icons/xcp.png').hide();
+    $('#video-wrapper').html('').hide();
+    $('#video-wrapper-youtube').html('').hide();
+    $('#audio-wrapper').html('').hide();
+    $('#audio-wrapper-soundcloud').html('').hide();
 }
 
 // Handle loading asset information 
@@ -1963,7 +2015,7 @@ function loadAssetInfo(asset){
         var val = balance.estimated_value;
         $('#asset-value-btc').text(numeral(val.btc).format('0,0.00000000'));
         $('#asset-value-xcp').text(numeral(val.xcp).format('0,0.00000000'));
-        $('#asset-value-usd').text('$' + numeral(val.usd).format('0,0.00'));
+        $('#asset-value-usd').text(numeral(val.usd).format('0,0.00'));
         var bal = balance.quantity,
             fmt = (balance.quantity.indexOf('.')==-1) ? '0,0' : '0,0.00000000';
         $('#asset-current-balance').text(numeral(bal).format(fmt));
@@ -1971,16 +2023,24 @@ function loadAssetInfo(asset){
         var cb = function(o){
             // console.log('o=',o);
             if(!o.error){
-                var fmt = (String(o.supply).indexOf('.')==-1) ? '0,0' : '0,0.00000000';
-                $('#asset-total-supply').text(numeral(o.supply).format(fmt));
-                // console.log('xcp,supply,usd',o.estimated_value.xcp, o.supply, xcp_usd);
                 var xcp_usd = getAssetPrice('XCP'),
-                    mcap    = numeral((o.estimated_value.xcp * o.supply) * xcp_usd).format('0,0.00'),
-                    last    = numeral(o.estimated_value.xcp).format('0,0.00000000'),
-                    lock    = $('#asset-locked-status');
-                $('#asset-marketcap').text('$' + mcap);
-                $('#asset-last-price').text(last);
-                $('#asset-description').text(o.description);
+                    btc_usd = getAssetPrice('BTC'),
+                    fmtA    = '0,0.00000000',
+                    fmtB    = '0,0.00',
+                    fmt     = (String(o.supply).indexOf('.')==-1) ? '0,0' : '0,0.00000000',
+                    lock    = $('#asset-locked-status'),
+                    mcap    = o.market_info.btc.price * o.supply;
+                $('#asset-total-supply').text(numeral(o.supply).format(fmt));
+                $('#market-xcp-price-xcp').text(numeral(o.market_info.xcp.price).format(fmtA));
+                $('#market-xcp-price-usd').text(numeral(o.market_info.xcp.price * xcp_usd).format(fmtA));
+                $('#market-xcp-floor-xcp').text(numeral(o.market_info.xcp.floor).format(fmtA));
+                $('#market-xcp-floor-usd').text(numeral(o.market_info.xcp.floor * xcp_usd).format(fmtA));
+                $('#market-btc-price-btc').text(numeral(o.market_info.btc.price).format(fmtA));
+                $('#market-btc-price-usd').text(numeral(o.market_info.btc.price * btc_usd).format(fmtA));
+                $('#market-btc-floor-btc').text(numeral(o.market_info.btc.floor).format(fmtA));
+                $('#market-btc-floor-usd').text(numeral(o.market_info.btc.floor * btc_usd).format(fmtA));
+                $('#market-marketcap-btc').text(numeral(mcap).format(fmtA));
+                $('#market-marketcap-usd').text(numeral(mcap * btc_usd).format(fmtB));
                 // Force locked on certain items
                 if(['BTC','XCP'].indexOf(asset)!=-1)
                     o.locked = true;
@@ -1989,66 +2049,45 @@ function loadAssetInfo(asset){
                 } else {
                     lock.removeClass('fa-lock').addClass('fa-unlock');
                 }
-                // Only allow feedback on XCP and assets, not BTC
+                // // Only allow feedback on XCP and assets, not BTC
+                // if(asset=='BTC'){
+                //     feedback.hide();
+                // } else {
+                //     feedback.attr('href','https://reputation.coindaddy.io/xcp/asset/' + asset);
+                //     feedback.show();
+                // }
+                // Handle loading up basic info on BTC and XCP 
                 if(asset=='BTC'){
-                    feedback.hide();
-                } else {
-                    feedback.attr('href','https://reputation.coindaddy.io/xcp/asset/' + asset);
-                    feedback.show();
-                }
-                // Display the description info if we have it
-                var desc = String(o.description).toString(), // Make sure description is a string
-                    re1  = /^(.*).json$/,
-                    re2  = /^http:\/\//,
-                    re3  = /^https:\/\//;   
-                if(o.description!=''){
-                    $('#asset-info-not-available').hide();
-                    $('#asset-info').show();
-                }
-                $('#asset-description').text(o.description);
-                // If the file starts with http and does NOT end with JSON, then assume it is valid url and link it
-                if(!re1.test(desc) && (re2.test(desc)||re3.test(desc))){
-                    // create element to ensure we are only injecting a link with text for description/name
-                    var el = $('<a></a>').text(desc);
-                    el.attr('target','_blank');
-                    el.attr('href', desc);
-                    $('#asset-description').html(el);
-                }
-                // Handle loading enhanced asset info
-                if(re1.test(desc)){
-                    loadExtendedInfo();
-                } else if(asset=='BTC'){
                     loadExtendedInfo({
+                        asset: 'BTC',
                         name: 'Bitcoin (BTC)',
                         description: 'Bitcoin is digital money',
                         website: 'https://bitcoin.org'
                     });
                 } else if(asset=='XCP'){
                     loadExtendedInfo({
+                        asset: 'XCP',
                         name: 'Counterparty (XCP)',
                         description: 'Counterparty is a free and open platform that puts powerful financial tools in the hands of everyone with an Internet connection. Counterparty creates a robust and secure marketplace directly on the Bitcoin blockchain, extending Bitcoin\'s functionality into a full fledged peer-to-peer financial platform.',
                         website: 'https://counterparty.io'
                     });
                 } else {
-                    if(o.description==''){
-                        $('#asset-info-not-available').show();
-                        $('#asset-info').hide();
-                    }
+                    loadExtendedInfo(o);
                 }
             }
         }
         // Callback function to process reputation information
-        var cb2 = function(o){
-            if(!o.error){
-                var arr = ['current','30day','6month','1year'];
-                arr.forEach(function(name){
-                    var rating = o['rating_' + name],
-                        text   = (rating>0) ? rating : 'NA';
-                    $('#rating_' + name).html('<a href="https://reputation.coindaddy.io/xcp/asset/' + asset + '" target="_blank"><div class="rateit" data-rateit-readonly="true" data-rateit-value="' + rating + '" data-rateit-ispreset="true"></div></a> <span class="rateit-score">' + text + '</span>')
-                });
-                $('.rateit').rateit();
-            }
-        }
+        // var cb2 = function(o){
+        //     if(!o.error){
+        //         var arr = ['current','30day','6month','1year'];
+        //         arr.forEach(function(name){
+        //             var rating = o['rating_' + name],
+        //                 text   = (rating>0) ? rating : 'NA';
+        //             $('#rating_' + name).html('<a href="https://reputation.coindaddy.io/xcp/asset/' + asset + '" target="_blank"><div class="rateit" data-rateit-readonly="true" data-rateit-value="' + rating + '" data-rateit-ispreset="true"></div></a> <span class="rateit-score">' + text + '</span>')
+        //         });
+        //         $('.rateit').rateit();
+        //     }
+        // }
         // Hardcode the BTC values.. otherwise request the asset details
         if(asset=='BTC'){
             var btc = getAssetPrice('BTC',true),
@@ -2061,61 +2100,75 @@ function loadAssetInfo(asset){
                     usd: btc.market_cap_usd,
                     xcp: 1/xcp.price_btc
                 },
+                market_info:{
+                    btc: {
+                        floor: 1,
+                        price: 1,
+                    },
+                    xcp: {
+                        floor: 1/xcp.price_btc,
+                        price: 1/xcp.price_btc
+                    }
+                },
                 supply: btc.total_supply
             });
-            cb2({
-                asset: "BTC",
-                verify_status: "Not Verified",
-                rating_current: "5.00",
-                rating_30day: "5.00",
-                rating_6month: "5.00",
-                rating_1year: "5.00"
-            });
+            // Callback for asset reputation
+            // cb2({
+            //     asset: "BTC",
+            //     verify_status: "Not Verified",
+            //     rating_current: "5.00",
+            //     rating_30day: "5.00",
+            //     rating_6month: "5.00",
+            //     rating_1year: "5.00"
+            // });
         } else {
             getAssetInfo(asset, cb);
-            getAssetReputationInfo(asset, cb2);
+            // getAssetReputationInfo(asset, cb2);
         }
     }
 } 
 
 // Function to handle requesting extended asset info (if any) and updating page with extended info
 function loadExtendedInfo(data){
-    var desc = $('#asset-description').text(),
-        re1  = /^(.*).json$/,
-        re2  = /^http:\/\//,
-        re3  = /^https:\/\//;
-    // If the file starts with http and does NOT end with JSON, then assume it is valid url and link it
-    if(!re1.test(desc) && (re2.test(desc)||re3.test(desc)))
-        $('#asset-description').html('<a href="' + desc + '" target="_blank">' + desc + '</a>');
-    var url   = (re2.test(desc)||re3.test(desc)) ? desc : 'http://' + desc,
-        json  = FW.XCHAIN_API + '/relay?url=' + desc;
-    $('#asset-description').html('<a href="' + url + '" target="_blank">' + desc + '</a>');
-    var cb = function(o){
-        // console.log('o=',o);
-        if(o && (o.website!=''||o.description!='')){
-            $('#asset-info-enhanced').show();
-            var name = (o.name && o.name!='') ? o.name : o.asset;
-            $('#asset-info-name').text(name);
-            // Update Website
-            var html = '';
-            if(o.website && o.website!='')
-                html = '<a href="' + getValidUrl(o.website) + '" target="_blank">' + o.website + '</a>';
-            $('#asset-info-website').html(html);
-            $('#asset-info-pgpsig').text(o.pgpsig);
-            // Run description through sanitizer to remove any XSS or other nasties
-            if(o.description && o.description!=''){
-                var html = sanitizer.sanitize(o.description);
-                $('#asset-description').html(html);
-            }
+    var json  = /^(.*).json/i,
+        http  = /^http:\/\//,
+        https = /^https:\/\//,
+        ord   = /^ord:/i,
+        ipfs  = /^ipfs:/i,
+        desc  = data.description,
+        arr   = desc.split(';');
+    // Use cached JSON if we have it
+    if(data.json)
+        showExtendedAssetInfo(data.json);
+    // Display NFTs 
+    if(isNFT(data.asset))
+        showExtendedAssetInfo(data);
+    // Handle loading any JSON, IPFS, Ordinals content
+    if(json.test(desc) || ipfs.test(desc) || ord.test(desc)){
+        if(ipfs.test(desc)){
+            url = 'https://ipfs.io/ipfs/' + String(desc).replace(ipfs,'');
+        } else if(ord.test(desc)){
+            var hash = String(desc).replace(ord,'');
+            if(hash.length!=64)
+                hash = base64ToHex(hash);
+            url = 'https://inscription-decoder.vercel.app/api/image?type=json&tx=' + hash;
         } else {
-            $('#asset-info-enhanced').hide();
+            url = 'https://' + arr[0].replace('https://','').replace('http://','');
         }
-    };
-    if(data){
-        cb(data);
+        // Try to make a request for the JSON directly (might fail due to missing headers, etc)
+        $.getJSON( url, function( o ){ 
+            showExtendedAssetInfo(o);
+        }).fail(function(){
+            // Try to request the JSON through the xchain relay
+            var url = FW.XCHAIN_API + '/relay?url=' + desc;
+            $.getJSON( url, function( o ){ 
+                showExtendedAssetInfo(o);
+            });
+        }); 
     } else {
-        $.getJSON( json, function( o ){ cb(o); });
+        showExtendedAssetInfo(data);
     }
+
 }
 
 // Handle building out the HTML for the address list
@@ -2201,6 +2254,17 @@ function loadTransactionInfo(data){
     FW.CURRENT_TRANSACTION = data;
     $('.history-content').load('html/history/' + data.type + '.html');
 } 
+
+// Function to handle checking if a URL is valid
+function isValidUrl(url) {
+    var req;
+    try {
+        req = new URL(url);
+    } catch (_) {
+        return false;
+    }
+    return req.protocol === "http:" || req.protocol === "https:";
+}
 
 // Function to handle making a URL a url valid by ensuring it starts with http or https
 function getValidUrl( url ){
@@ -5681,3 +5745,628 @@ function getOracleInfo(address){
     });
     return info;
 }
+
+// Function to remove html from string
+function stripHtml(html){
+    var tmp = document.createElement("DIV");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+}
+
+// Function to handle converting any JSON to use the CIP25 standard
+// https://github.com/CounterpartyXCP/cips/blob/master/cip-0025.md
+function legacyJsonToCip25(o){
+    var json = {},
+        o    = (o) ? o : {};
+    // Pass basic asset info fields forward
+    ['asset','description','image','website','pgpsig','name'].forEach(function(name){ if(o[name]) json[name]=o[name]; });
+    // Owner fields
+    json.owner = {};
+    if(o.owner)
+        ['name','title','organization'].forEach(function(name){ if(o.owner[name]) json.owner[name]=o.owner[name]; });
+    // Contacts Data
+    json.contacts = (typeof o.contacts === 'object') ? o.contacts : [];
+    if(o.contact_address_line_1)
+        json.contacts.push({ type: 'address', data: o.contact_address_line_1 + ' ' + o.contact_address_line_2 + ', ' +  o.contact_city + ', ' +  o.contact_state_province + ' ' +  o.contact_postal_code + ' ' + o.contact_country });
+    if(o.contact_email1)
+        json.contacts.push({ type: 'email', data: o.contact_email1 });
+    if(o.contact_email2)
+        json.contacts.push({ type: 'email', data: o.contact_email2 });
+    if(o.contact_phone)
+        json.contacts.push({ type: 'phone', data: o.contact_phone });
+    if(o.contact_fax)
+        json.contacts.push({ type: 'fax', data: o.contact_fax });
+    if(o.website_alternate1)
+        json.contacts.push({ type: 'url', data: o.website_alternate1 });
+    if(o.website_alternate2)
+        json.contacts.push({ type: 'url', data: o.website_alternate2 });
+    // Category Data
+    json.categories = (typeof o.categories === 'object') ? o.categories : [];
+    if(o.category)
+        json.categories.push({ type: 'main', data: o.category });
+    if(o.subcategory)
+        json.categories.push({ type: 'sub', data: o.subcategory });
+    if(o.category_custom)
+        json.categories.push({ type: 'other', data: o.category_custom });
+    // Social Media
+    json.social = (typeof o.social === 'object') ? o.social : [];
+    if(o.website_social_facebook)
+        json.social.push({ type: 'facebook', data: o.website_social_facebook });
+    if(o.website_social_github)
+        json.social.push({ type: 'github', data: o.website_social_github });
+    if(o.website_social_twitter)
+        json.social.push({ type: 'twitter', data: o.website_social_twitter });
+    if(o.website_social_reddit)
+        json.social.push({ type: 'reddit', data: o.website_social_reddit });
+    if(o.website_social_linkedin)
+        json.social.push({ type: 'linkedin', data: o.website_social_linkedin });
+    // Images
+    json.images = (typeof o.images === 'object') ? o.images : [];
+    // Add 'image' to images array if it does not already exist
+    if(o.image){
+        var found = false;
+        json.images.forEach(function(item){
+            if(item.data==o.image)
+                found = true;
+        });
+        if(!found)
+            json.images.push({ type: 'icon', data: o.image });
+    }
+    if(o.image_large)
+        json.images.push({ type: 'large', name: o.image_title, data: o.image_large });
+    if(o.image_large_hd)
+        json.images.push({ type: 'hires', name: o.image_title, data: o.image_large_hd });
+    // Audio
+    json.audio = (typeof o.audio === 'object') ? o.audio : [];
+    if(o.audio!='' && typeof o.audio === 'string')
+        json.audio.push({ type: o.audio.slice(-3), data: o.audio });
+    // Video
+    json.video = (typeof o.video === 'object') ? o.video : [];
+    if(o.video!='' && typeof o.video === 'string')
+        json.video.push({ type: o.video.slice(-3), data: o.video });
+    // Files
+    json.files = (typeof o.files === 'object') ? o.files : [];
+    // DNS
+    json.dns = (typeof o.dns === 'object') ? o.dns : [];
+    // Handle trying to extact image/video/audio data from the html description
+    var urls   = String(o.description).match(/(((https?:\/\/)|(www\.))[^\s]+)/g),
+        images = ['gif','jpg','jpeg','gif','png'],
+        audios = ['m4a','mp3','wav'],
+        videos = ['mp4','mov','wmv'];
+    // Loop through any extracted urls and try to detect the content type and add to the appropriate array
+    if(urls){
+        urls.forEach(function(str){
+            var [url, qs] = String(str).split('?'),
+                url   = url.replace('"',''),
+                arr   = url.split('.'),
+                ext   = arr[arr.length-1].toLowerCase(),
+                found = false;
+            // Extract any images
+            if(images.indexOf(ext)!=-1){
+                json.images.forEach(function(item){
+                    if(item.data==url)
+                        found = true;
+                });
+                if(!found){
+                    var type = (/hires/.test(url)!=-1) ? 'hires' : 'standard';
+                    json.images.push({ type: type, data: url });
+                }
+            }
+            // Extract any video
+            if(videos.indexOf(ext)!=-1){
+                json.videos.forEach(function(item){
+                    if(item.data==url)
+                        found = true;
+                });
+                if(!found)
+                    json.videos.push({ type: ext, data: url });
+            }
+            // Extract any video
+            if(audios.indexOf(ext)!=-1){
+                json.audio.forEach(function(item){
+                    if(item.data==url)
+                        found = true;
+                });
+                if(!found)
+                    json.audio.push({ type: ext, data: url });
+            }
+        });
+    }
+    if(o.html)
+        json.html = o.html;
+    if(json.description){
+        // Loop through description and detect attempts to inject HTML and javascript into description
+        var filters = ['<script', '<iframe', 'onload'],
+            desc    = String(json.description).replace('&lt;','<').replace('&gt;','>'),
+            html    = false;
+        filters.forEach(function(filter){
+            var re = new RegExp(filter, 'ig');
+            if(re.test(desc)){
+                console.log('matched on filter =',filter);
+                html = true;
+            }
+        });
+        if(html)
+            json.html = json.description;
+        // Remove any attempts to inject HTML or javascript via description field
+        var desc = String(json.description).replace('&lt;','<').replace('&gt;','>').replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,'').trim();
+        json.description = stripHtml(desc);
+    }
+    // console.log('--- Begin CIP25 JSON ---');
+    // console.log(JSON.stringify(json));
+    // console.log('--- End CIP25 JSON ---');
+    return json;
+}
+
+// Function to handle returning specific record type from array
+function getArrayItemByType(arr, type){
+    rec = false;
+    arr.forEach(function(item){
+        if(item.type==type)
+            rec = item
+    });
+    return rec;
+}
+
+// Function to handle returning specific record type from array
+function getArrayItemByType(arr, type){
+    rec = false;
+    arr.forEach(function(item){
+        if(item.type==type)
+            rec = item
+    });
+    return rec;
+}
+
+
+// Function to normalize JSON and display enhanced asset info
+function showExtendedAssetInfo(json){
+    json = legacyJsonToCip25(json);
+    cachedJson = json;          // Cache JSON so we can easily reference it again when needed
+    showExtendedInfo(json);
+    showAssetArtwork(json);
+}
+
+
+ // Function to handle displaying any enhanced asset information (CIP25)
+function showExtendedInfo(o){
+    // Basic Asset Information
+    if(o.name)          $('#assetName').text(o.name).parent().show();
+    if(o.website){
+        var url = getValidUrl(o.website);
+        if(isValidUrl(url)){
+            $('#assetWebsite').html('<a href="' + url + '" target="_blank">' + url + '</a>').parent().show();        
+        } else {
+            $('#assetWebsite').text(o.website).parent().show();
+        }
+    }
+    if(o.pgpsig){
+        var url = o.pgpsig;
+        if(isValidUrl(url)){
+            $('#pgpSignature').html('<a href="' + url + '" target="_blank">' + url + '</a>').parent().show();        
+        } else {
+            $('#pgpSignature').text(o.pgpsig).parent().show();
+        }
+    }   
+    // Extract Categories info from categories array
+    if(o.categories.length){
+        var main  = getArrayItemByType(o.categories, 'main'),
+            sub   = getArrayItemByType(o.categories, 'sub'),
+            other = getArrayItemByType(o.categories, 'other');
+        if(main)  $('#assetCategory').text(main.data).parent().show();
+        if(sub)   $('#assetSubCategory').text(sub.data).parent().show();
+        if(other) $('#assetCategoryOther').text(other.data).parent().show();
+    }
+    if(o.description){
+        var json  = /^(.*).json/i,
+            http  = /^http:\/\//,
+            https = /^https:\/\//,
+            desc  = o.description,
+            el    = $('#assetExtendedDescription');
+        if(json.test(desc)||http.test(desc)||https.test(desc)){
+            var arr  = desc.split(';'),
+                html = '<a href="' + getValidUrl(arr[0]) + '" target="_blank">' + arr[0] + '</a>';
+            if(arr[1])
+                html += ';' + arr[1];
+            el.html(html);
+        } else {
+            el.text(desc);
+        }
+        el.parent().show();
+        el.parent().parent().show();
+    }
+    if(o.name||o.website||o.pgpsig||o.description||main||sub||other)
+        $('#additionalAssetInfo').show();
+    // Owner Information
+    if(o.owner.name)         $('#ownerName').text(o.owner.name).parent().show();
+    if(o.owner.title)        $('#ownerTitle').text(o.owner.title).parent().show();
+    if(o.owner.organization) $('#ownerOrganization').text(o.owner.organization).parent().show();
+    if(o.owner.name||o.owner.title||o.owner.organization)
+        $('#ownerInfo').show();
+    // Contacts
+    if(o.contacts.length){
+        var table = $('#contactInfo table tbody');
+        table.empty();
+        o.contacts.slice(0,10).forEach(function(item){
+            var type = item.type.toLowerCase(),
+                html = '<tr><th>' + item.type + '</th><td>' + item.data + '</td></tr>';
+            if(type=='email')
+                html = '<tr><th>' + item.type + '</th><td><a href="mailto:'+ item.data + '">' + item.data + '</a></td></tr>'
+            if(type=='phone'||type=='fax')
+                html = '<tr><th>' + item.type + '</th><td><a href="tel:'+ item.data + '">' + item.data + '</a></td></tr>'
+            if(type=='url')
+                html = '<tr><th>' + item.type + '</th><td><a href="'+ getValidUrl(item.data) + '" target="_blank">' + item.data + '</a></td></tr>'
+            table.append(html);
+        });
+        $('#contactInfo').show();
+    }
+    // Social Media
+    if(o.social.length){
+        var table = $('#socialInfo table tbody');
+        table.empty();
+        o.social.slice(0,10).forEach(function(item){
+            table.append('<tr><th>' + item.type + '</th><td><a href="'+ getValidUrl(item.data) + '" target="_blank">' + item.data + '</a></td></tr>');
+        });
+        $('#socialInfo').show();
+    }
+    // Images
+    if(o.images.length){
+        var table = $('#imagesInfo table tbody'),
+            html  = false;
+        table.empty();
+        o.images.slice(0,10).forEach(function(item){
+            if(item.data.substring(0,4)=='data')
+                return;
+            html = '<tr><th>' + item.type;
+            if(item.size)
+                html += ' (' + item.size + ')';
+            html += '</th><td><a href="'+ getValidUrl(item.data) + '" target="_blank">' + item.data + '</a></td></tr>';
+            table.append(html);
+        });
+        if(html)
+            $('#imagesInfo').show();
+    }
+    // Audio
+    if(o.audio.length){
+        var table = $('#audioInfo table tbody');
+        table.empty();
+        o.audio.slice(0,10).forEach(function(item){
+            table.append('<tr><th>' + item.type + '</th><td><a href="'+ getValidUrl(item.data) + '" target="_blank">' + item.data + '</a></td></tr>');
+        });
+        $('#audioInfo').show();
+    }
+    // Video
+    if(o.video.length){
+        var table = $('#videoInfo table tbody');
+        table.empty();
+        o.video.slice(0,10).forEach(function(item){
+            table.append('<tr><th>' + item.type + '</th><td><a href="'+ getValidUrl(item.data) + '" target="_blank">' + item.data + '</a></td></tr>');
+        });
+        $('#videoInfo').show();
+    }
+    // Files
+    if(o.files.length){
+        var table = $('#fileInfo table tbody');
+        table.empty();
+        o.files.slice(0,10).forEach(function(item){
+            table.append('<tr><th>' + item.type + '</th><td><a href="'+ getValidUrl(item.data) + '" target="_blank">' + item.data + '</a></td></tr>');
+        });
+        $('#fileInfo').show();
+    }
+    // DNS
+    if(o.dns.length){
+        var table = $('#dnsInfo table tbody');
+        table.empty();
+        table.append('<tr><th>Type</th><th>Host</th><th>Value</th></tr>')
+        o.dns.slice(0,10).forEach(function(item){
+            var html = '<tr><td>' + item.type + '</td><td>' + item.host + '</td><td>' + item.value + '</td></tr>';
+            if(item.type.toLowerCase()=='btcdns')
+                html = '<tr><td>' + item.type + '</td><td colspan="2"><a href="'+ getValidUrl(item.value) + '" target="_blank">' + item.value + '</a></td></tr>';
+            table.append(html);
+        });
+        $('#dnsInfo').show();
+    }
+    if(o.description)
+        $('#additionalInfoNotAvailable').hide();
+    // Handle 
+    var icon = false;
+    if(o.images.length){
+        // First try to find 48x48 icon
+        o.images.forEach(function(item){
+            if(!icon && item.type=='icon' && item.size=='48x48')
+                icon = item.data;
+        });
+        // If we couldn't find 48x48 icon, use the first icon in the list
+        o.images.forEach(function(item){
+            if(!icon && item.type=='icon')
+                icon = item.data;
+        });
+    }
+    // Use older "image" param if we couldn't find icon in the CIP25 images array
+    if(!icon && o.image)
+        icon = i.image;
+    // Handle displaying asset icon image
+    if(icon)
+        setAssetIcon(icon);
+}
+
+// Hande displaying any artwork associated with the asset
+function showAssetArtwork(o){
+    var audio = false,
+        video = false,
+        image = false,
+        title = false;
+    if(o){
+        // Extract image from images array
+        if(o.images.length){
+            var large    = getArrayItemByType(o.images, 'large'),
+                standard = getArrayItemByType(o.images, 'standard'),
+                first    = o.images[0].data;
+            image = (large) ? large.data : (standard) ? standard.data : first.data;
+            title = (large) ? large.name : (standard) ? standard.name : first.name;
+        }
+        // Extract audio from audio array
+        if(o.audio.length){
+            var m4a   = getArrayItemByType(o.audio, 'm4a'),
+                mp3   = getArrayItemByType(o.audio, 'mp3'),
+                wav   = getArrayItemByType(o.audio, 'wav'),
+                first = o.audio[0].data;
+            audio = (m4a) ? m4a.data : (mp3) ? mp3.data : (wav) ? wav.data : first.data;
+            if(!title)
+                title = (m4a) ? m4a.name : (mp3) ? mp3.name : (wav) ? wav.name : first.name;
+        }
+        // Extract video from videos array
+        if(o.video.length){
+            var mp4   = getArrayItemByType(o.video, 'mp4'),
+                mov   = getArrayItemByType(o.video, 'mov'),
+                wmv   = getArrayItemByType(o.video, 'wmv'),
+                first = o.video[0].data;
+            video = (mp4) ? mp4.data : (mov) ? mov.data : (wmv) ? wmv.data : first.data;
+            if(!title)
+                title = (mp4) ? mp4.name : (mov) ? mov.name : (wmv) ? wmv.name : first.name;
+        }
+    }
+    // Try to decode asset description using one of the CIP25 defined formats
+    if(!audio && !video && !image){
+        // Cleanup description a bit to remove leading/trailing spaces and some funky characters
+        var desc = String(o.description).trim().replace('\u001e','');
+        if(/^(imgur|youtube|soundcloud|stamp)/i.test(desc)){
+            // service/info;title format parsing
+            var [url, title, xtra] = desc.split(';'),
+                [service, code]    = url.split('/'),
+                title              = (xtra) ? title + ';' + xtra: title,
+                service            = service.toLowerCase();
+            // stamp:base64_data format parsing (assume it is an image)
+            if(/^stamp:/i.test(desc)){
+                service = 'stamp';
+                code    = desc.replace(/^stamp:/i,'');
+            }
+            // Cleanup some bad formats
+            if(service=='imgur.com')
+                service = 'imgur';
+            // Handle decoding some common characters
+            if(title)
+                title = title.replace('&#39;',"'");
+            if(service=='imgur')
+                image = 'https://i.imgur.com/' + code;
+            if(service=='youtube')
+                video = 'https://www.youtube.com/embed/' + code;
+            if(service=='soundcloud')
+                audio = 'https://api.soundcloud.com/tracks/' + code;
+            if(service=='stamp')
+                image = 'data:image/png;base64,' + code;
+            // console.log('service, code, title', service, code, title);
+        }
+    }
+    // Handle processing descriptions that include urls
+    if(!audio && !video && !image){
+        if(/http/.test(desc) || /i\.imgur\.com/.test(desc)){
+            var [url, qs] = desc.split('?'), // Ignore any querystring data
+                arr = url.split('.'),
+                url = desc,
+                ext = arr[arr.length-1].toLowerCase();
+            if(url.indexOf('http')==-1)
+                url = 'http://' + url;
+            // Handle images
+            var images = ['gif','jpg','jpeg','gif','png'],
+                audios = ['m4a','mp3','wav'],
+                videos = ['mp4','mov','wmv'];
+            if(images.indexOf(ext)!=-1)
+                image = url;
+            if(audios.indexOf(ext)!=-1)
+                audio = url;
+            if(videos.indexOf(ext)!=-1)
+                video = url;
+        }
+    }
+    // Handle supporting NFTs (Non-Fungible Tokens) from various projects
+    if(isNFT(o.asset)){
+        var info  = getNFTInfo(o.asset),
+            title = (title && title!='') ? title : false,
+            html = '';
+        // Loop through projects array and build out list of projects card is associated with
+        info.projects.forEach(function(project){
+            html += '<div class="alert alert-success bold text-center" style="margin: 15px 15px 15px 15px;">';
+            html += '    This is an official card in the ';
+            if(project.site){
+                html += '<a href="' + project.site + '" target="_blank">' + project.project + '</a> project';
+            } else {
+                html += project.project;
+            }
+            html += '</div>';
+        });
+        // Force display image to use image from project (overrides JSON)
+        // Except in the case of 'stamp', since image is already correct
+        if(service!='stamp')
+            image = FW.XCHAIN_API + '/img/cards/' + info.image;
+        $('#officialCard').html(html).show();
+    }
+    // If we have a title, display it
+    if(title){
+        var title = title.replace('&#39;',"'");
+        $('#artwork-information').show();
+        $('#artwork-title').text(title).parent().show();
+    }
+    if(image||audio||video){
+        $('#additionalInfoNotAvailable').hide();
+        $('#digitalArtInfo').show();
+        if(image){
+            $('#artwork-header').show();
+            var load = $('#artwork-loader'),
+                img  = $('#artwork-image')
+            if(service=='stamp'){
+                var cnt = 0;
+                img  = $('#artwork-bitcoin-stamp');
+                img.off('error'); // Remove any existing error handlers on this image
+                img.on('error', function(e){
+                    cnt++;
+                    console.log('error cnt=',cnt);
+                    // Try to failover to SVG
+                    if(cnt==1){
+                        image = 'data:image/svg+xml;base64,' + code;
+                        img.attr('src',image);
+                    }  else {
+                        $('#additionalInfoNotAvailable').show();
+                        $('#digitalArtInfo').hide();
+                        img.hide();
+                    }
+                });
+            } 
+            img.hide();  // Hide the original image
+            load.show(); // Display the loading indicator
+            img.one("load", function(){
+                load.hide(); // Hide the loading indicator
+                img.show();  // Show the fully loaded image
+            });
+            img.attr('src',image); 
+        }
+        if(video){
+            $('#video-header').show();
+            var el  = $('#video-wrapper'),
+                arr = video.split('.'),
+                ext = arr[arr.length-1].toLowerCase();
+            if(/youtube/.test(video)){
+                el   = $('#video-wrapper-youtube'),
+                html = '<iframe src="' + video + '" frameborder="0" allowfullscreen class="embedded-video"></iframe>';
+            } else {
+                var type = '';
+                if(ext=='mp4') type = 'video/mp4';
+                if(ext=='wmv') type = 'video/x-ms-asf';
+                if(ext=='mov') type = 'video/quicktime'
+                html = '<video draggable="false" controls playsinline="" autoplay="" loop="" class="img-fluid img-responsive" width="100%" style="max-width:400px"><source type="' + type+ '" src="' + video + '"></video>';
+            }
+            el.html(html).show()
+        }
+        if(audio){
+            $('#audio-header').show();
+            var el = $('#audio-wrapper');
+            if(/soundcloud/.test(audio)){
+                el = $('#audio-wrapper-soundcloud');
+                html = '<iframe src="https://w.soundcloud.com/player/?url=' + audio + '" frameborder="0" allowfullscreen class="soundcloud-audio" style="width:100%;"></iframe>';
+            } else {
+                html = '<audio src="' + audio + '" autoplay="true" controls loop preload></audio>';
+            }
+            el.html(html).show();
+        }
+
+    }
+    if(o.html){
+        $('#custom-content-header').show();
+        $('#custom-content-wrapper').show();
+    }
+    // console.log('audio=',audio);
+    // console.log('video=',video);
+    // console.log('image=',image);
+    // console.log('title=',title);
+}
+
+// Handle loading remote image icon
+function setAssetIcon(image){
+    var url = image;
+    // var url = relay + image;
+    // var url = FW.XCHAIN_API + '/relay?url=' + image;
+    $.get( url, function(data){
+        if(String(data).trim().length)
+            $('#assetIcon').attr('src', 'data:image/png;base64,' + data);
+    });
+}
+
+// Function to handle converting a base64 string to a hex
+function base64ToHex(str) {
+    const raw = atob(str);
+    let result = '';
+    for (let i = 0; i < raw.length; i++) {
+        const hex = raw.charCodeAt(i).toString(16);
+        result += (hex.length === 2 ? hex : '0' + hex);
+    }
+    return result;
+}
+
+// Handle checking if an asset is an NFT
+function isNFT(asset){
+    var asset_upper = String(asset).toUpperCase();
+    if(FW.NFT_CARDS[asset] || FW.NFT_CARDS[asset_upper])
+        return true;
+    return false;
+}
+
+// Handle getting the image for an NFT
+function getNFTImage(asset){
+    if(FW.NFT_CARDS[asset])
+        return asset + "." + FW.NFT_CARDS[asset];
+    var asset_upper = String(asset).toUpperCase();
+    if(FW.NFT_CARDS[asset_upper])
+        return asset_upper + "." + FW.NFT_CARDS[asset_upper];
+    return false    
+}
+
+// Handle returning info on an NFT (asset, image, project, website, etc)
+function getNFTInfo(asset){
+    var info = {
+        asset: asset,
+        image: getNFTImage(asset),
+        projects: []
+    };
+    FW.NFT_DATA.forEach(function(project){
+        if(project.cards.indexOf(info.image)!=-1){
+            info.projects.push({
+                project: project.name,
+                logo: project.logo,
+                site: project.site
+            })
+        }
+    });
+    return info;
+}
+
+// Handle updating basic wallet information via a call to xchain.io/api/network
+function updateNFTInfo( force ){
+    var last = ls.getItem('nftInfoLastUpdated') || 0,
+        ms   = 21600000; // 6 hours
+    if((parseInt(last) + ms)  <= Date.now() || force ){
+        // BTC/USD Price
+        $.getJSON( FW.XCHAIN_API + '/json/nfts.json', function( data ){
+            if(data){
+                FW.NFT_DATA = data;
+                ls.setItem('nftInfo',JSON.stringify(data));
+                ls.setItem('nftInfoLastUpdated', Date.now());
+                updateNFTCards();
+            }
+        });
+    }
+}
+
+// Handld building out the FW.NFT_CARDS assoc array
+function updateNFTCards(){
+    // Loop through NFT_DATA array and build out NFT_CARDS array
+    FW.NFT_DATA.forEach(function(project){
+        project.cards.forEach(function(card){
+            var a = card.split('.'),
+                b = a.slice(0, -1);
+            name = b.join('.');
+            ext  = a[a.length - 1];
+            FW.NFT_CARDS[name] = ext;
+        });
+    });    
+}
+

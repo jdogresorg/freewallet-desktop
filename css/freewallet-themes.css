@@ -129,11 +129,14 @@
 .theme-blue .panel-middle {
     color: #fff;
 }
-.theme-blue .panel-default .panel-heading {
+.theme-blue .panel-default .panel-heading,
+.theme-blue .panel-primary .panel-heading {
     color: #fff;
     background-color: #428bca;
 }
-.theme-blue .panel-default table tr.info th {
+
+.theme-blue .panel-default table tr.info th, 
+.theme-blue .panel-primary table tr th {
     background-color: #d9edf7;
 }
 .theme-blue .bootstrap-dialog.type-default .modal-header { 

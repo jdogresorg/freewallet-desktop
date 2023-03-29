@@ -216,6 +216,14 @@ body:before {
 .text-justify {
     text-align: justify;
 }
+.text-nowrap {
+    white-space: nowrap;
+}
+.text-truncate {
+    overflow: hidden;
+    text-overflow:ellipsis;
+}
+
 
 /* Tweak Panel headers to be a bit more compact*/
 .panel-heading {
@@ -398,6 +406,24 @@ body:before {
     background-color: #999;
     color: #fff;
 }
+
+table.asset-info tr td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+table.asset-info tr th {
+    width: 120px !important;
+    background-color: #d9edf7 !important;
+    text-transform: capitalize;
+}
+table.asset-info-hide tr {
+    display: none;
+}
+#assetExtendedDescription {
+    white-space: normal;  
+}
+
 
 
 /*
@@ -1170,4 +1196,22 @@ a.red:hover {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+
+#artwork-loader {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    margin-left: 15px;
+    margin-right: 15px;
+}
+
+/* Bitcoin Stamps Display code (STAMP: prefix) */
+.bitcoin-stamp-pixelated {
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -o-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    -ms-interpolation-mode: nearest-neighbor;
+    image-rendering: pixelated;
+    width:400px;
 }
