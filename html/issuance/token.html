@@ -236,10 +236,10 @@ $(document).ready(function(){
             vals.description = desc.replace(/\*/g,'').trim();
             $('#token-description').val(vals.description);
         }
-        // Verify token description is 200 characters or less
-        var maxlength = 200;
+        // Verify token description is 10,000 characters or less
+        var maxlength = 10000;
         if(vals.description.length > maxlength){
-            errors.push('Maximum token description length is ' + maxlength + ' characters!');
+            errors.push('Maximum token description length is ' + numeral(maxlength).format('0,0') + ' characters!');
             $('#token-description').closest('.form-group').addClass('has-error has-danger');
         }
         // Display any error message
