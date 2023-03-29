@@ -37,6 +37,32 @@ function isValidTransaction(unsignedTx, signedTx){
     return v;
 }
 
+// Handle returning script type based on output and network
+function scriptTypeFromOutputScript(output, network) {
+    network = network || bitcoin.networks.bitcoin;
+    try {
+        payments.p2pkh({ output, network }).address;
+        return "PAYTOADDRESS"
+    } catch (e) {}
+    try {
+        payments.p2sh({ output, network }).address;
+        return null //no support yet
+    } catch (e) {}
+    try {
+        payments.p2wpkh({ output, network }).address;
+        return "PAYTOWITNESS"
+    } catch (e) {}
+    try {
+        payments.p2wsh({ output, network }).address;
+        return null //no support yet
+    } catch (e) {}
+    try {
+        payments.p2tr({ output, network }).address;
+        return null //no support yet
+    } catch (e) {}
+    return null
+}
+
 // Handle signing a transaction
 // @net        = Network (mainnet, testnet)
 // @source     = Source Address
@@ -66,7 +92,7 @@ function signTx(net='mainnet', source, path, unsignedTx, callback){
         utxos[tx_hash] = -1; // set to -1 so we can determine which ones have been processed and which have not
     });
     // Define callback to run when done with API calls 
-    var doneCb = function(){
+    var doneCb = async function(){
         // Check if we are truly done
         var done = true;
         for(var tx_hash in utxos){
@@ -81,11 +107,11 @@ function signTx(net='mainnet', source, path, unsignedTx, callback){
                     data = {
                         address_n: address,         // Address 
                         prev_hash: tx_hash,         // Previous transaction hash
-                        prev_index: tx_info.index  // output to use from previous transaction
-                        // amount: tx_info.amount      // amount of the output
+                        prev_index: tx_info.index,  // output to use from previous transaction
+                        amount: tx_info.amount      // amount of the output
                     };
-                // if(tx_info.type=='pay-to-witness-pubkey-hash')
-                //     data.script_type = 'SPENDP2SHWITNESS';
+                if(tx_info.type=='pay-to-witness-pubkey-hash')
+                    data.script_type = 'SPENDWITNESS';
                 inputs.push(data);
             });
             // Build out a list of outputs
@@ -99,9 +125,11 @@ function signTx(net='mainnet', source, path, unsignedTx, callback){
                         op_return_data: String(asm).replace('OP_RETURN ','')
                     };
                 } else {
+                    var address_from_script = bitcoin.address.fromOutputScript(out.script);
+                    var script_type_from_script = scriptTypeFromOutputScript(out.script);
                     output = {
-                        script_type: 'PAYTOADDRESS',
-                        address_n: address,
+                        script_type: script_type_from_script,
+                        address: address_from_script,
                         amount: out.value
                     }
                 }
@@ -114,19 +142,18 @@ function signTx(net='mainnet', source, path, unsignedTx, callback){
                 coin: 'btc'
             };
             console.log("Trezor Request=",params);
-            TrezorConnect.signTransaction(params).then(function(data){
-                console.log('Trezor Response=',result);
-                // If the outputs mismatch in any way, the tx is not what is expected and we should throw error
-                // This can happen if user entered wrong/different password.
-                if(data.payload.serializedTx && !isValidTransaction(unsignedTx, data.payload.serializedTx)){
-                    var data = {
-                        success: false,
-                        error: 'outputs mismatch'
-                    };
-                }
-                if(typeof callback === 'function')
-                    callback(data);
-            });
+            var data = await TrezorConnect.signTransaction(params)
+            console.log('Trezor Response=',data);
+            // If the outputs mismatch in any way, the tx is not what is expected and we should throw error
+            // This can happen if user entered wrong/different password.
+            if(data.payload.serializedTx && !isValidTransaction(unsignedTx, data.payload.serializedTx)){
+                var data = {
+                    success: false,
+                    error: 'outputs mismatch'
+                };
+            }
+            if(typeof callback === 'function')
+                callback(data);
         }
     };
     // Request info on the utxos being used in this transaction and determine what output from the previous transaction is being used
