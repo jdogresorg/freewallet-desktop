@@ -5842,7 +5842,7 @@ function legacyJsonToCip25(o){
                 ext   = arr[arr.length-1].toLowerCase(),
                 found = false;
             // Extract any images
-            if(images.indexOf(ext)!=-1 && json.images && json.images.lenth){
+            if(images.indexOf(ext)!=-1 && json.images){
                 json.images.forEach(function(item){
                     if(item.data==url)
                         found = true;
@@ -5853,7 +5853,7 @@ function legacyJsonToCip25(o){
                 }
             }
             // Extract any videos
-            if(videos.indexOf(ext)!=-1 && json.videos && json.videos.lenth){
+            if(videos.indexOf(ext)!=-1 && json.videos){
                 json.videos.forEach(function(item){
                     if(item.data==url)
                         found = true;
@@ -5862,7 +5862,7 @@ function legacyJsonToCip25(o){
                     json.videos.push({ type: ext, data: url });
             }
             // Extract any audio
-            if(audios.indexOf(ext)!=-1 && json.audio && json.audio.lenth){
+            if(audios.indexOf(ext)!=-1 && json.audio){
                 json.audio.forEach(function(item){
                     if(item.data==url)
                         found = true;
