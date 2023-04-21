@@ -142,7 +142,9 @@
                             </label>
                             <div class="col-sm-9">
                                 <div class="input-group">
-                                    <input type="text" class="form-control" name="regular-dust-size" id="regular-dust-size" placeholder="Default Size (0.00000546)">
+                                    <input type="text" class="form-control" name="regular-dust-size" id="regular-dust-size" placeholder="Default Size (0.00000546)" style="width:200px">
+                                    <a class="input-group-addon border-left-0 border-right-0 "><i class="fa fa-usd"></i></a>
+                                    <input type="text" class="form-control" name="regular-dust-value" id="regular-dust-value" placeholder="0.00" readonly>
                                     <a href="#" class="input-group-addon" id="reset-regular-dust-size">Reset</a>
                                 </div>
                             </div>
@@ -154,7 +156,9 @@
                             </label>
                             <div class="col-sm-9">
                                 <div class="input-group">
-                                    <input type="text" class="form-control" name="multisig-dust-size" id="multisig-dust-size" placeholder="Default Size (0.00007800)">
+                                    <input type="text" class="form-control" name="multisig-dust-size" id="multisig-dust-size" placeholder="Default Size (0.00007800)" style="width:200px">
+                                    <a class="input-group-addon border-left-0 border-right-0 "><i class="fa fa-usd"></i></a>
+                                    <input type="text" class="form-control" name="multisig-dust-value" id="multisig-dust-value" placeholder="0.00" readonly>
                                     <a href="#" class="input-group-addon" id="reset-multisig-dust-size">Reset</a>
                                 </div>
                             </div>
@@ -487,17 +491,13 @@ $(document).ready(function(){
         setWalletNetwork(net);
     });
 
-    // Load the current dust preferences
-    var dust1 = (FW.DUST_SIZE_REGULAR==false) ? '' : numeral(FW.DUST_SIZE_REGULAR).format('0,0.00000000'),
-        dust2 = (FW.DUST_SIZE_MULTISIG==false) ? '' : numeral(FW.DUST_SIZE_MULTISIG).format('0,0.00000000');
-    $('#regular-dust-size').val(dust1);
-    $('#multisig-dust-size').val(dust2);
-
-
     // Handle saving regular dust size on change
     $('#regular-dust-size').change(function(e){
-        var val     = $(this).val(),
+        var val = $(this).val(),
+            usd = $('#regular-dust-value'),
+            btc = getAssetPrice('BTC',true),
             errors = [];
+        console.log('btc=',btc);
         if(val==''){
             FW.DUST_SIZE_REGULAR = false;
             ls.removeItem('dustSizeRegular');
@@ -505,13 +505,15 @@ $(document).ready(function(){
             // Auto-convert integers into sats
             if(val>=1)
                 val = val * 0.00000001;
+            // Convert from 0.00000000 to sats format
+            sats = parseInt(val * 100000000);
             // Throw error if user goes over max 
-            var max = 100000 * 0.00000001,
-                min = 546 * 0.00000001;
-            if(val>max)
-                errors.push('Maximum dust value is  ' + numeral(max).format('0,0.00000000') + '!');
-            if(val<min)
-                errors.push('Minimum dust value is  ' + numeral(min).format('0,0.00000000') + '!');
+            var max = 100000,
+                min = 546;
+            if(sats>max)
+                errors.push('Maximum dust value is  ' + numeral(max * 0.00000001).format('0,0.00000000') + '!');
+            if(sats<min)
+                errors.push('Minimum dust value is  ' + numeral(min * 0.00000001).format('0,0.00000000') + '!');
             // Display any error message
             if(errors.length){
                 dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>'));
@@ -520,9 +522,10 @@ $(document).ready(function(){
                 ls.removeItem('dustSizeRegular');
                 $(this).val('');
             } else {
-                val = numeral(val).format('0.00000000');
-                ls.setItem('dustSizeRegular', val);
-                $(this).val(val);
+                FW.DUST_SIZE_REGULAR = sats;
+                ls.setItem('dustSizeRegular', sats);
+                $(this).val(numeral(val).format('0.00000000'));
+                usd.val(numeral(val * btc.price_usd).format('0.00'));
             }
         }
     });
@@ -531,12 +534,15 @@ $(document).ready(function(){
     $('#reset-regular-dust-size').click(function(){
         FW.DUST_SIZE_REGULAR = false;
         $('#regular-dust-size').val('');
+        $('#regular-dust-value').val('0.00');
         ls.removeItem('dustSizeRegular');
     });
 
     // Handle saving multisig dust size on change
     $('#multisig-dust-size').change(function(e){
-        var val     = $(this).val(),
+        var val    = $(this).val(),
+            usd    = $('#multisig-dust-value'),
+            btc    = getAssetPrice('BTC',true),
             errors = [];
         if(val==''){
             FW.DUST_SIZE_MULTISIG = false;
@@ -545,13 +551,15 @@ $(document).ready(function(){
             // Auto-convert integers into sats
             if(val>=1)
                 val = val * 0.00000001;
+            // Convert from 0.00000000 to sats format
+            sats = parseInt(val * 100000000);
             // Throw error if user goes over max 
-            var max = 100000 * 0.00000001,
-                min = 546 * 0.00000001;
-            if(val>max)
-                errors.push('Maximum dust value is  ' + numeral(max).format('0,0.00000000') + '!');
-            if(val<min)
-                errors.push('Minimum dust value is  ' + numeral(min).format('0,0.00000000') + '!');
+            var max = 100000,
+                min = 546;
+            if(sats>max)
+                errors.push('Maximum dust value is  ' + numeral(max * 0.00000001).format('0,0.00000000') + '!');
+            if(sats<min)
+                errors.push('Minimum dust value is  ' + numeral(min * 0.00000001).format('0,0.00000000') + '!');
             // Display any error message
             if(errors.length){
                 dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>'));
@@ -560,19 +568,29 @@ $(document).ready(function(){
                 ls.removeItem('dustSizeMultisig');
                 $(this).val('');
             } else {
-                val = numeral(val).format('0.00000000');
-                ls.setItem('dustSizeMultisig', val);
-                $(this).val(val);
+                FW.DUST_SIZE_MULTISIG = sats;
+                ls.setItem('dustSizeMultisig', sats);
+                $(this).val(numeral(val).format('0.00000000'));
+                usd.val(numeral(val * btc.price_usd).format('0.00'));
             }
         }
     });
-
 
     // Handle resetting multisig dust size
     $('#reset-multisig-dust-size').click(function(){
         FW.DUST_SIZE_MULTISIG = false;
         $('#multisig-dust-size').val('');
+        $('#multisig-dust-value').val('0.00');
         ls.removeItem('dustSizeMultisig');
     });    
+
+
+    // Load the current dust preferences
+    var dust1 = (FW.DUST_SIZE_REGULAR==false) ? '' : numeral(FW.DUST_SIZE_REGULAR * 0.00000001).format('0,0.00000000'),
+        dust2 = (FW.DUST_SIZE_MULTISIG==false) ? '' : numeral(FW.DUST_SIZE_MULTISIG* 0.00000001).format('0,0.00000000');
+    $('#regular-dust-size').val(dust1).change();
+    $('#multisig-dust-size').val(dust2).change();
+
+
 });
 </script>

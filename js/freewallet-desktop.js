@@ -136,7 +136,7 @@ FW.ORACLES = {};
 FW.NFT_CARDS = []; // placeholder 
 FW.NFT_DATA  = JSON.parse(ls.getItem('nftInfo')) || []; // placeholder for raw NFT data
 
-// Load any dust data encoding preferences
+// Load any dust data encoding preferences (stored in sats)
 FW.DUST_SIZE_REGULAR  = JSON.parse(ls.getItem('dustSizeRegular')) || false;
 FW.DUST_SIZE_MULTISIG = JSON.parse(ls.getItem('dustSizeMultisig')) || false;
 
@@ -2938,9 +2938,9 @@ function createIssuance(network, source, asset, quantity, divisible, description
     };
     // Pass forward dust preferences in satoshis
     if(FW.DUST_SIZE_REGULAR)
-        data.params.regular_dust_size = parseInt(numeral(FW.DUST_SIZE_REGULAR).multiply(100000000).format('0'));
+        data.params.regular_dust_size = parseInt(FW.DUST_SIZE_REGULAR);
     if(FW.DUST_SIZE_MULTISIG)
-        data.params.multisig_dust_size = parseInt(numeral(FW.DUST_SIZE_MULTISIG).multiply(100000000).format('0'));
+        data.params.multisig_dust_size = parseInt(FW.DUST_SIZE_MULTISIG);
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
