@@ -21,3 +21,13 @@ Windows : Download FreeWallet.exe, run it, complete the installer.
 Mac/OSX : Download FreeWallet.dmg, mount, and drag FreeWallet app to 'Applications' folder
 Linux   : Download FreeWallet.tgz, extract it, run FreeWallet/install.sh
 ```
+
+Generate checksum.txt file 
+---
+```
+sha256sum FreeWallet.linux32.tgz > checksums.txt
+sha256sum FreeWallet.linux64.tgz >> checksums.txt
+sha256sum FreeWallet.osx64.dmg   >> checksums.txt
+sha256sum FreeWallet.win32.exe   >> checksums.txt
+sha256sum FreeWallet.win64.exe   >> checksums.txt
+```
