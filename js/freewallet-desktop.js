@@ -3772,7 +3772,7 @@ function dialogImportPrivateKey(){
         message: function(dialog){
             var msg = $('<div class="center"></div>');
             msg.append('<p>Please enter your unencrypted private key and click \'Ok\'</p>');
-            msg.append('<input type="text" class="btc-wallet-blackbox" id="importPrivateKey">');
+            msg.append('<input type="text" class="btc-wallet-blackbox" id="importPrivateKey" autocomplete="off">');
             return msg;
         },
         onshown: function(dialog){
