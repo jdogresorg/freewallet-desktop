@@ -6379,3 +6379,39 @@ function updateNFTCards(){
     });    
 }
 
+// Handle confirming issuance (and any hidden data encoding costs) with the user
+function confirmIssuance(title, msg, network, source, asset, quantity, divisible, description, destination, fee, reset, successCallback){
+    var title = (title) ? title : '<i class="fa fa-lg fa-fw fa-question-circle"></i> Confirm  Issuance?',
+        msg   = (msg) ? msg : '';
+    updateTransactionStatus('pending', 'Checking data encoding fees on issuance...');
+    createIssuance(network, source, asset, quantity, divisible, description, destination, fee, reset, function(o){
+        if(o && o.result){
+            // Clear status message 
+            updateTransactionStatus('clear', '');
+            //decode the transaction
+            var tx  = bitcoinjs.Transaction.fromHex(o.result),
+                btc = getAssetPrice('BTC',true),
+                fee = 0,
+                usd = 0;
+            // Loop through outputs and sum up values
+            tx.outs.slice(0, -1).forEach(function(out){
+                fee += out.value;
+            });
+            // Confirm the action with the user
+            if(fee){
+                fee = numeral(fee * 0.00000001).format('0,0.00000000');
+                usd = numeral(fee * btc.price_usd).format('0,0.00');
+                msg += '<br><br><div class="alert alert-warning" role="alert">This will include an additional fee of ' + fee + ' BTC ($' + usd + ') <br>needed to encode the data to the Bitcoin (BTC) blockchain.</div>';
+            }
+            dialogConfirm(title, '<center>' + msg + '</center>', false, true, function(){
+                cpIssuance(network, source, asset, quantity, divisible, description, destination, fee, reset, function(tx){
+                    if(tx)
+                        successCallback(tx);
+                });
+            });
+        } else {
+            updateTransactionStatus('error', 'Error communicating with the Counterparty API!');
+            cbError(o,'Error communicating with the Counterparty API');
+        }
+    });
+}

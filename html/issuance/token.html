@@ -246,27 +246,19 @@ $(document).ready(function(){
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            // Callback to run after broadcasting send
-            var doneCb = function(tx){
-                if(tx){
-                    dialogClose('dialog-create-token');
-                    dialogMessage('<i class="fa fa-lg fa-plus-circle"></i> Token Creation Successful', '<center>Your issuance has been broadcast to the network and your token should be created shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
-                }
-            }
-            // Callback to run if user confirms action
-            var confirmCb = function(){
-                var network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                    amt_sat   = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
-                    fee_sat   = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
-                    divisible = (vals.divisible=='Yes') ? true : false;
-                cpIssuance(network, vals.source, vals.name, amt_sat, divisible, vals.description, null, fee_sat, false, doneCb);
-            }
-            // Confirm the action with the user
-            var title = '<i class="fa fa-lg fa-fw fa-question-circle"></i> Confirm  Issuance?',
-                fmt   = ($('#asset-divisible').val()=='Yes') ? '0,0.00000000' : '0,0',
-                msg   = 'Issue a token named <b>' + vals.name + '</b> with a inital supply of ' + numeral(vals.amount).format(fmt) + '?';
-            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+            var network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                amt_sat   = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
+                fee_sat   = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
+                divisible = (vals.divisible=='Yes') ? true : false,
+                title     = '<i class="fa fa-lg fa-fw fa-question-circle"></i> Confirm  Issuance?',
+                fmt       = ($('#asset-divisible').val()=='Yes') ? '0,0.00000000' : '0,0',
+                msg       = 'Issue a token named <b>' + vals.name + '</b> with a inital supply of ' + numeral(vals.amount).format(fmt) + '?';
+            // Confirm the issuance details with the user
+            confirmIssuance(title, msg, network, vals.source, vals.name, amt_sat, divisible, vals.description, null, fee_sat, false, function(tx){
+                dialogClose('dialog-create-token');
+                dialogMessage('<i class="fa fa-lg fa-plus-circle"></i> Token Creation Successful', '<center>Your issuance has been broadcast to the network and your token should be created shortly.' +
+                              '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+            });
         }
     })
 

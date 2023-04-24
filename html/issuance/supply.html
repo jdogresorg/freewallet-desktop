@@ -99,27 +99,19 @@ $(document).ready(function(){
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            // Callback to run after broadcasting send
-            var doneCb = function(tx){
-                if(tx){
-                    dialogClose('dialog-issue-supply');
-                    dialogMessage('<i class="fa fa-lg fa-bank"></i> Issue Supply Successful', '<center>Your issuance has been broadcast to the network and your additional supply should be available shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
-                }
-            }
-            // Callback to run if user confirms action
-            var confirmCb = function(){
-                var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                    amt_sat = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
-                    fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
-                    info    = FW.ASSET_INFO;
-                cpIssuance(network, vals.source, vals.name, amt_sat, info.divisible, info.description, null, fee_sat, false, doneCb);
-            }
-            // Confirm the action with the user
-            var title = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Issuance?',
-                fmt   = (FW.ASSET_INFO.divisible) ? '0,0.00000000' : '0,0',
-                msg   = 'Issue  <b>' + numeral(vals.amount).format(fmt) + ' ' + vals.name + '</b>?';
-            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+            var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                amt_sat = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
+                fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
+                info    = FW.ASSET_INFO,
+                fmt     = (info.divisible) ? '0,0.00000000' : '0,0',
+                title   = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Issuance?',
+                msg     = 'Issue  <b>' + numeral(vals.amount).format(fmt) + ' ' + vals.name + '</b>?';                
+            // Confirm the issuance details with the user
+            confirmIssuance(title, msg, network, vals.source, vals.name, amt_sat, info.divisible, info.description, null, fee_sat, false, function(tx){
+                dialogClose('dialog-issue-supply');
+                dialogMessage('<i class="fa fa-lg fa-bank"></i> Issue Supply Successful', '<center>Your issuance has been broadcast to the network and your additional supply should be available shortly.' +
+                              '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+            });
         }
     })
 
