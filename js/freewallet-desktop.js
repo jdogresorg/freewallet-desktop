@@ -6222,32 +6222,43 @@ function showAssetArtwork(o){
         if(image){
             $('#artwork-header').show();
             var load = $('#artwork-loader'),
-                img  = $('#artwork-image')
-            if(service=='stamp'){
-                var cnt = 0;
-                img  = $('#artwork-bitcoin-stamp');
-                img.off('error'); // Remove any existing error handlers on this image
-                img.on('error', function(e){
-                    cnt++;
-                    console.log('error cnt=',cnt);
-                    // Try to failover to SVG
-                    if(cnt==1){
-                        image = 'data:image/svg+xml;base64,' + code;
-                        img.attr('src',image);
-                    }  else {
-                        $('#additionalInfoNotAvailable').show();
-                        $('#digitalArtInfo').hide();
-                        img.hide();
-                    }
-                });
-            } 
-            img.hide();  // Hide the original image
-            load.show(); // Display the loading indicator
-            img.one("load", function(){
-                load.hide(); // Hide the loading indicator
-                img.show();  // Show the fully loaded image
+                img  = $('#artwork-image');
+            // Hide image and show loading indicator
+            img.hide();  
+            load.show();
+            // Request the remote image via jquery (second request will have image cached already)
+            $.get(image, function(data){
+                // Convert XML object to string
+                if(typeof data=='object')
+                    data = xmlToString(data);
+                var re1 = /^<\?xml /,
+                    re2 = /^<svg /,
+                    re3 = /script/gi,
+                    svg = (re1.test(data)||re2.test(data));
+                // If we detected an SVG with <script> tag... ignore it
+                if(svg && re3.test(data)){
+                    $('#digitalArtInfo').hide();
+                } else {
+                    if(service=='stamp'){
+                        if(svg)
+                            image = 'data:image/svg+xml;base64,' + code;
+                        img = $('#artwork-bitcoin-stamp');
+                        img.off('error'); // Remove any existing error handlers on this image
+                        // If we get error while trying to load image, hide image 
+                        img.on('error', function(e){
+                            $('#additionalInfoNotAvailable').show();
+                            $('#digitalArtInfo').hide();
+                            img.hide();
+                        });
+                    } 
+                    // When image is done loading, show image and hide loading indicator
+                    img.one("load", function(){
+                        load.hide();
+                        img.show();
+                    });
+                    img.attr('src',image); 
+                }
             });
-            img.attr('src',image); 
         }
         if(video){
             $('#video-header').show();
@@ -6415,3 +6426,16 @@ function confirmIssuance(title, msg, network, source, asset, quantity, divisible
         }
     });
 }
+
+// Handle converting data into an XML string
+function xmlToString(xmlData) { 
+    var xmlString;
+    if(window.ActiveXObject){
+        // Internet Exploder
+        xmlString = xmlData.xml;
+    } else {
+        // Mozilla, Firefox, Opera, etc.
+        xmlString = (new XMLSerializer()).serializeToString(xmlData);
+    }
+    return xmlString;
+}   
