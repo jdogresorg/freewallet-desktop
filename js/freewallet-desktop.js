@@ -3390,7 +3390,7 @@ function broadcastTransaction(network, tx, callback){
                     dataType: 'json',
                     complete: function(o){
                         // console.log('o=',o);
-                        if(o.responseJSON.data && o.responseJSON.data.txid){
+                        if(o && o.responseJSON && o.responseJSON.data && o.responseJSON.data.txid){
                             var txid = o.responseJSON.data.txid;
                             if(callback)
                                 callback(txid);
