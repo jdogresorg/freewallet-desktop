@@ -307,15 +307,37 @@
 <script>
 $(document).ready(function(){
 
+    // Define placeholders
+    var lastWidth  = 0,
+        lastHeight = 0,
+        lastLength = 0;
+
+    // Lazy Loader config
+    var lazyConfig = {
+        effect: 'fadeIn',
+        // threshold: 100,
+        visibleOnly: true,
+    };
+
+    // Detect any changes to the balances list and lazy-load any images
+    $('.balances-list-assets ul').on('DOMSubtreeModified', $.debounce(100,function(e){
+        var length = $('.balances-list-assets ul li').length;
+        if(length!=lastLength){
+            lastLength=length;
+            $('.balances-list-item .lazy-load').Lazy(lazyConfig);
+        }
+    }));
+
+    // Detect scrolling of balances panel and lazy-load any images
+    $('.balances-list-assets').scroll($.debounce(100,function(e){
+        $('.balances-list-item .lazy-load').Lazy(lazyConfig);
+    }));
+
     // Display balances list        
     updateBalancesList();
 
     // Display BTC asset info
     loadAssetInfo('BTC');
-
-    // Define placeholders
-    var lastWidth  = 0,
-        lastHeight = 0;
 
     // Unbind the event to prevent duplicate listeners
     $(window).unbind('resize');

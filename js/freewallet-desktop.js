@@ -1790,7 +1790,7 @@ function getBalanceHtml(data){
     var html_style    = (parent && parentInfo && parentInfo.collapsed == false && !isSearch) ? 'display: none;' : '';
     var html =  '<li class="balances-list-item ' + data.cls + '" data-asset="' + data.asset + '" data-parent="' + parent + '" style="' + html_style + '">' +
                 '    <div class="balances-list-icon' + ((parentInfo && data.isSearch != true) ? ' indented' : '') + '">' +
-                '        <img src="' + FW.XCHAIN_API + '/icon/' + data.icon + '.png" >' +
+                '        <img class="lazy-load" data-src="' + FW.XCHAIN_API + '/icon/' + data.icon + '.png" >' +
                 '    </div>' +
                 '    <div class="balances-list-info">' +
                 '        <table width="100%">' +
