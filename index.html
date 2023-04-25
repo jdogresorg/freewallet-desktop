@@ -212,7 +212,7 @@
 
             // Setup listener on lock/unlock button
             // buffer the click event by 100ms to prevent issues when users click item multiple times
-            $('#lock').click($.debounce(00,function(e){
+            $('#lock').click($.debounce(100,function(e){
                 if(parseInt(ls.getItem('walletEncrypted'))==1){
                     if(ss.getItem('wallet')){
                         // Lock wallet
