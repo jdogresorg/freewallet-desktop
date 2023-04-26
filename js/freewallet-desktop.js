@@ -140,6 +140,15 @@ FW.NFT_DATA  = JSON.parse(ls.getItem('nftInfo')) || []; // placeholder for raw N
 FW.DUST_SIZE_REGULAR  = JSON.parse(ls.getItem('dustSizeRegular')) || false;
 FW.DUST_SIZE_MULTISIG = JSON.parse(ls.getItem('dustSizeMultisig')) || false;
 
+// Define balance viewing options
+FW.BALANCE_OPTIONS  = JSON.parse(ls.getItem('walletBalanceOptions')) || [1,2,3]; // 1=named, 2=subasset, 3=numeric 
+
+// Lazy Loader config
+FW.LAZY_LOAD_CONFIG = {
+    effect: 'fadeIn',
+    visibleOnly: true
+};
+
 // Start loading the wallet 
 $(document).ready(function(){
 
@@ -271,6 +280,7 @@ function resetWallet(){
     ls.removeItem('walletAddresses');
     ls.removeItem('walletAddressLabel');
     ls.removeItem('walletBalances');
+    ls.removeItem('walletBalanceOptions');
     ls.removeItem('walletFormat');
     ls.removeItem('walletHistory');
     ls.removeItem('walletNetwork');
@@ -765,16 +775,17 @@ function getAssetInfo(asset, callback, force){
         block  = (FW.NETWORK_INFO.network_info) ? FW.NETWORK_INFO.network_info[net].block_height : 1,
         data   = FW.ASSET_INFO[asset] || false,
         last   = (data) ? data.block : 0,
-        update = (block > last || force) ? true : false;
+        update = (block > last || data.init ||force) ? true : false;
     // Initialize the asset data cache
     if(!FW.ASSET_INFO[asset])
         FW.ASSET_INFO[asset] = {}
     if(update){
-        $.getJSON( FW.XCHAIN_API + '/api/asset/' + asset, function( data ){
-            data.block = block;
-            FW.ASSET_INFO[asset] = data;
+        $.getJSON( FW.XCHAIN_API + '/api/asset/' + asset, function( o ){
+            o.block = block;
+            o.collapsed = data.collapsed;
+            FW.ASSET_INFO[asset] = o;
             if(typeof callback === 'function')
-                callback(data);
+                callback(o);
         });
     } else {
         callback(data);
@@ -1700,7 +1711,6 @@ function updateBalancesList(){
                     fmt     = (item.quantity.indexOf('.')!=-1) ? '0,0.00000000' : '0,0'
                     subOf   = (asset.indexOf('.')!=-1) ? asset.split(".")[0] : '',
                     parent   = display.find(o => o.asset === subOf) ? subOf : ''; // Only if parent exists
-                    
                 display.push({ 
                     asset: asset, 
                     icon: item.asset, 
@@ -1713,19 +1723,27 @@ function updateBalancesList(){
             }
         });
         display.forEach(function(item){
-            var asset = item.asset,
-                isParent = display.find(o => o.parent === asset) ? true : false;
+            var asset    = item.asset,
+                isParent = display.find(o => o.parent === asset) ? true : false,
+                type     = (asset.substr(0,1)=='A') ? 3 : (asset.indexOf('.')!=-1) ? 2 : 1; 
             if(isParent){
                 item.isParent = isParent;
                 // Init cache for the asset and cache the collapsed state
                 if(!FW.ASSET_INFO[asset])
-                    FW.ASSET_INFO[asset] = {};
+                    FW.ASSET_INFO[asset] = { init: true };
                 FW.ASSET_INFO[asset].collapsed = item.collapsed;
             }
             var show = (filter!='') ? false : true;
             item.isSearch = (filter!='') ? true : false;
+            // Filter results based on search
             if(filter!='')
                 show = (asset.search(new RegExp(filter, "i")) != -1) ? true : false;
+            // Filter results based on asset type viewing preferences
+            if(FW.BALANCE_OPTIONS.indexOf(type)==-1)
+                show = false;
+            // Always show XCP and BTC unless there is a filter
+            if(['BTC','XCP'].indexOf(asset)!=-1 && filter=='')
+                show = true;
             if(show){
                 // Striping based on whether it's a regular asset or a subasset with grail card
                 if(typeof item.parent == 'undefined' || item.parent === ''){
@@ -1745,9 +1763,11 @@ function updateBalancesList(){
     }
     // Update balances list with completed html
     $('.balances-list-assets ul').html(html);
+    $('.balances-list-item .lazy-load').Lazy(FW.LAZY_LOAD_CONFIG);
     // Handle updating the 'active' item in the balances list
     // We need to do this every time we update the balances list content
-    $('.balances-list ul li').click($.debounce(100,function(e){
+    $('.balances-list-assets ul li').off('click');
+    $('.balances-list-assets ul li').click($.debounce(100,function(e){
         var target = $(e.target);
         if (target.is('a.balances-list-collapsible')) {
             var parent = $(this).attr('data-asset'),
@@ -1766,7 +1786,6 @@ function updateBalancesList(){
                     FW.ASSET_INFO[parent].collapsed = obj.collapsed;
                 }
             });
-            ls.setItem('walletBalances',JSON.stringify(FW.WALLET_BALANCES));
         } else {
             $('.balances-list ul li').removeClass('active');
             $(this).addClass('active');
@@ -1790,13 +1809,12 @@ function getBalanceHtml(data){
     var html_style    = (parent && parentInfo && parentInfo.collapsed == false && !isSearch) ? 'display: none;' : '';
     var html =  '<li class="balances-list-item ' + data.cls + '" data-asset="' + data.asset + '" data-parent="' + parent + '" style="' + html_style + '">' +
                 '    <div class="balances-list-icon' + ((parentInfo && data.isSearch != true) ? ' indented' : '') + '">' +
-                '        <img class="lazy-load" data-src="' + FW.XCHAIN_API + '/icon/' + data.icon + '.png" >' +
+                '        <img class="lazy-load" data-src="' + FW.XCHAIN_API + '/icon/' + data.icon + '.png" src="' + FW.XCHAIN_API + '/icon/XCP.png">' +
                 '    </div>' +
                 '    <div class="balances-list-info">' +
                 '        <table width="100%">' +
                 '        <tr>' +
-                '            <td class="balances-list-asset" colspan="' + (isParent ? 1 : 2) + '">' + data.asset + '</td>' + 
-                            html_collapse + 
+                '            <td class="balances-list-asset" colspan="' + (isParent ? 1 : 2) + '">' + data.asset + '</td>' + html_collapse + 
                 '        <tr>' +
                 '            <td class="balances-list-amount">' + data.quantity + '</td>' +
                 '            <td class="balances-list-price">' + value + '</td>' +
@@ -1993,7 +2011,7 @@ function resetAssetInfo(asset){
     $('#audio-header').hide();
     $('#custom-content-header').hide();
     $('#artwork-image').attr('src','images/icons/xcp.png').hide();
-    $('#artwork-bitcoin-stamp').attr('src','images/icons/xcp.png').hide();
+    $('#artwork-stamp').attr('src','images/icons/xcp.png').hide();
     $('#video-wrapper').html('').hide();
     $('#video-wrapper-youtube').html('').hide();
     $('#audio-wrapper').html('').hide();
@@ -6242,7 +6260,7 @@ function showAssetArtwork(o){
                     if(service=='stamp'){
                         if(svg)
                             image = 'data:image/svg+xml;base64,' + code;
-                        img = $('#artwork-bitcoin-stamp');
+                        img = $('#artwork-stamp');
                         img.off('error'); // Remove any existing error handlers on this image
                         // If we get error while trying to load image, hide image 
                         img.on('error', function(e){

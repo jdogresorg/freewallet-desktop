@@ -2,9 +2,40 @@
     <!-- Balances List -->
     <div class="balances-list">
         <div class="balances-list-toolbar">
+            <div class="input-group add-on pull-right" id="balances-searchbox">
+                <input type="text" class="form-control balances-list-search" placeholder="Enter search here">
+                <div class="input-group-btn dropdown right-dropdown-menu" id="balances-settings">
+                    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                        <i class="fa fa-lg fa-cog"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-right">
+                        <div class="dropdown-menu-header">Actions</div>
+                        <li><a href="#" id="btn-refresh"><i class="fa fa-lg fa-refresh"></i> Refresh Balances</a></li>
+                        <div class="dropdown-menu-header">View Options</div>
+                        <div class="dropdown-checkboxes">
+                            <li class="checkbox">
+                                <label><input type="checkbox" name="options-named" value="1"><i class="fa fa-lg fa-sort-alpha-asc"></i> Named</label>
+                            </li>
+                            <div class="checkbox">
+                                <label><input type="checkbox" name="options-subassets" value="2"><i class="fa fa-lg fa-sitemap"></i> Subassets</label>
+                            </div>
+                            <div class="checkbox">
+                                <label><input type="checkbox" name="options-numeric" value="3"><i class="fa fa-lg fa-sort-numeric-asc"></i> Numeric</label>
+                            </div>
+                        </div>
+                    </ul>
+                </div>
+            </div>
+
+<style>
+
+</style>
+<!--
+
             <a href="#" class="balances-list-refresh"><i class="fa fa-refresh pull-left"></i></a></li>
             <input type="text" class="form-control balances-list-search" placeholder="Enter search here">
             <div style="clear:both;"></div>
+-->
         </div>        
         <div class="balances-list-assets">
             <ul class="nav">
@@ -172,7 +203,7 @@
                     <i class="fa fa-spinner fa-pulse fa-fw"></i> Loading...
                 </div>
                 <img src="images/icons/xcp.png" class="img-responsive" id="artwork-image" style="display: none;">
-                <img src="images/icons/XCP.png" class="bitcoin-stamp-pixelated"   id="artwork-bitcoin-stamp" style="display: none;">
+                <img src="images/icons/XCP.png" class="stamp-img"      id="artwork-stamp" style="display: none;">
                 <div class="panel-heading panel-heading-lg primary-middle" id="audio-header" style="display: none;"><i class="fa fa-lg fa-music"></i> Digital Audio</div>
                 <div class="audio-wrapper" id="audio-wrapper" style="display: none;"></div>
                 <div class="audio-wrapper-soundcloud" id="audio-wrapper-soundcloud" style="display: none;"></div>
@@ -312,25 +343,18 @@ $(document).ready(function(){
         lastHeight = 0,
         lastLength = 0;
 
-    // Lazy Loader config
-    var lazyConfig = {
-        effect: 'fadeIn',
-        // threshold: 100,
-        visibleOnly: true,
-    };
-
     // Detect any changes to the balances list and lazy-load any images
     $('.balances-list-assets ul').on('DOMSubtreeModified', $.debounce(100,function(e){
         var length = $('.balances-list-assets ul li').length;
         if(length!=lastLength){
             lastLength=length;
-            $('.balances-list-item .lazy-load').Lazy(lazyConfig);
+            $('.balances-list-item .lazy-load').Lazy(FW.LAZY_LOAD_CONFIG);
         }
     }));
 
     // Detect scrolling of balances panel and lazy-load any images
     $('.balances-list-assets').scroll($.debounce(100,function(e){
-        $('.balances-list-item .lazy-load').Lazy(lazyConfig);
+        $('.balances-list-item .lazy-load').Lazy(FW.LAZY_LOAD_CONFIG);
     }));
 
     // Display balances list        
@@ -374,9 +398,31 @@ $(document).ready(function(){
 
     // Handle refreshing address balances when user clicks refresh button
     // buffer the event by 250ms so we can allow for spamming the click button
-    $('.balances-list-refresh').click($.debounce(250,function(e){
+    $('#btn-refresh').click($.debounce(250,function(e){
         updateWalletBalances(getWalletAddress(), true);
     }));
+
+    // Initialize the 'View Options'
+    if(FW.BALANCE_OPTIONS.indexOf(1)!=-1) $(".checkbox [name='options-named']").prop('checked', true);
+    if(FW.BALANCE_OPTIONS.indexOf(2)!=-1) $(".checkbox [name='options-subassets']").prop('checked', true);
+    if(FW.BALANCE_OPTIONS.indexOf(3)!=-1) $(".checkbox [name='options-numeric']").prop('checked', true);
+
+    // Handle updating view when user changes the viewing options
+    $('.dropdown-checkboxes .checkbox input').change($.debounce(100,function(e){ 
+        var arr = [];
+        if($(".checkbox [name='options-named']").is(':checked')) arr.push(1);
+        if($(".checkbox [name='options-subassets']").is(':checked')) arr.push(2);
+        if($(".checkbox [name='options-numeric']").is(':checked')) arr.push(3);
+        FW.BALANCE_OPTIONS = arr;
+        ls.setItem('walletBalanceOptions',JSON.stringify(FW.BALANCE_OPTIONS));
+        updateBalancesList();        
+    }));
+
+    // Prevent settings dropdown from collapsing while toggling viewing options
+    $('#balances-searchbox .dropdown-menu').click(function(e){
+        if(!$('li > a').is(e.target))
+           e.stopPropagation();
+    });
 
 });
 </script>
