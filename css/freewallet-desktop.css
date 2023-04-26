@@ -1240,13 +1240,13 @@ a.red:hover {
 .stamp-img {
     width: 420px;
     height: 420px;
-    object-fit: contain; image-rendering: 
-    pixelated; background-color: rgb(0, 0, 0);
+    object-fit: contain; 
     overflow:hidden;
     display: block;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
+    background-color: rgb(0, 0, 0);
     background-image: url("../images/stamp-bg.png");
     background-size: 3px;    
 }
