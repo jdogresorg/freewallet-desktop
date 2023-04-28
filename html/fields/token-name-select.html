@@ -37,7 +37,7 @@ $(document).ready(function(){
                 if(item.asset=='BTC' && (type=='destroy'||type=='dispenser'))
                     return;
                 var asset = (item.asset_longname && item.asset_longname!='') ? item.asset_longname : item.asset;
-                html += '<option data-content="<img src=\'' + FW.XCHAIN_API + '/icon/' + item.asset + '.png\' class=\'fw-icon-20 margin-right-5\'>' + asset + '">' + asset + '</option>';
+                html += '<option data-content="<img src=\'' + FW.XCHAIN_API + '/icon/XCP.png\' data-src=\'' + FW.XCHAIN_API + '/icon/' + item.asset + '.png\' class=\'fw-icon-20 margin-right-5 lazy-load\'>' + asset + '">' + asset + '</option>';
             });
         }
 
@@ -45,7 +45,25 @@ $(document).ready(function(){
     el.html(html);
     el.selectpicker({ width: '100%' });
     el.selectpicker("refresh");
-    // Update the available amount if the function exist
+
+    // Detect when select field is first shown and lazy-load images
+    el.on('shown.bs.select', $.debounce(100,function(e){
+        $('img.lazy-load').Lazy(FW.LAZY_LOAD_CONFIG);
+    }));
+
+    // Detect when select field chooses an option and lazy-load images
+    el.on('changed.bs.select', $.debounce(100,function(e){
+        $('img.lazy-load').Lazy(FW.LAZY_LOAD_CONFIG);
+    }));
+
+    // Detect scrolling of asset list and lazy-load images
+    $('.dropdown-menu').scroll($.debounce(100,function(e){
+        $('img.lazy-load').Lazy(FW.LAZY_LOAD_CONFIG);
+    }));
+
+
+
+     // Update the available amount if the function exist
     if(typeof updateAvailableQuantity === 'function')
         updateAvailableQuantity();
 
