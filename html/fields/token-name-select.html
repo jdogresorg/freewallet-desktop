@@ -61,8 +61,6 @@ $(document).ready(function(){
         $('img.lazy-load').Lazy(FW.LAZY_LOAD_CONFIG);
     }));
 
-
-
      // Update the available amount if the function exist
     if(typeof updateAvailableQuantity === 'function')
         updateAvailableQuantity();
@@ -139,7 +137,6 @@ $(document).ready(function(){
             getAssetInfo(val, cb);
         }
     });
-
 
     // Trigger a change on the field, so we initialize asset info
     $('#token-name-select').change();
