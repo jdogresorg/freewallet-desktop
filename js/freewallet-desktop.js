@@ -149,6 +149,14 @@ FW.LAZY_LOAD_CONFIG = {
     visibleOnly: true
 };
 
+// Define vars for donation system and load any saved preferences
+FW.DONATE         = {};                               // donation causes cache
+FW.DONATE_DEFAULT = 1000;                             // 1,000 satoshis
+FW.DONATE_COUNT   = ls.getItem('donateCount')   || 0; // Track number of transactions
+FW.DONATE_STATUS  = ls.getItem('donateStatus')  || 1; // 1=enabled, 0=disabled, #=% of txs
+FW.DONATE_ADDRESS = ls.getItem('donateAddress') || '1FWDonkMbC6hL64JiysuggHnUAw2CKWszs';
+FW.DONATE_AMOUNT  = ls.getItem('donateAmount')  || FW.DONATE_DEFAULT;
+
 // Start loading the wallet 
 $(document).ready(function(){
 
@@ -266,6 +274,8 @@ function initWallet(){
     updateWalletOptions();
     // Populate the oracle list
     updateOracleList();
+    // Populate the donation list
+    updateDonationList();
     // Populate FW.NFT_CARDS 
     updateNFTCards();
 }
@@ -344,6 +354,7 @@ function createWallet( passphrase, isBip39=false ){
     ls.setItem('walletPassword', password);
     ls.setItem('walletEncrypted',0);
     ls.setItem('walletNetwork',1);
+    ls.setItem('walletDonationAlert',1);
     ss.removeItem('skipWalletAuth');
     // Set the wallet format (0 = Counterwallet, 1=BIP39)
     FW.WALLET_FORMAT = (isBip39) ? 1 : 0;
@@ -819,8 +830,8 @@ function getAssetReputationInfo(asset, callback, force){
 // Check if wallet price/balance info should be updated
 function checkUpdateWallet(){
     updateNetworkInfo();
-    checkDonateReminder();    
-    checkBtcpayTransactions();  
+    checkDonateAlert();
+    checkBtcpayTransactions();
     var addr = getWalletAddress();
     if(addr){
         updateWalletBalances(addr);
@@ -833,15 +844,13 @@ function checkUpdateWallet(){
 
 
 
-// Handle begging for donations from users on a regular basis
-function checkDonateReminder(){
-    var ls   = localStorage,
-        last = ls.getItem('walletDonationReminder') || 0,
-        ms   = 604800000,          // 1 week
-        skip = checkTokenAccess(); // Skip begging if user has purchased FULLACCESS or XCHAINPEPE 
-    if((parseInt(last) + ms)  <= Date.now() && !skip){
+// Handle notifying user of Automatic Donation System.
+function checkDonateAlert(){
+    var wallet = ls.getItem('wallet'),
+        alert  = ls.getItem('walletDonationAlert') || 0;
+    if(wallet && !alert){
         dialogDonate();
-        ls.setItem('walletDonationReminder', Date.now());
+        ls.setItem('walletDonationAlert',1);
     }
 }
 
@@ -3217,6 +3226,8 @@ function isHardwareWallet(address){
 
 // Handle signing a transaction based on what type of address it is
 function signTransaction(network, source, destination, unsignedTx, callback){
+    // Check if this transaction should include a donation
+    unsignedTx = checkDonate(network, source, destination, unsignedTx);
     if(isHardwareWallet(source)){
         signHardwareWalletTransaction(network, source, unsignedTx);
     } else {
@@ -3514,7 +3525,7 @@ function dialogAbout(){
 function dialogDonate(){
     BootstrapDialog.show({
         type: 'type-default',
-        title: '<i class="fa fa-lg fa-fw fa-btc"></i> Donate',
+        title: '<i class="fa fa-lg fa-fw fa-btc"></i> Automatic Donation System',
         id: 'dialog-donate',
         closeByBackdrop: false,
         message: $('<div></div>').load('html/donate.html')
@@ -4427,7 +4438,13 @@ function dialogWelcome(){
                                 '<p>With FreeWallet, your passphrase is literally your wallet, and all of your addresses and keys are generated on-the-fly when you log in.</p>' +
                                 '<p>There are no wallet files to backup or secure, and using your passphrase you can access your wallet from any trusted machine with a web browser.</p>' +
                             '</div>' +
-                       '</div>');
+                        '</div>' +
+                        '<div class="alert alert-info" style="margin-bottom:5px">' +
+                        '    FreeWallet includes an <i>optional</i> "Automatic Donation System"<br> ' +
+                        '    You can edit your automatic donation preferences at Settings->Preferences<br>' +
+                        '    <i class="fa fa-heart"></i> All donations are appreciated and support hosting and additional development <i class="fa fa-heart"></i>' +
+                        '</div>');
+
             return msg;
         },
         buttons:[{
@@ -5773,6 +5790,21 @@ function getOracleInfo(address){
     return info;
 }
 
+// Function to handle creating/updating the donation list
+function updateDonationList(){
+    $.getJSON('https://freewallet.io/json/donation-causes.json', function(o){
+        if(o && o.mainnet)
+            FW.DONATE = o;
+    });
+}
+
+// Function to handle getting a list of donation causes for a given network
+function getDonationList(network){
+    var network = (network) ? network : FW.WALLET_NETWORK,
+        net     = (network==2||network=='testnet') ? 'testnet' : 'mainnet';
+    return FW.DONATE[net];
+}
+
 // Function to remove html from string
 function stripHtml(html){
     var tmp = document.createElement("DIV");
@@ -6457,3 +6489,109 @@ function xmlToString(xmlData) {
     }
     return xmlString;
 }   
+
+// Handle getting an address from an output script and returning it (if any)
+function getAddressFromOutputScript(script){
+    var address = false;
+    try {
+        address = bitcoinjs.address.fromOutputScript(script);
+    } catch (e){
+        // console.log('caught error=',e);
+    }
+    return address;
+}
+
+// Handle checking if we should donate on a transaction, if so, add the donation output
+// Remove this when counterparty-lib supports `custom_outputs` feature
+// https://github.com/CounterpartyXCP/counterparty-lib/issues/1214
+function checkDonate(network, source, destination, unsignedTx){
+    // console.log('checkDonate=',network, source, destination, unsignedTx);
+    var net    = (network=='testnet') ? 'testnet' : 'mainnet', 
+        donate = false,
+        change = false;
+    // Increase the donation tx counter
+    FW.DONATE_COUNT++;
+    // If the donation system is enabled, check if we should donate on this tx
+    if(FW.DONATE_STATUS!=0){
+        if(FW.DONATE_STATUS==1 ||
+          (FW.DONATE_STATUS==25 && FW.DONATE_COUNT==4) ||
+          (FW.DONATE_STATUS==50 && [1,3].indexOf(FW.DONATE_COUNT)!=-1) ||
+          (FW.DONATE_STATUS==75 && [1,2,3].indexOf(FW.DONATE_COUNT)!=-1))
+            donate = true;
+    }
+    // Reset donation tx counter
+    if(FW.DONATE_COUNT==4)
+       FW.DONATE_COUNT = 0;
+    // Save the current donation count
+    ls.setItem('donateCount',FW.DONATE_COUNT);
+    // Handle updating the transaction to include a donation output
+    if(donate){
+        // Convert destination to array if not already
+        if(typeof(destination)==='string')
+            destination = [destination];
+        // Check if any of the addresses are bech32
+        var sourceIsBech32 = isBech32(source),
+            destIsBech32   = destination.reduce((p, x) => p || isBech32(x), false),
+            donateisBech32 = isBech32(FW.DONATE_ADDRESS),
+            hasAnyBech32   = sourceIsBech32 || destIsBech32 || donateisBech32;
+        // Handle updating transaction
+        if(hasAnyBech32){
+            // Handle Segwit/Bech32 transactions
+            var netName = (net=='testnet') ? 'testnet' : 'bitcoin',
+                tx      = bitcoinjs.Transaction.fromHex(unsignedTx);
+            // Find change output / value
+            tx.outs.forEach(function(output,idx){
+                // Find last output with matching source address (change output)
+                if(getAddressFromOutputScript(output.script)==source && idx==tx.outs.length-1){
+                    // Make sure we have enough change to cover the donation and return more than dust (546 sats)
+                    if(output.value > FW.DONATE_AMOUNT && (output.value - FW.DONATE_AMOUNT) >= 546)
+                        change = output.value;
+                }
+            });
+            // If we found a change address, add our donation output
+            if(change){
+                // Add our donation output
+                tx.addOutput(bitcoinjs.address.toOutputScript(FW.DONATE_ADDRESS), FW.DONATE_AMOUNT);
+                // Rearrange the tx so the change output is last again
+                tx.outs.splice(tx.outs.length-2,0,tx.outs.pop());
+                // Reduce change amount by donation amount
+                tx.outs.forEach(function(output,idx){
+                    if(getAddressFromOutputScript(output.script)==source && idx==tx.outs.length-1)
+                        output.value = output.value - FW.DONATE_AMOUNT;
+                });
+                // Convert the transaction back into a hex string
+                unsignedTx = tx.toHex();
+            }
+        } else {
+            // Handle Normal transactions
+            var netName = (network=='testnet') ? 'testnet' : 'livenet';
+            NETWORK = bc.Networks[netName];
+            var tx = bc.Transaction(unsignedTx);
+            // Find change output / value
+            tx.outputs.forEach(function(output,idx){
+                // Find last output with matching source address (change output)
+                if(CWBitcore.extractAddressFromTxOut(output)==source && idx==tx.outputs.length-1){
+                    // Make sure we have enough change to cover the donation and return more than dust (546 sats)
+                    if(output.satoshis > FW.DONATE_AMOUNT && (output.satoshis - FW.DONATE_AMOUNT) >= 546)
+                        change = output.satoshis;
+                }
+            });
+            // If we found a change address, add our donation output
+            if(change){
+                // Add our donation output
+                tx.to(FW.DONATE_ADDRESS, FW.DONATE_AMOUNT);
+                // Rearrange the tx so the change output is last again
+                tx.outputs.splice(tx.outputs.length-2,0,tx.outputs.pop());
+                // Reduce change amount by donation amount
+                tx.outputs.forEach(function(output,idx){
+                    if(CWBitcore.extractAddressFromTxOut(output)==source && idx==tx.outputs.length-1)
+                        output.satoshis = output.satoshis - FW.DONATE_AMOUNT;
+                });
+                // Convert the transaction back into a hex string
+                unsignedTx = tx.toString();
+                console.log('final tx=',unsignedTx);
+            }
+        }
+    }
+    return unsignedTx;
+}
