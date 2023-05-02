@@ -123,7 +123,7 @@ $(document).ready(function(){
             // Callback to run if user confirms action
             var confirmCb = function(){
                 var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                    fee_sat  = parseInt(numeral(vals['fee-amount']).multiply(100000000).value());
+                    fee_sat  = getSatoshis(numeral(vals['fee-amount']);
                     flags    = 0;
                     if(vals['transfer-balances']=='Y') 
                         flags += 1;

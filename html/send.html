@@ -176,7 +176,7 @@ $(document).ready(function(){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
             var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
+                fee_sat = getSatoshis(vals['fee-amount']),
                 is_data = (vals['memo-type']=='data') ? true : false;
             // Callback to run after broadcasting send
             var doneCb = function(tx){
@@ -190,7 +190,7 @@ $(document).ready(function(){
             if(type=='single'){
                 // Callback to run if user confirms action
                 var confirmCb = function(){
-                    var amt_sat = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).format('0') : numeral(vals.amount).format('0');
+                    var amt_sat = getSatoshis(vals.amount);
                     cpSend(network, vals.source, vals.destination, vals.memo, is_data, vals.name, amt_sat, fee_sat, doneCb);
                 }
                 // Confirm the action with the user

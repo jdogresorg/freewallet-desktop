@@ -55,10 +55,10 @@ function confirmCreateDispenser(vals){
     // Callback to run if user confirms action
     var confirmCb = function(){
         var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-            escrow_sat = (vals['escrow-amount'].indexOf('.')!=-1) ? numeral(vals['escrow-amount']).multiply(100000000).format('0') : numeral(vals['escrow-amount']).format('0'),
-            give_sat   = (vals['escrow-amount'].indexOf('.')!=-1) ? numeral(vals['give-amount']).multiply(100000000).format('0') : numeral(vals['give-amount']).format('0'),
+            escrow_sat = getSatoshis(vals['escrow-amount']),
+            give_sat   = getSatoshis(vals['give-amount']),
+            fee_sat    = getSatoshis(vals['fee-amount']),
             btc_sat    = (oracle_address!='') ? parseInt(numeral(vals['fiat-amount']).multiply(100).value()) : parseInt(numeral(vals['btc-amount']).multiply(100000000).value()),
-            fee_sat    = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
             asset      = vals.name, 
             status     = 0; // Hardcode to open for creating a dispenser... can close via dispensers interface
         cpDispenser(network, vals.source, vals.destination, asset, escrow_sat, give_sat, btc_sat, status, fee_sat, oracle_address, doneCb);

@@ -247,8 +247,8 @@ $(document).ready(function(){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
             var network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                amt_sat   = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).value() : numeral(vals.amount).value(),
-                fee_sat   = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
+                amt_sat   = getSatoshis(vals.amount),
+                fee_sat   = getSatoshis(vals['fee-amount']),
                 divisible = (vals.divisible=='Yes') ? true : false,
                 title     = '<i class="fa fa-lg fa-fw fa-question-circle"></i> Confirm  Issuance?',
                 fmt       = ($('#asset-divisible').val()=='Yes') ? '0,0.00000000' : '0,0',

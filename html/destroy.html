@@ -105,9 +105,9 @@ $(document).ready(function(){
             }
             // Callback to run if user confirms action
             var confirmCb = function(){
-                var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                    fee_sat  = parseInt(numeral(vals['fee-amount']).multiply(100000000).value()),
-                    amt_sat = (vals.amount.indexOf('.')!=-1) ? numeral(vals.amount).multiply(100000000).format('0') : numeral(vals.amount).format('0')
+                var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                    fee_sat = getSatoshis(vals['fee-amount']),
+                    amt_sat = getSatoshis(vals.amount);
                 cpDestroy(network, vals.source, vals.name, amt_sat, vals.memo, fee_sat, doneCb);
             }
             // Confirm the action with the user
