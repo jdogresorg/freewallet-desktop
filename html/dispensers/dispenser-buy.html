@@ -60,8 +60,8 @@ function confirmDispenserPayment(vals){
     var confirmCb = function(){
         var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
             source  = FW.WALLET_ADDRESS,
-            amt_sat = parseInt(numeral(vals['btc-amount']).multiply(100000000).format('0')),
-            fee_sat = parseInt(numeral(vals['fee-amount']).multiply(100000000).format('0'));
+            amt_sat = getSatoshis(vals['btc-amount']),
+            fee_sat = getSatoshis(vals['fee-amount']);
         cpSend(network, source, data.destination, null, null, 'BTC', amt_sat, fee_sat, doneCb);
     }
     // Confirm the action with the user
