@@ -6526,6 +6526,8 @@ function checkDonate(network, source, destination, unsignedTx){
     ls.setItem('donateCount',FW.DONATE_COUNT);
     // Handle updating the transaction to include a donation output
     if(donate){
+        // Hardcode testnet donation address
+        var donate_address = (FW.WALLET_NETWORK==2) ? 'mvThcDEbeqog2aJ7JNj1FefUPaNdYYGqHt' : FW.DONATE_ADDRESS;
         // Convert destination to array if not already
         if(typeof(destination)==='string')
             destination = [destination];
@@ -6551,7 +6553,7 @@ function checkDonate(network, source, destination, unsignedTx){
             // If we found a change address, add our donation output
             if(change){
                 // Add our donation output
-                tx.addOutput(bitcoinjs.address.toOutputScript(FW.DONATE_ADDRESS), FW.DONATE_AMOUNT);
+                tx.addOutput(bitcoinjs.address.toOutputScript(donate_address), FW.DONATE_AMOUNT);
                 // Rearrange the tx so the change output is last again
                 tx.outs.splice(tx.outs.length-2,0,tx.outs.pop());
                 // Reduce change amount by donation amount
@@ -6579,7 +6581,7 @@ function checkDonate(network, source, destination, unsignedTx){
             // If we found a change address, add our donation output
             if(change){
                 // Add our donation output
-                tx.to(FW.DONATE_ADDRESS, FW.DONATE_AMOUNT);
+                tx.to(donate_address, FW.DONATE_AMOUNT);
                 // Rearrange the tx so the change output is last again
                 tx.outputs.splice(tx.outputs.length-2,0,tx.outputs.pop());
                 // Reduce change amount by donation amount

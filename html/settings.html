@@ -687,7 +687,7 @@ $(document).ready(function(){
     if(FW.DONATE['mainnet'].length){
         var html = '',
             net  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
-        FW.DONATE[net].forEach(function(item){
+        FW.DONATE['mainnet'].forEach(function(item){
             html += '<option data-content="' + item.name + '" value="' + item.address + '">' + item.name + '</option>';
         });
         el.html(html);
