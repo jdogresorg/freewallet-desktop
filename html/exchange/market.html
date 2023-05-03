@@ -473,12 +473,10 @@ $(document).ready(function(){
     // Setup alias for localstorage
     var ls = localStorage;
 
-
     // Initialize some placeholders
     FW.RAW_CHART_DATA  = [];
     FW.CHART_DATA      = [];
     FW.MARKET_NAME     = 'BTC/XCP';
-    FW.ASSET_DIVISIBLE = {};
 
     // Load preferred market chart
     var chart = ls.getItem('marketChart') || 'candlestick';
@@ -648,8 +646,6 @@ $(document).ready(function(){
                 asset2 = assets[1],
                 errors = [],
                 minbtc = 0.00001; // Minimum BTC order amount
-            console.log('FW.ASSET_DIVISIBLE=',FW.ASSET_DIVISIBLE);
-            console.log('FW.MARKET_NAME=',FW.MARKET_NAME);
             // Verify price/amount/total are greater than 0
             if(numeral(vals[id + '-price']).value()==0){
                 errors.push('You must enter a ' + id + ' price which is greater than 0!');

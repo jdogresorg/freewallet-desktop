@@ -157,6 +157,11 @@ FW.DONATE_STATUS  = ls.getItem('donateStatus')  || 1; // 1=enabled, 0=disabled, 
 FW.DONATE_ADDRESS = ls.getItem('donateAddress') || '1FWDonkMbC6hL64JiysuggHnUAw2CKWszs';
 FW.DONATE_AMOUNT  = ls.getItem('donateAmount')  || FW.DONATE_DEFAULT;
 
+// Define cache for asset divisibility
+FW.ASSET_DIVISIBLE = {};
+FW.ASSET_DIVISIBLE['BTC'] = true;
+FW.ASSET_DIVISIBLE['XCP'] = true;
+
 // Start loading the wallet 
 $(document).ready(function(){
 
