@@ -2409,11 +2409,11 @@ function cpSend(network, source, destination, memo, memo_is_hex, currency, amoun
 }
 
 // Handle generating a multi-peer-multi-asset (MPMA) send transaction
-function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback){
+function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, encoding, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
     updateTransactionStatus('pending', 'Generating first counterparty transaction...');
     // Create unsigned send transaction
-    createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, null, function(o){
+    createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, null, encoding, function(o){
         if(o && o.result){
             updateTransactionStatus('pending', 'Signing first counterparty transaction...');
             // Sign the transaction
@@ -2424,7 +2424,7 @@ function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, qua
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
                             // Start trying to generate the second MPMA transaction
-                            cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee,  txid, 1, callback);
+                            cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee,  txid, 1, encoding, callback);
                         } else {
                             updateTransactionStatus('error', 'Error broadcasting first transaction!');
                             cbError(o, 'Error while trying to broadcast first transaction', cb);
@@ -2446,7 +2446,7 @@ function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, qua
 // We have this in a separate function so we can detect when an API call fails and try again after X seconds up to Y times
 // Sometimes the first mpma tx has not propagated to mempool before second mpma tx is generated, resulting in API error when tx is not found
 // Now we retry the second mpma tx after a brief delay, to let the first tx propagate a bit
-function cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, count, callback){
+function cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, count, encoding, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
         cnt = (count) ? count : 1,
         max = 10,   // Max number of retries
@@ -2455,11 +2455,19 @@ function cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asse
     if(count <= max){
         updateTransactionStatus('pending', 'Generating second counterparty transaction...');
         // Create unsigned send transaction
-        createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, function(o){
+        createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, encoding, function(o){
             if(o && o.result){
                 updateTransactionStatus('pending', 'Signing second counterparty transaction...');
+                var signFunction = null
+                
+                if (encoding == "p2sh"){
+                    signFunction = signP2SHTransaction
+                } else if (encoding == "p2wsh"){
+                    signFunction = signP2WSHTransaction
+                }
+                
                 // Sign the transaction
-                signP2SHTransaction(network, source, destination, o.result, function(signedTx){
+                signFunction(network, source, destination, o.result, function(signedTx){
                     if(signedTx){
                         updateTransactionStatus('pending', 'Broadcasting second counterparty transaction...');
                         // Broadcast the transaction
@@ -2907,7 +2915,7 @@ function createSend(network, source, destination, memo, memo_is_hex, asset, quan
 }
 
 // Handle creating send transaction
-function createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, callback){
+function createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, encoding, callback){
     // console.log('createMultiSend=',network, source, destination, memo, memo_is_hex, asset, quantity, fee, p2sh_pretx_txid);
     var data = {
        method: "create_send",
@@ -2920,7 +2928,7 @@ function createMultiSend(network, source, destination, memo, memo_is_hex, asset,
             memo_is_hex: memo_is_hex,
             fee: parseInt(fee),
             allow_unconfirmed_inputs: true,
-            encoding: "p2sh"
+            encoding: encoding
         },
         jsonrpc: "2.0",
         id: 0
@@ -3338,6 +3346,64 @@ function signP2SHTransaction(network, source, destination, unsignedTx, callback)
     if(callback)
         callback(signedHex);
 }
+
+function signP2WSHTransaction(network, source, destination, unsignedTx, callback){
+    var net        = (network=='testnet') ? 'testnet' : 'mainnet', 
+        netName    = (network=='testnet') ? 'testnet' : 'bitcoin', // bitcoinjs-lib
+        network    = bitcoinjs.networks[netName],
+        callback   = (typeof callback === 'function') ? callback : false,
+        privKey    = getPrivateKey(net, source),
+        cwKey      = new CWPrivateKey(privKey),
+        keyPair    = bitcoinjs.ECPair.fromWIF(cwKey.getWIF(), network),
+        dataTx     = bitcoinjs.Transaction.fromHex(unsignedTx), // The unsigned second part of the 2 part P2WSH transactions
+        sigType    = bitcoinjs.Transaction.SIGHASH_ALL;         // This shouldn't be changed unless you REALLY know what you're doing
+    // Loop through all inputs and sign
+	var utxosCallbacksReceived = 0
+    for (let i=0; i < dataTx.ins.length; i++) {
+        var dataWitness = dataTx.ins[i].witness[0];
+        var witnessScript = new Buffer(dataWitness.buffer.slice(dataWitness.byteOffset, dataWitness.byteLength + dataWitness.byteOffset));
+        const {address} = bitcoinjs.payments.p2wsh({
+            network:network, 
+            redeem: {
+                output: witnessScript
+            }
+        })
+		
+		//We need utxos from every input to retrieve the amount
+		getUTXOs(net, address, (addressUtxos)=>{
+			utxosCallbacksReceived = utxosCallbacksReceived + 1
+			
+			if (addressUtxos.length == 0){
+				console.log("Error while signing P2WSH transactions, there are not utxos for the p2wsh address")
+			} else if (addressUtxos.length > 1){
+				console.log("Error while signing P2WSH transactions, there are too many utxos for the same p2wsh address")
+			} 
+			
+			var sigHash    = dataTx.hashForWitnessV0(i, witnessScript, addressUtxos[0].value, sigType),
+				sig        = keyPair.sign(sigHash),
+				encodedSig = bitcoinjs.script.signature.encode(sig, sigType),
+				compiled   = bitcoinjs.script.compile([encodedSig]);
+
+			const signedWitnessPayment = bitcoinjs.payments.p2wsh({
+			  redeem: {
+				input: compiled, 
+				output: witnessScript
+			  }
+			});
+
+			const signedWitness = signedWitnessPayment.witness;        
+			dataTx.setWitness(i,signedWitness)
+			
+            //All inputs have received their utxos
+            if (utxosCallbacksReceived == dataTx.ins.length){
+                var signedHex = dataTx.toHex();
+                if(callback)
+                    callback(signedHex);
+            }
+        })
+    }
+}
+
 
 // Handle getting a list of raw UTXOs for a given address
 function getUTXOs(network, address, callback){
