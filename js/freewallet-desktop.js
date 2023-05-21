@@ -3358,7 +3358,7 @@ function signP2WSHTransaction(network, source, destination, unsignedTx, callback
         dataTx     = bitcoinjs.Transaction.fromHex(unsignedTx), // The unsigned second part of the 2 part P2WSH transactions
         sigType    = bitcoinjs.Transaction.SIGHASH_ALL;         // This shouldn't be changed unless you REALLY know what you're doing
     // Loop through all inputs and sign
-	var utxosCallbacksReceived = 0
+    var utxosCallbacksReceived = 0
     for (let i=0; i < dataTx.ins.length; i++) {
         var dataWitness = dataTx.ins[i].witness[0];
         var witnessScript = new Buffer(dataWitness.buffer.slice(dataWitness.byteOffset, dataWitness.byteLength + dataWitness.byteOffset));
@@ -3368,32 +3368,32 @@ function signP2WSHTransaction(network, source, destination, unsignedTx, callback
                 output: witnessScript
             }
         })
-		
-		//We need utxos from every input to retrieve the amount
-		getUTXOs(net, address, (addressUtxos)=>{
-			utxosCallbacksReceived = utxosCallbacksReceived + 1
-			
-			if (addressUtxos.length == 0){
-				console.log("Error while signing P2WSH transactions, there are not utxos for the p2wsh address")
-			} else if (addressUtxos.length > 1){
-				console.log("Error while signing P2WSH transactions, there are too many utxos for the same p2wsh address")
-			} 
-			
-			var sigHash    = dataTx.hashForWitnessV0(i, witnessScript, addressUtxos[0].value, sigType),
-				sig        = keyPair.sign(sigHash),
-				encodedSig = bitcoinjs.script.signature.encode(sig, sigType),
-				compiled   = bitcoinjs.script.compile([encodedSig]);
+        
+        //We need utxos from every input to retrieve the amount
+        getUTXOs(net, address, (addressUtxos)=>{
+            utxosCallbacksReceived = utxosCallbacksReceived + 1
+            
+            if (addressUtxos.length == 0){
+                console.log("Error while signing P2WSH transactions, there are not utxos for the p2wsh address")
+            } else if (addressUtxos.length > 1){
+                console.log("Error while signing P2WSH transactions, there are too many utxos for the same p2wsh address")
+            } 
+            
+            var sigHash    = dataTx.hashForWitnessV0(i, witnessScript, addressUtxos[0].value, sigType),
+                sig        = keyPair.sign(sigHash),
+                encodedSig = bitcoinjs.script.signature.encode(sig, sigType),
+                compiled   = bitcoinjs.script.compile([encodedSig]);
 
-			const signedWitnessPayment = bitcoinjs.payments.p2wsh({
-			  redeem: {
-				input: compiled, 
-				output: witnessScript
-			  }
-			});
+            const signedWitnessPayment = bitcoinjs.payments.p2wsh({
+              redeem: {
+                input: compiled, 
+                output: witnessScript
+              }
+            });
 
-			const signedWitness = signedWitnessPayment.witness;        
-			dataTx.setWitness(i,signedWitness)
-			
+            const signedWitness = signedWitnessPayment.witness;        
+            dataTx.setWitness(i,signedWitness)
+            
             //All inputs have received their utxos
             if (utxosCallbacksReceived == dataTx.ins.length){
                 var signedHex = dataTx.toHex();
