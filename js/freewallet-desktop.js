@@ -162,6 +162,11 @@ FW.ASSET_DIVISIBLE = {};
 FW.ASSET_DIVISIBLE['BTC'] = true;
 FW.ASSET_DIVISIBLE['XCP'] = true;
 
+//Init ecc lib for taproot to work
+bitcoinjs.initEccLib(bitcoinjs.tiny_secp256k1) 
+ECPairFactory = bitcoinjs.ecpairfactory
+ECPair = ECPairFactory(bitcoinjs.tiny_secp256k1)
+
 // Start loading the wallet 
 $(document).ready(function(){
 
@@ -377,8 +382,10 @@ function createWallet( passphrase, isBip39=false ){
             var d = s.derive("m/0'/0/" + i),
                 a = bc.Address(d.publicKey, network).toString();
                 b = bitcoinjs.payments.p2wpkh({ pubkey: d.publicKey.toBuffer(), network: bitcoinjs.networks[netname] }).address;
+                c = bitcoinjs.payments.p2tr({ pubkey: d.publicKey.toBuffer().slice(1, 33), network: bitcoinjs.networks[netname] }).address;
             addWalletAddress(net, a, 'Address #' + (i + 1), 1, i);
             addWalletAddress(net, b, 'Segwit Address #' + (i + 1), 7, i);
+            addWalletAddress(net, c, 'Taproot Address #' + (i + 1), 8, i);
         }
     });
     // Set current address to first address in wallet
@@ -392,7 +399,12 @@ function addNewWalletAddress(net=1, type='normal'){
     var ls   = localStorage;
     net      = (net=='testnet' || net==2) ? 2 : 1;
     network  = (net==2) ? 'testnet' : 'mainnet',
-    addrtype = (type=='segwit') ? 7 : 1; 
+    addrtype = 1; 
+    if (type=="segwit"){
+        addrtype = 7;
+    } else if (type=="taproot"){
+        addrtype = 8;
+    }   
     address  = false;
     // Lookup the highest indexed address so far
     var idx = 0;
@@ -413,6 +425,11 @@ function addNewWalletAddress(net=1, type='normal'){
         var netname = (net==2) ? 'testnet' : 'bitcoin';
         var address = bitcoinjs.payments.p2wpkh({ pubkey: d.publicKey.toBuffer(), network: bitcoinjs.networks[netname] }).address;
         label = 'Segwit ' + label;
+    // Support generating Taproot Addresses (Bech32m)
+    } else if (type=='taproot'){
+        var netname = (net==2) ? 'testnet' : 'bitcoin';
+        var address = bitcoinjs.payments.p2tr({ pubkey: d.publicKey.toBuffer(), network: bitcoinjs.networks[netname] }).address;
+        label = 'Taproot ' + label;
     }
     // Add the address to the wallet
     addWalletAddress(network, address, label, addrtype, idx);
@@ -556,7 +573,7 @@ function addWalletAddress( network=1, address='', label='', type=1, index='', pa
         address: address, // Address to add
         network: network, // Default to mainnet (1=mainnet, 2=testnet)
         label: label,     // Default to blank label
-        type: type,       // 1=indexed, 2=imported (privkey), 3=watch-only, 4=trezor, 5=ledger, 6=keepkey, 7=segwit
+        type: type,       // 1=indexed, 2=imported (privkey), 3=watch-only, 4=trezor, 5=ledger, 6=keepkey, 7=segwit, 8=taproot
         path: path,       // node path for address (ex: m/44'/0'/0)
         index: index      // wallet address index (used in address sorting)
     };
@@ -1615,10 +1632,10 @@ function getSatoshis(amount){
 // Handle checking if addresses is bech32
 function isBech32(addr) {
     try {
-        bitcoinjs.address.fromBech32(addr)
-        return true
+        decoded_address = bitcoinjs.address.fromBech32(addr)
+        return [true, decoded_address.version]
     } catch (e) {
-        return false
+        return [false, -1]
     }
 }
 
@@ -1638,7 +1655,7 @@ function getPrivateKey(network, address, prepend=false){
     // Check any we have a match in imported addresses
     if(FW.WALLET_KEYS[address]){
         priv = FW.WALLET_KEYS[address];
-        if(prepend && isBech32(address))
+        if(prepend && isBech32(address)[0])
             priv = prependStr + priv;
     }
     // Loop through HD addresses trying to find private key
@@ -1657,7 +1674,15 @@ function getPrivateKey(network, address, prepend=false){
             if(a!=address){
                 var netname = (network=='testnet') ? 'testnet' : 'bitcoin';
                 a = bitcoinjs.payments.p2wpkh({ pubkey: d.publicKey.toBuffer(), network: bitcoinjs.networks[netname] }).address;
-                if(a==address){
+                if(a!=address){
+                    a = bitcoinjs.payments.p2tr({ pubkey: d.publicKey.toBuffer().slice(1, 33), network: bitcoinjs.networks[netname] }).address;
+                    
+                    if(a==address){
+                        priv = d.privateKey.toWIF();
+                        if(prepend)
+                            priv = prependStr + priv;
+                    }
+                } else {
                     priv = d.privateKey.toWIF();
                     if(prepend)
                         priv = prependStr + priv;
@@ -2220,6 +2245,9 @@ function updateAddressList(){
             // Match segwit address (Bech32)
             if(type==5 && (item.type==7))
                 typeMatch = true;
+            // Match taproot address (Bech32m)
+            if(type==6 && (item.type==8))
+                typeMatch = true;            
             // Only display if we have both filter and type matches
             if(filterMatch && typeMatch){
                 cnt++;
@@ -3243,8 +3271,8 @@ function signTransaction(network, source, destination, unsignedTx, callback){
                 callback(signedTx);
         }
         // Check if any of the addresses are bech32
-        var sourceIsBech32 = isBech32(source);
-        var hasDestBech32  = destination.reduce((p, x) => p || isBech32(x), false);
+        var [sourceIsBech32, bech32SourceVersion] = isBech32(source);
+        var hasDestBech32  = destination.reduce((p, x) => p || isBech32(x)[0], false);
         var hasAnyBech32   = hasDestBech32 || sourceIsBech32;
         // Handle signing bech32 addresses
         if(hasAnyBech32){
@@ -3252,8 +3280,9 @@ function signTransaction(network, source, destination, unsignedTx, callback){
             var tx      = bitcoinjs.Transaction.fromHex(unsignedTx),
                 netName = (net=='testnet') ? 'testnet' : 'bitcoin', // bitcoinjs
                 network = bitcoinjs.networks[netName],
-                txb     = new bitcoinjs.TransactionBuilder(network),
-                keypair = bitcoinjs.ECPair.fromWIF(cwKey.getWIF(), network);
+                txb     = new bitcoinjs.Psbt(network),
+                keypair = ECPair.fromWIF(cwKey.getWIF(), network);
+                //keypair = bitcoinjs.ECPair.fromWIF(cwKey.getWIF(), network);
             // Callback to modify transaction after we get a list of UTXOs back
             var utxoCb = function(data){
                 var utxoMap = {};
@@ -3261,7 +3290,11 @@ function signTransaction(network, source, destination, unsignedTx, callback){
                     utxoMap[utxo.txid] = utxo;
                 });
                 if(sourceIsBech32){
-                    var input = bitcoinjs.payments.p2wpkh({ pubkey: keypair.publicKey, network: network });
+                    if (bech32SourceVersion == 0){//segwit
+                        var input = bitcoinjs.payments.p2wpkh({ pubkey: keypair.publicKey, network: network });
+                    } else if (bech32SourceVersion == 1){//taproot
+                        var input = bitcoinjs.payments.p2tr({ pubkey: keypair.publicKey.slice(1, 33), network: network });
+                    }
                 } else {
                     var input = bitcoinjs.payments.p2pkh({ pubkey: keypair.publicKey, network: network });
                 }
@@ -3270,13 +3303,34 @@ function signTransaction(network, source, destination, unsignedTx, callback){
                     // We get reversed tx hashes somehow after parsing
                     var txhash = tx.ins[i].hash.reverse().toString('hex');
                     var prev = utxoMap[txhash];
-                    if(prev)
-                        txb.addInput(tx.ins[i].hash.toString('hex'), prev.vout, null, input.output);
+                    if(prev){
+                        var nextInput = null
+                        if (sourceIsBech32){
+                            var witness = {script:input.output,value:prev.value}
+                            if (bech32SourceVersion == 0){ //segwit
+                                nextInput = {hash:tx.ins[i].hash.toString('hex'), index:prev.vout, witnessUtxo:witness};
+                            } else if (bech32SourceVersion == 1){ //taproot
+                                nextInput = {hash:tx.ins[i].hash.toString('hex'), index:prev.vout, witnessUtxo:witness, tapInternalKey: keypair.publicKey.slice(1,33)};
+                            }
+                        } else {
+                            var prev_tx_hex_buffer = bitcoinjs.Buffer.from(prev.prev_tx_hex,"hex")                      
+                            nextInput = {hash:tx.ins[i].hash.toString('hex'), index:prev.vout, nonWitnessUtxo:prev_tx_hex_buffer};
+                        }
+                        
+                        if (nextInput){
+                            txb.addInput(nextInput);
+                        } else {
+                            console.log("Failed to sign input: script type not implemented")
+                            return
+                        }
+                    }
                 }
                 // Handle adding outputs
                 for(var i=0; i < tx.outs.length; i++){
                     var txout = tx.outs[i];
-                    txb.addOutput(txout.script, txout.value);
+                    var outputScript = bitcoinjs.Buffer.from(txout.script.buffer.slice(txout.script.byteOffset, txout.script.byteLength + txout.script.byteOffset));
+        
+                    txb.addOutput({script:outputScript, value:txout.value});
                 }
                 // var signedHex = txb.build().toHex();
                 // console.log('signedHex before=',signedHex);                
@@ -3290,7 +3344,8 @@ function signTransaction(network, source, destination, unsignedTx, callback){
                           redeemScript =  // Future support for P2WSH
                         }*/
                         // Math.floor is less than ideal in this scenario, we need to get the raw satoshi value in the utxo map
-                        txb.sign(i, keypair, null, null, prev.value, redeemScript);
+                        //txb.sign(i, keypair, null, null, prev.value, redeemScript);
+                        txb.signInput(i, keypair);
                     } else {
                         // Throw error that we couldn't sign tx
                         console.log("Failed to sign transaction: " + "Incomplete SegWit inputs");
@@ -3300,14 +3355,15 @@ function signTransaction(network, source, destination, unsignedTx, callback){
                 var signedHex = false,
                     error     = false;
                 try {
-                    signedHex = txb.build().toHex();
+                    txb.finalizeAllInputs();    
+                    signedHex = txb.extractTransaction().toHex(); 
                 } catch(e){
                     error = e;
                 }
                 cb(error, signedHex);
             }
-            // Get list of utxo
-            getUTXOs(net, source, utxoCb);
+            // Get list of utxo with tx hex
+            getUtxosWithRawTransactions(net, source, utxoCb);
         } else {
             // Sign using bitcore
             CWBitcore.signRawTransaction(unsignedTx, cwKey, cb);
@@ -3360,6 +3416,54 @@ function getUTXOs(network, address, callback){
         if(callback)
             callback(utxos);
     });
+}
+
+// Handle getting a raw transaction for a given tx hash
+function getRawTransactions(network, hashList, callback){
+    var txs = [];
+    var data = {
+       method: "getrawtransaction_batch",
+       params: {
+            txhash_list: hashList
+        },
+        jsonrpc: "2.0",
+        id: 0
+    };
+    cpRequest(network, data, function(o){
+        if(o && o.result){
+            if(callback)
+                callback(o.result);
+        };
+    });
+}
+
+//Handle getting utxos and their respectives prevout tx hex
+function getUtxosWithRawTransactions(network, address, callback){
+    var utxosCb = function(dataUtxos){
+        //Adding hex data to the utxos
+        var rawTransactionCb = function (dataRawTransactions){
+            for (var nextUtxoIndex in dataUtxos){
+                var nextUtxo = dataUtxos[nextUtxoIndex]
+                nextUtxo["prev_tx_hex"] = dataRawTransactions[nextUtxo.txid]
+            }
+            
+            if (callback){
+                callback(dataUtxos)
+            }
+        }       
+        
+        //Preparing the list with all obtained utxos hashes
+        var hashList = []
+        for (var nextUtxoIndex in dataUtxos){
+            var nextUtxo = dataUtxos[nextUtxoIndex]
+            hashList.push(nextUtxo.txid)
+        }
+        
+        getRawTransactions(network, hashList, rawTransactionCb)
+    }
+    
+    //Obtaining utxos
+    getUTXOs(network, address, utxosCb)
 }
 
 // Handle signing a message and returning the signature
@@ -4621,8 +4725,8 @@ function displayContextMenu(event){
                 dialogViewAddress(addr);
             }
         }));
-        // Display 'View Private Key' for certain addresses (1=normal, 2=imported, 7=segwit)
-        if([1,2,7].indexOf(info.type)!=-1){
+        // Display 'View Private Key' for certain addresses (1=normal, 2=imported, 7=segwit, 8=taproot)
+        if([1,2,7,8].indexOf(info.type)!=-1){
             mnu.append(new nw.MenuItem({ 
                 label: 'View Private Key',
                 click: function(){ 
@@ -6480,9 +6584,9 @@ function checkDonate(network, source, destination, unsignedTx){
         if(typeof(destination)==='string')
             destination = [destination];
         // Check if any of the addresses are bech32
-        var sourceIsBech32 = isBech32(source),
-            destIsBech32   = destination.reduce((p, x) => p || isBech32(x), false),
-            donateisBech32 = isBech32(FW.DONATE_ADDRESS),
+        var [sourceIsBech32, sourceBech32Version] = isBech32(source),
+            destIsBech32   = destination.reduce((p, x) => p || isBech32(x)[0], false),
+            donateisBech32 = isBech32(FW.DONATE_ADDRESS)[0],
             hasAnyBech32   = sourceIsBech32 || destIsBech32 || donateisBech32;
         // Handle updating transaction
         if(hasAnyBech32){
