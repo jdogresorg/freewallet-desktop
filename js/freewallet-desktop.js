@@ -2856,6 +2856,21 @@ function cpDispenser(network, source, destination, asset, escrow_amount, give_am
     });
 }
 
+// Handle setting some 'advanced' params for counterparty API requests
+// https://docs.counterparty.io/docs/develop/api#advanced-create_-parameters
+function setAdvancedCreateParams(data){
+    var o = data.params;
+    // Allow usage of unconfirmed inputs (enables daisy-chaining pending txs)
+    o.allow_unconfirmed_inputs = true;
+    // Pass forward dust preferences in satoshis
+    if(FW.DUST_SIZE_REGULAR)
+        o.regular_dust_size = parseInt(FW.DUST_SIZE_REGULAR);
+    if(FW.DUST_SIZE_MULTISIG)
+        o.multisig_dust_size = parseInt(FW.DUST_SIZE_MULTISIG);
+    data.params = o;
+    return data;
+}
+
 // Handle sending request to counterparty servers
 function cpRequest(network, data, callback){
     var net  = (network=='testnet') ? 'testnet' : 'mainnet',
@@ -2864,6 +2879,8 @@ function cpRequest(network, data, callback){
         auth = $.base64.btoa(info.user + ':' + info.pass);
         // console.log('info=',info);
         // console.log('url=',url);
+    // Set any 'advanced' params for counterparty API requests
+    data = setAdvancedCreateParams(data);
     // Send request to server, process response
     $.ajax({
         type: "POST",
@@ -2882,6 +2899,7 @@ function cpRequest(network, data, callback){
     });
 }
 
+
 // Handle creating send transaction
 function createSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback){
     // console.log('createSend=',network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback);
@@ -2892,7 +2910,6 @@ function createSend(network, source, destination, memo, memo_is_hex, asset, quan
             destination: destination,
             asset: asset,
             quantity: parseInt(quantity),
-            allow_unconfirmed_inputs: true,
             fee: parseInt(fee)
         },
         jsonrpc: "2.0",
@@ -2921,7 +2938,6 @@ function createMultiSend(network, source, destination, memo, memo_is_hex, asset,
             memo: memo,
             memo_is_hex: memo_is_hex,
             fee: parseInt(fee),
-            allow_unconfirmed_inputs: true,
             encoding: "p2sh"
         },
         jsonrpc: "2.0",
@@ -2953,17 +2969,11 @@ function createIssuance(network, source, asset, quantity, divisible, description
             description:  (description) ? description : null,
             transfer_destination: (destination) ? destination : null,
             reset: (reset) ? true : false,            
-            fee: parseInt(fee),
-            allow_unconfirmed_inputs: true
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
     };
-    // Pass forward dust preferences in satoshis
-    if(FW.DUST_SIZE_REGULAR)
-        data.params.regular_dust_size = parseInt(FW.DUST_SIZE_REGULAR);
-    if(FW.DUST_SIZE_MULTISIG)
-        data.params.multisig_dust_size = parseInt(FW.DUST_SIZE_MULTISIG);
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
@@ -2981,8 +2991,7 @@ function createBroadcast(network, source, text, value, feed_fee, timestamp, fee,
             value: value,
             fee_fraction: feed_fee,
             timestamp: timestamp,
-            fee: parseInt(fee),
-            allow_unconfirmed_inputs: true
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3003,8 +3012,7 @@ function createDividend(network, source, asset, dividend_asset, quantity_per_uni
             asset: asset,
             dividend_asset: dividend_asset,
             quantity_per_unit: quantity_per_unit,
-            fee: parseInt(fee),
-            allow_unconfirmed_inputs: true
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3023,8 +3031,7 @@ function createCancel(network, source, tx_hash, fee, callback){
        params: {
             source: source,
             offer_hash: tx_hash,
-            fee: parseInt(fee),
-            allow_unconfirmed_inputs: true
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3050,8 +3057,7 @@ function createOrder(network, source, get_asset, give_asset, get_quantity, give_
             // Temp fix for bug in API (https://github.com/CounterpartyXCP/counterparty-lib/issues/1025)
             fee_required: 0,
             fee_provided: 0,
-            fee: parseInt(fee),
-            allow_unconfirmed_inputs: true
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3070,8 +3076,7 @@ function createBtcpay(network, source, order_match_id, fee, callback){
        params: {
             source: source,
             order_match_id: order_match_id,
-            fee: parseInt(fee),
-            allow_unconfirmed_inputs: true
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3090,8 +3095,7 @@ function createBurn(network, source, quantity, fee, callback){
        params: {
             source: source,
             quantity: parseInt(quantity),
-            fee: parseInt(fee),
-            allow_unconfirmed_inputs: true
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3112,8 +3116,7 @@ function createDestroy(network, source, asset, quantity, memo, fee, callback){
             source: source,
             asset: asset,
             quantity: parseInt(quantity),
-            fee: parseInt(fee),
-            allow_unconfirmed_inputs: true
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3136,8 +3139,7 @@ function createSweep(network, source, destination, flags, memo, fee, callback){
             destination: destination,
             flags: parseInt(flags),
             memo: memo,
-            fee: parseInt(fee),
-            allow_unconfirmed_inputs: true
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3161,8 +3163,7 @@ function createDispenser(network, source, destination, asset, escrow_amount, giv
             give_quantity: parseInt(give_amount),
             mainchainrate: parseInt(btc_amount),
             status:  parseInt(status),
-            fee: parseInt(fee),
-            allow_unconfirmed_inputs: true
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
