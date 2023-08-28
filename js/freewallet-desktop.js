@@ -156,7 +156,7 @@ FW.DONATE_TRIGGER = 25000;                            // 25,000 satoshis (amount
 FW.DONATE_TOTAL   = ls.getItem('donateTotal')   || 0; // Track total donation until we hit FW.DONATE_TRIGGER
 FW.DONATE_COUNT   = ls.getItem('donateCount')   || 0; // Track number of transactions
 FW.DONATE_STATUS  = ls.getItem('donateStatus')  || 1; // 1=enabled, 0=disabled, #=% of txs
-FW.DONATE_ADDRESS = ls.getItem('donateAddress') || '1FWDonkMbC6hL64JiysuggHnUAw2CKWszs';
+FW.DONATE_ADDRESS = ls.getItem('donateAddress') || 'bc1qd0nateja8l9am8tqpzjn9uazhf6dlp9qer2tra';
 FW.DONATE_AMOUNT  = ls.getItem('donateAmount')  || FW.DONATE_DEFAULT;
 
 // Define cache for asset divisibility
