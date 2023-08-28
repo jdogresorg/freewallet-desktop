@@ -4430,7 +4430,7 @@ function dialogWelcome(){
 }
 
 // 'License Agreement' dialog box
-function dialogLicenseAgreement(){
+function dialogLicenseAgreement(allowClose=false){
     BootstrapDialog.show({
         type: 'type-default',
         cssClass: 'dialog-license-agreement',
@@ -4444,11 +4444,15 @@ function dialogLicenseAgreement(){
             cssClass: 'btn-success', 
             hotkey: 13,
             action: function(dialog){
-                if($('#dialog-license-agreement-checkbox').is(':checked')){
-                    ls.setItem('licenseAgreementAccept',1);
+                if(allowClose){
                     dialog.close();
                 } else {
-                    $('#dialog-license-agreement-confirm').effect( "shake", { times: 3, direction: 'up' }, 1000);
+                    if($('#dialog-license-agreement-checkbox').is(':checked')){
+                        ls.setItem('licenseAgreementAccept',1);
+                        dialog.close();
+                    } else {
+                        $('#dialog-license-agreement-confirm').effect( "shake", { times: 3, direction: 'up' }, 1000);
+                    }
                 }
             }
         }]

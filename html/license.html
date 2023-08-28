@@ -34,3 +34,17 @@
     <p><b>11.3.</b> This Agreement constitutes the entire understanding and agreement between you the User and FreeWallet and the Services regarding the Services and supersedes any prior agreement, understanding, or arrangement between the same.</p>
 </div>
 <div class="checkbox" id="dialog-license-agreement-confirm"><label><input type="checkbox" id="dialog-license-agreement-checkbox"> I have <u><i><b>read and accept</b></i></u> the above License Agreement.</label></div>
+
+<script>
+$(document).ready(function(){
+    var ls = localStorage; 
+
+    if(parseInt(ls.getItem('licenseAgreementAccept'))==1){
+        var el = $('#dialog-license-agreement-checkbox');
+        el.prop( "checked", true );
+        el.prop( "disabled", true );
+    }
+
+});
+
+</script>

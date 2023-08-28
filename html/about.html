@@ -40,6 +40,7 @@ hr.spacer {
 <div class="text-right">
     <div id="btn-debug" class="btn btn-info pull-left"><i class="fa fa-lg fa-fw fa-bug"></i> Debug</div>
     <div id="btn-update" class="btn btn-primary pull-left" style="margin-left: 5px"><i class="fa fa-lg fa-fw fa-download"></i> Check for Update</div>
+    <div id="btn-license" class="btn btn-info pull-left" style="margin-left: 5px"><i class="fa fa-lg fa-fw fa-info-circle"></i> License Agreement</div>
     <!-- <div id="btn-buy" class="btn btn-success"><i class="fa fa-lg fa-fw fa-btc"></i> Buy FULLACCESS</div> -->
     <div id="btn-donate" class="btn btn-info"><i class="fa fa-lg fa-fw fa-bitcoin"></i> Donate</div>
 </div>
@@ -68,6 +69,11 @@ $(document).ready(function(){
         debug.hide();
         update.hide();
     }
+
+    // When a user clicks the License Agreement button, display the license agreement
+    $('#btn-license').click(function(){
+        dialogLicenseAgreement(true);
+    });
 
     // When a user clicks the donate now button, save bounty address and launch 'Send Funds' window
     $('#btn-donate').click($.debounce(100, function(e){
