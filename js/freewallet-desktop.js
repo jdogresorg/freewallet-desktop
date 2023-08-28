@@ -2859,15 +2859,18 @@ function cpDispenser(network, source, destination, asset, escrow_amount, give_am
 // Handle setting some 'advanced' params for counterparty API requests
 // https://docs.counterparty.io/docs/develop/api#advanced-create_-parameters
 function setAdvancedCreateParams(data){
-    var o = data.params;
-    // Allow usage of unconfirmed inputs (enables daisy-chaining pending txs)
-    o.allow_unconfirmed_inputs = true;
-    // Pass forward dust preferences in satoshis
-    if(FW.DUST_SIZE_REGULAR)
-        o.regular_dust_size = parseInt(FW.DUST_SIZE_REGULAR);
-    if(FW.DUST_SIZE_MULTISIG)
-        o.multisig_dust_size = parseInt(FW.DUST_SIZE_MULTISIG);
-    data.params = o;
+    // Only apply advanced params to 'create_' requests
+    if(data.method.indexOf('create_')!=-1){
+        var o = data.params;
+        // Allow usage of unconfirmed inputs (enables daisy-chaining pending txs)
+        o.allow_unconfirmed_inputs = true;
+        // Pass forward dust preferences in satoshis
+        if(FW.DUST_SIZE_REGULAR)
+            o.regular_dust_size = parseInt(FW.DUST_SIZE_REGULAR);
+        if(FW.DUST_SIZE_MULTISIG)
+            o.multisig_dust_size = parseInt(FW.DUST_SIZE_MULTISIG);
+        data.params = o;
+    }
     return data;
 }
 
