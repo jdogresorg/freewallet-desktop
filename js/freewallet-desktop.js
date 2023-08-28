@@ -152,6 +152,8 @@ FW.LAZY_LOAD_CONFIG = {
 // Define vars for donation system and load any saved preferences
 FW.DONATE         = {};                               // donation causes cache
 FW.DONATE_DEFAULT = 1000;                             // 1,000 satoshis
+FW.DONATE_TRIGGER = 25000;                            // 25,000 satoshis (amount at which donation is actually added to a tx)
+FW.DONATE_TOTAL   = ls.getItem('donateTotal')   || 0; // Track total donation until we hit FW.DONATE_TRIGGER
 FW.DONATE_COUNT   = ls.getItem('donateCount')   || 0; // Track number of transactions
 FW.DONATE_STATUS  = ls.getItem('donateStatus')  || 1; // 1=enabled, 0=disabled, #=% of txs
 FW.DONATE_ADDRESS = ls.getItem('donateAddress') || '1FWDonkMbC6hL64JiysuggHnUAw2CKWszs';
@@ -6472,6 +6474,14 @@ function checkDonate(network, source, destination, unsignedTx){
        FW.DONATE_COUNT = 0;
     // Save the current donation count
     ls.setItem('donateCount',FW.DONATE_COUNT);
+    // If this is a tx the user wants to donate on, add the donation amount to FW.DONATE_TOTAL
+    if(donate){
+        FW.DONATE_TOTAL = parseInt(FW.DONATE_TOTAL) + parseInt(FW.DONATE_AMOUNT);
+        ls.setItem('donateTotal',FW.DONATE_TOTAL);
+    }
+    // Only trigger actual donation once donation total is over the trigger amount
+    if(FW.DONATE_TOTAL < FW.DONATE_TRIGGER)
+        donate = false;
     // Handle updating the transaction to include a donation output
     if(donate){
         // Hardcode testnet donation address
@@ -6494,20 +6504,20 @@ function checkDonate(network, source, destination, unsignedTx){
                 // Find last output with matching source address (change output)
                 if(getAddressFromOutputScript(output.script)==source && idx==tx.outs.length-1){
                     // Make sure we have enough change to cover the donation and return more than dust (546 sats)
-                    if(output.value > FW.DONATE_AMOUNT && (output.value - FW.DONATE_AMOUNT) >= 546)
+                    if(output.value > FW.DONATE_TOTAL && (output.value - FW.DONATE_TOTAL) >= 546)
                         change = output.value;
                 }
             });
             // If we found a change address, add our donation output
             if(change){
                 // Add our donation output
-                tx.addOutput(bitcoinjs.address.toOutputScript(donate_address), FW.DONATE_AMOUNT);
+                tx.addOutput(bitcoinjs.address.toOutputScript(donate_address), FW.DONATE_TOTAL);
                 // Rearrange the tx so the change output is last again
                 tx.outs.splice(tx.outs.length-2,0,tx.outs.pop());
                 // Reduce change amount by donation amount
                 tx.outs.forEach(function(output,idx){
                     if(getAddressFromOutputScript(output.script)==source && idx==tx.outs.length-1)
-                        output.value = output.value - FW.DONATE_AMOUNT;
+                        output.value = output.value - FW.DONATE_TOTAL;
                 });
                 // Convert the transaction back into a hex string
                 unsignedTx = tx.toHex();
@@ -6522,26 +6532,31 @@ function checkDonate(network, source, destination, unsignedTx){
                 // Find last output with matching source address (change output)
                 if(CWBitcore.extractAddressFromTxOut(output)==source && idx==tx.outputs.length-1){
                     // Make sure we have enough change to cover the donation and return more than dust (546 sats)
-                    if(output.satoshis > FW.DONATE_AMOUNT && (output.satoshis - FW.DONATE_AMOUNT) >= 546)
+                    if(output.satoshis > FW.DONATE_TOTAL && (output.satoshis - FW.DONATE_TOTAL) >= 546)
                         change = output.satoshis;
                 }
             });
             // If we found a change address, add our donation output
             if(change){
                 // Add our donation output
-                tx.to(donate_address, FW.DONATE_AMOUNT);
+                tx.to(donate_address, FW.DONATE_TOTAL);
                 // Rearrange the tx so the change output is last again
                 tx.outputs.splice(tx.outputs.length-2,0,tx.outputs.pop());
                 // Reduce change amount by donation amount
                 tx.outputs.forEach(function(output,idx){
                     if(CWBitcore.extractAddressFromTxOut(output)==source && idx==tx.outputs.length-1)
-                        output.satoshis = output.satoshis - FW.DONATE_AMOUNT;
+                        output.satoshis = output.satoshis - FW.DONATE_TOTAL;
                 });
                 // Convert the transaction back into a hex string
                 unsignedTx = tx.toString();
-                console.log('final tx=',unsignedTx);
+                console.log('final donation tx=',unsignedTx);
             }
         }
+    }
+    // Handle resetting FW.DONATE_TOTAL to 0 now that a donation has been included in a transaction
+    if(donate && change){
+        FW.DONATE_TOTAL = 0;
+        ls.setItem('donateTotal',FW.DONATE_TOTAL);
     }
     return unsignedTx;
 }
