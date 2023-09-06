@@ -164,6 +164,11 @@ FW.ASSET_DIVISIBLE = {};
 FW.ASSET_DIVISIBLE['BTC'] = true;
 FW.ASSET_DIVISIBLE['XCP'] = true;
 
+//Init ecc lib for new bitcoin-lib version
+bitcoinjs.initEccLib(bitcoinjs.tiny_secp256k1) 
+ECPairFactory = bitcoinjs.ecpairfactory
+ECPair = ECPairFactory(bitcoinjs.tiny_secp256k1)
+
 // Start loading the wallet 
 $(document).ready(function(){
 
@@ -3258,8 +3263,8 @@ function signTransaction(network, source, destination, unsignedTx, callback){
             var tx      = bitcoinjs.Transaction.fromHex(unsignedTx),
                 netName = (net=='testnet') ? 'testnet' : 'bitcoin', // bitcoinjs
                 network = bitcoinjs.networks[netName],
-                txb     = new bitcoinjs.TransactionBuilder(network),
-                keypair = bitcoinjs.ECPair.fromWIF(cwKey.getWIF(), network);
+                txb     = new bitcoinjs.Psbt(network),
+                keypair = ECPair.fromWIF(cwKey.getWIF(), network);
             // Callback to modify transaction after we get a list of UTXOs back
             var utxoCb = function(data){
                 var utxoMap = {};
@@ -3276,13 +3281,30 @@ function signTransaction(network, source, destination, unsignedTx, callback){
                     // We get reversed tx hashes somehow after parsing
                     var txhash = tx.ins[i].hash.reverse().toString('hex');
                     var prev = utxoMap[txhash];
-                    if(prev)
-                        txb.addInput(tx.ins[i].hash.toString('hex'), prev.vout, null, input.output);
+                    if(prev){
+                        var nextInput = null
+                        if (sourceIsBech32){
+                            var witness = {script:input.output,value:prev.value}
+                            nextInput = {hash:tx.ins[i].hash.toString('hex'), index:prev.vout, witnessUtxo:witness};
+                        } else {
+                            var prev_tx_hex_buffer = bitcoinjs.Buffer.from(prev.prev_tx_hex,"hex")                      
+                            nextInput = {hash:tx.ins[i].hash.toString('hex'), index:prev.vout, nonWitnessUtxo:prev_tx_hex_buffer};
+                        }
+
+                        if (nextInput){
+                            txb.addInput(nextInput);
+                        } else {
+                            console.log("Failed to sign input: script type not implemented")
+                            return
+                        }
+                    }
                 }
                 // Handle adding outputs
                 for(var i=0; i < tx.outs.length; i++){
                     var txout = tx.outs[i];
-                    txb.addOutput(txout.script, txout.value);
+                    var outputScript = bitcoinjs.Buffer.from(txout.script.buffer.slice(txout.script.byteOffset, txout.script.byteLength + txout.script.byteOffset));
+
+                    txb.addOutput({script:outputScript, value:txout.value});
                 }
                 // var signedHex = txb.build().toHex();
                 // console.log('signedHex before=',signedHex);                
@@ -3296,7 +3318,7 @@ function signTransaction(network, source, destination, unsignedTx, callback){
                           redeemScript =  // Future support for P2WSH
                         }*/
                         // Math.floor is less than ideal in this scenario, we need to get the raw satoshi value in the utxo map
-                        txb.sign(i, keypair, null, null, prev.value, redeemScript);
+                        txb.signInput(i, keypair);
                     } else {
                         // Throw error that we couldn't sign tx
                         console.log("Failed to sign transaction: " + "Incomplete SegWit inputs");
@@ -3306,14 +3328,15 @@ function signTransaction(network, source, destination, unsignedTx, callback){
                 var signedHex = false,
                     error     = false;
                 try {
-                    signedHex = txb.build().toHex();
+                    txb.finalizeAllInputs();    
+                    signedHex = txb.extractTransaction().toHex();
                 } catch(e){
                     error = e;
                 }
                 cb(error, signedHex);
             }
-            // Get list of utxo
-            getUTXOs(net, source, utxoCb);
+            // Get list of utxo with tx hex
+            getUtxosWithRawTransactions(net, source, utxoCb);
         } else {
             // Sign using bitcore
             CWBitcore.signRawTransaction(unsignedTx, cwKey, cb);
@@ -3366,6 +3389,54 @@ function getUTXOs(network, address, callback){
         if(callback)
             callback(utxos);
     });
+}
+
+// Handle getting a raw transaction for a given tx hash
+function getRawTransactions(network, hashList, callback){
+    var txs = [];
+    var data = {
+       method: "getrawtransaction_batch",
+       params: {
+            txhash_list: hashList
+        },
+        jsonrpc: "2.0",
+        id: 0
+    };
+    cpRequest(network, data, function(o){
+        if(o && o.result){
+            if(callback)
+                callback(o.result);
+        };
+    });
+}
+
+//Handle getting utxos and their respectives prevout tx hex
+function getUtxosWithRawTransactions(network, address, callback){
+    var utxosCb = function(dataUtxos){
+        //Adding hex data to the utxos
+        var rawTransactionCb = function (dataRawTransactions){
+            for (var nextUtxoIndex in dataUtxos){
+                var nextUtxo = dataUtxos[nextUtxoIndex]
+                nextUtxo["prev_tx_hex"] = dataRawTransactions[nextUtxo.txid]
+            }
+
+            if (callback){
+                callback(dataUtxos)
+            }
+        }       
+
+        //Preparing the list with all obtained utxos hashes
+        var hashList = []
+        for (var nextUtxoIndex in dataUtxos){
+            var nextUtxo = dataUtxos[nextUtxoIndex]
+            hashList.push(nextUtxo.txid)
+        }
+
+        getRawTransactions(network, hashList, rawTransactionCb)
+    }
+
+    //Obtaining utxos
+    getUTXOs(network, address, utxosCb)
 }
 
 // Handle signing a message and returning the signature

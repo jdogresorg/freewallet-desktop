@@ -1,23 +1,25 @@
 /* 
  * nwjs builder script
  */
-var NwBuilder = require('nw-builder');
-var nw = new NwBuilder({
-    files: './build/**', // use the glob format
-    platforms: ['osx64', 'win32', 'win64', 'linux32', 'linux64'],
-    cacheDir: './cache',
-    buildDir: './builds/',
-    macIcns:  './build/images/FreeWallet.icns',
-    // macCredits: './build/html/credits.html'
-    // winIco: '',
-});
+import nwbuilder from 'nw-builder';
 
-// Output logs to the console
-nw.on('log',  console.log);
+async function init(){
 
-// Build returns a promise
-nw.build().then(function () {
-   console.log('all done!');
-}).catch(function (error) {
-    console.error(error);
-});
+  var nw = await nwbuilder({
+      srcDir: './build/**', // use the glob format
+      platform: "win",
+      arch: "x64",
+      cacheDir: './cache',
+      outDir: './builds/',
+      icon:  './build/images/FreeWallet.icns',
+      // macCredits: './build/html/credits.html' //no longer exists
+      // winIco: '', //no longer exists
+  });
+
+  // Output logs to the console
+  //nw.on('log',  console.log); //This event no longer exists
+
+  console.log('all done!');  
+}
+
+init()
