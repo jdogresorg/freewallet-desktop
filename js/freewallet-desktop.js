@@ -6410,17 +6410,17 @@ function confirmIssuance(title, msg, network, source, asset, quantity, divisible
             //decode the transaction
             var tx  = bitcoinjs.Transaction.fromHex(o.result),
                 btc = getAssetPrice('BTC',true),
-                fee = 0,
+                num = 0,
                 usd = 0;
             // Loop through outputs and sum up values
             tx.outs.slice(0, -1).forEach(function(out){
-                fee += out.value;
+                num += out.value;
             });
             // Confirm the action with the user
-            if(fee){
-                fee = numeral(fee * 0.00000001).format('0,0.00000000');
-                usd = numeral(fee * btc.price_usd).format('0,0.00');
-                msg += '<br><br><div class="alert alert-warning" role="alert">This will include an additional fee of ' + fee + ' BTC ($' + usd + ') <br>needed to encode the data to the Bitcoin (BTC) blockchain.</div>';
+            if(num){
+                num = numeral(num * 0.00000001).format('0,0.00000000');
+                usd = numeral(num * btc.price_usd).format('0,0.00');
+                msg += '<br><br><div class="alert alert-warning" role="alert">This will include an additional fee of ' + num + ' BTC ($' + usd + ') <br>needed to encode the data to the Bitcoin (BTC) blockchain.</div>';
             }
             dialogConfirm(title, '<center>' + msg + '</center>', false, true, function(){
                 cpIssuance(network, source, asset, quantity, divisible, description, destination, fee, reset, function(tx){
