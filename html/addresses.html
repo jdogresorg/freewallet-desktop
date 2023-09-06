@@ -6,6 +6,7 @@
             <button type="button" value="0" class="btn btn-default active" style="width:60px">All</button>
             <button type="button" value="1" class="btn btn-default">Normal</button>
             <button type="button" value="5" class="btn btn-default">Segwit</button>
+            <button type="button" value="6" class="btn btn-default">Taproot</button>
             <button type="button" value="2" class="btn btn-default">Imported</button>
             <button type="button" value="4" class="btn btn-default">Hardware</button>
             <button type="button" value="3" class="btn btn-default">Watch</button>
@@ -29,6 +30,7 @@
             <ul class="dropdown-menu">
                 <li><a href="#" id="btn-add-normal"><i class="fa fa-lg fa-plus-circle"></i> Add New Normal Address</a></li>
                 <li><a href="#" id="btn-add-segwit"><i class="fa fa-lg fa-plus-circle"></i> Add New Segwit Address</a></li>
+                <li><a href="#" id="btn-add-taproot"><i class="fa fa-lg fa-plus-circle"></i> Add New Taproot Address</a></li>
                 <li><a href="#" id="btn-import"><i class="fa fa-lg fa-key"></i> Import Private Key</a></li>
                 <li><a href="#" id="btn-hardware"><i class="fa fa-lg fa-lock"></i> Add Hardware Wallet Address</a></li>
                 <li><a href="#" id="btn-watch"><i class="fa fa-lg fa-eye"></i> Add 'Watch Only' Address</a></li>
@@ -94,6 +96,18 @@ $(document).ready(function(){
         if(dialogCheckLocked('generate a segwit address'))
             return;
         addr = addNewWalletAddress(FW.WALLET_NETWORK, 'segwit');
+        // Only display confirmation message if we have an address
+        if(addr)
+            dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> New Wallet Address', 'Address ' + addr + ' has been added to your wallet.');
+        updateAddressList();
+    }));
+
+    // Handle generating taproot addresses
+    $('#btn-add-taproot').click($.debounce(100,function(e){
+        // Make sure wallet is unlocked
+        if(dialogCheckLocked('generate a taproot address'))
+            return;
+        addr = addNewWalletAddress(FW.WALLET_NETWORK, 'taproot');
         // Only display confirmation message if we have an address
         if(addr)
             dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> New Wallet Address', 'Address ' + addr + ' has been added to your wallet.');
