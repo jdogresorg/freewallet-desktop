@@ -2361,11 +2361,16 @@ function array2Object(arr){
 // Handle extracting error message from Counterparty API response 
 function getCpErrorMessage(o, defaultMessage){
     var msg = defaultMessage;
+    // If we have responseJSON, use it
+    if(o && o.responseJSON)
+        o = o.responseJSON;
     if(o && o.error){
         if(o.error.data && o.error.data.message){
             msg = o.error.data.message;
         } else if(o.error.message){
             msg = o.error.message;
+        } else {
+            msg = o.error;
         }
     }
     return msg;
