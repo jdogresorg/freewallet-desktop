@@ -3409,18 +3409,18 @@ function broadcastTransaction(network, tx, callback){
                 if(txid)
                     console.log('Broadcasted transaction hash=',txid);
             } else {
-                // If the request to XChain API failed, fallback to chain.so API
+                // If the request to XChain API failed, fallback to blockcypher API
+                var pushtx = {
+                  tx
+                };
                 $.ajax({
                     type: "POST",
-                    url: 'https://chain.so/api/v2/send_tx/' + net,
-                    data: { 
-                        tx_hex: tx 
-                    },
-                    dataType: 'json',
+                    url: 'https://api.blockcypher.com/v1/btc/'+ (network=='testnet') ? 'test3' : 'main' +'/txs/push',
+                    data: JSON.stringify(pushtx),
                     complete: function(o){
                         // console.log('o=',o);
-                        if(o && o.responseJSON && o.responseJSON.data && o.responseJSON.data.txid){
-                            var txid = o.responseJSON.data.txid;
+                        if(o && o.responseJSON && o.responseJSON.data && o.responseJSON.data.tx && o.responseJSON.data.tx.hash){
+                            var txid = o.responseJSON.data.tx.hash;
                             if(callback)
                                 callback(txid);
                             if(txid)
