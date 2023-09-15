@@ -3402,7 +3402,7 @@ function broadcastTransaction(network, tx, callback){
         complete: function(o){
             // console.log('o=',o);
             // Handle successful broadcast
-            if(o.responseJSON.tx_hash){
+            if(o && o.responseJSON && o.responseJSON.tx_hash){
                 var txid = o.responseJSON.tx_hash;
                 if(callback)
                     callback(txid);
@@ -3410,17 +3410,16 @@ function broadcastTransaction(network, tx, callback){
                     console.log('Broadcasted transaction hash=',txid);
             } else {
                 // If the request to XChain API failed, fallback to blockcypher API
-                var pushtx = {
-                  tx
-                };
+                var net = (network=='testnet') ? 'test3' : 'main',
+                    url  = 'https://api.blockcypher.com/v1/btc/'+ net +'/txs/push';
                 $.ajax({
                     type: "POST",
-                    url: 'https://api.blockcypher.com/v1/btc/'+ (network=='testnet') ? 'test3' : 'main' +'/txs/push',
-                    data: JSON.stringify(pushtx),
+                    url: url,
+                    data: JSON.stringify({ tx }),
                     complete: function(o){
-                        // console.log('o=',o);
-                        if(o && o.responseJSON && o.responseJSON.data && o.responseJSON.data.tx && o.responseJSON.data.tx.hash){
-                            var txid = o.responseJSON.data.tx.hash;
+                        // Handle successful broadcast
+                        if(o && o.responseJSON && o.responseJSON.tx && o.responseJSON.tx.hash){
+                            var txid = o.responseJSON.tx.hash;
                             if(callback)
                                 callback(txid);
                             if(txid)
