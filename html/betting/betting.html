@@ -2,10 +2,10 @@
     <div class="panel panel-default">
         <!-- Betting Information -->
         <div class="panel-heading">
-            <i class="fa fa-lg fa-exchange"></i> Decentralized Exchange (DEX) Bounty
+            <i class="fa fa-lg fa-bullseye"></i> Decentralized Betting Bounty
         </div>
         <div class="panel-body">
-            <div class="panel panel-default pull-right" style="width: 250px;margin-left: 10px"">
+            <div class="panel panel-default pull-right" style="width: 250px;margin-left: 10px">
                 <!-- Betting Information -->
                 <div class="panel-heading">
                     <i class="fa fa-lg fa-bitcoin"></i> Bounty Information
@@ -13,37 +13,41 @@
                 <div class="panel-body text-center" style="background-color: #d9edf7">
                     <div id="bounty-amount">0 XCP</div>
                     <div id="bounty-funded">0.00% Funded (0 XCP)</div>
-                    <div class="progress margin-bottom-5">
+                    <div class="progress margin-bottom-5"">
                         <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;" id="bounty-progressbar">
                         </div>
                     </div>            
-                    <a href="#" class="btn btn-block btn-success" id="donate-now">Donate Now</a>
-                    <a href="#" class="btn btn-block btn-info"    id="access-now">Get Access Now</a>
+                    <a href="#" class="btn btn-block btn-success margin-bottom-5" id="donate-now">Donate Now</a>
                 </div>
             </div>
-            <p>Counterparty has a Decentralized EXchange (DEX) built into the protocol which enables peer-to-peer trading of BTC, XCP, or any Counterparty asset. All buy and sell orders are automatically escrowed in the Bitcoin blockchain until they are completed, which means your funds are never at risk of being lost or stolen. </p>
-            <p>The FreeWallet team has built an <b><i>integrated exchange interface</i></b> with the following features :</p>
+            <p>Counterparty has a robust <a href="https://counterparty.io/docs/protocol_specification/#bet">decentralized betting system</a> built into the protocol with the following features :</p>
             <ul>
-                <li>Easy-to-use interface which will be familiar to many traders</li>
-                <li>Automatic signing of BTCpay transactions when order matches are detected </li>
-                <li>Markets interface to allow browsing of exchange markets</li>
-                <li>Charts to help visualize market information (Line, Open/High/Low/Close, Market Depth)</li>
-                <li>Over 20 technical indicators (Stochastic, MACD, MFI, EMA, SMA, etc.)</li>
-                <li>Asset reputation ratings via the <a href="https://reputation.coindaddy.io" target="_blank">CoinDaddy Reputation Service</a></li>
+                <li>Allows anyone to operate an oracle and broadcast event information to the blockchain</li>
+                <li>Oracle operators are able to earn a percentage (%) of any bets placed with them</li>
+                <li>Bet funds are escrowed and paid out by the protocol (No risk of stolen funds)</li>
             </ul>
-            <p class="text-justify">These features will be made available to all wallet users at no cost after the development bounty is fully funded. If you would like immediate access to these features please click the 'Get Access Now' button.</p>
-            <p class="text-justify">Users who hold <a href="https://xchain.io/asset/FULLACCESS" target="_blank"><b>FULLACCESS</b></a> or <a href="https://xchain.io/asset/XCHAINPEPE" target="_blank"><b>XCHAINPEPE</b></a> tokens will have immediate access to all the features listed above.</p>
+            <p>The FreeWallet team would like to add support for a <b><i>integrated betting interface</i></b> with the following features :</p>
+            <ul>
+                <li>Simple interface that allows anyone to setup and operate an oracle/feed</li>
+                <li>'Oracle &amp; Feed Directories' to allow browsing of oracles, feeds, and events that can be bet upon</li>
+                <li>Simple interface that allows anyone to place a bet on an oracle/feed</li>
+                <li>Bet history interface which shows betting history, results, and allows exporting bet data</li>
+            </ul>
+            <p class="text-justify">These features will be made available to all wallet users at no cost after the development bounty is fully funded.</p>
+            <p class="text-justify">Users who hold <a href="https://xchain.io/asset/FULLACCESS" target="_blank"><b>FULLACCESS</b></a> or <a href="https://xchain.io/asset/XCHAINPEPE" target="_blank"><b>XCHAINPEPE</b></a> tokens will have immediate access to all the features listed above after the betting interface is completed.</p>
             <p><b>Bounty Address</b> : <span id="bounty-address"></span></p>
         </div>
     </div>
 </div>
 
+
+
 <script>
 $(document).ready(function(){
 
     // Define information about this bounty;
-    var address = '1FWDEXhxWcxtrbqnGhLoKofLwKs7aSbREj',
-        bounty  = 1500,
+    var address = '1FWBetKxYBmMDszTAkyK1VYC6gLxznzjMG',
+        bounty  = 3000,
         balance = 0,
         percent = 0;
 
@@ -74,12 +78,6 @@ $(document).ready(function(){
         };
         dialogSend();
     }));
-
-    // Display the "Get Access Now" dialog interface so users can purchase an access token
-    $('#access-now').click($.debounce(100, function(e){
-        dialogBuyAccess();
-    }));
-
 });
 </script>
 

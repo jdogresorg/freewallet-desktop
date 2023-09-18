@@ -248,10 +248,13 @@ function checkWalletUpgrade(version, message){
 function loadPage(page){
     var html = page + '.html';
     // Handle mapping pages to correct content
-    if(page=='betting')     html = 'betting.html';
+    if(page=='betting'){
+        // html = (checkTokenAccess()) ? 'betting/index.html' : 'betting/betting.html';
+        html = 'betting/betting.html';
+    }
+    if(page=='dispensers')  html = 'dispensers/index.html';
     if(page=='exchange')    html = 'exchange/markets.html';
     if(page=='market')      html = 'exchange/market.html';
-    if(page=='dispensers')  html = 'dispensers/index.html';
     // Load the page content and switch the tab to active
     $('#main-content-panel').load('html/' + html);
     $('.header .navbar-nav li > a').removeClass('active');
@@ -3635,7 +3638,7 @@ function dialogChangeAddress(){
         cssClass: 'dialog-change-address',
         closeByBackdrop: false,
         title: '<i class="fa fa-lg fa-fw fa-bitcoin"></i> Change Wallet Address',
-        message: $('<div></div>').load('html/addresses.html'),
+        message: $('<div></div>').load('html/address/change.html'),
     });
 }
 
@@ -3954,7 +3957,7 @@ function dialogImportHardwareAddress(){
         id: 'dialog-import-hardware-address',
         closeByBackdrop: false,
         title: '<i class="fa fa-fw fa-lock"></i> Choose your Hardware wallet',
-        message: $('<div></div>').load('html/hardware-wallet.html'),
+        message: $('<div></div>').load('html/address/import-hardware-wallet.html'),
     });
 }
 
@@ -4103,7 +4106,7 @@ function dialogOrder(){
         id: 'dialog-create-order',
         closeByBackdrop: false,
         title: '<i class="fa fa-fw fa-exclamation-circle"></i> Confirm ' + '<span class="order-type"></span>' + ' Order?',
-        message: $('<div></div>').load('html/order.html'),
+        message: $('<div></div>').load('html/exchange/order.html'),
     });
 }
 
@@ -4117,7 +4120,7 @@ function dialogSignMessage(){
         id: 'dialog-sign-message',
         closeByBackdrop: false,
         title: '<i class="fa fa-fw fa-envelope"></i> Sign Message',
-        message: $('<div></div>').load('html/sign-message.html'),
+        message: $('<div></div>').load('html/sign/message.html'),
     });
 }
 
@@ -4131,7 +4134,7 @@ function dialogSignTransaction(){
         id: 'dialog-sign-transaction',
         closeByBackdrop: false,
         title: '<i class="fa fa-fw fa-file-text"></i> Sign Transaction',
-        message: $('<div></div>').load('html/sign-transaction.html'),
+        message: $('<div></div>').load('html/sign/transaction.html'),
     });
 }
 
@@ -4173,7 +4176,7 @@ function dialogDispenser(){
         id: 'dialog-dispenser',
         closeByBackdrop: false,
         title: '<i class="fa fa-fw fa-arrows-h"></i> Create Dispenser',
-        message: $('<div></div>').load('html/dispenser.html'),
+        message: $('<div></div>').load('html/dispensers/dispenser.html'),
     });
 }
 // 'Dispenser Buy' dialog box
@@ -4186,7 +4189,7 @@ function dialogDispenserBuy(){
         id: 'dialog-dispenser-buy',
         closeByBackdrop: false,
         title: '<i class="fa fa-fw fa-btc"></i> Buy ' + FW.DIALOG_DATA.name,
-        message: $('<div></div>').load('html/dispensers/dispenser-buy.html'),
+        message: $('<div></div>').load('html/dispensers/buy.html'),
     });
 }
 
@@ -4200,7 +4203,7 @@ function dialogSweep(){
         id: 'dialog-sweep',
         closeByBackdrop: false,
         title: '<i class="fa fa-fw fa-truck"></i> Sweep Address',
-        message: $('<div></div>').load('html/sweep.html'),
+        message: $('<div></div>').load('html/address/sweep.html'),
     });
 }
 
@@ -4216,7 +4219,7 @@ function dialogBTCpay(closable=true){
         closable: closable,
         closeByBackdrop: false,
         title: '<i class="fa fa-fw fa-bitcoin"></i> Confirm BTCpay?',
-        message: $('<div></div>').load('html/btcpay.html')
+        message: $('<div></div>').load('html/exchange/btcpay.html')
     });
 }
 
@@ -4245,7 +4248,7 @@ function dialogCancelOrder(){
         id: 'dialog-cancel-order',
         closeByBackdrop: false,
         title: '<i class="fa fa-fw fa-ban"></i> Confirm Cancel Order?',
-        message: $('<div></div>').load('html/cancel-order.html')
+        message: $('<div></div>').load('html/exchange/cancel.html')
     });
 }
 
@@ -4259,7 +4262,7 @@ function dialogCloseDispenser(){
         id: 'dialog-close-dispenser',
         closeByBackdrop: false,
         title: '<i class="fa fa-fw fa-close"></i> Confirm Close Dispenser?',
-        message: $('<div></div>').load('html/dispenser-close.html')
+        message: $('<div></div>').load('html/dispensers/close.html')
     });
 }
 
