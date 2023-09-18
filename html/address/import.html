@@ -1,0 +1,62 @@
+<form class="form-horizontal" id="import-privkey-form" data-toggle="validator" role="form">
+    <p>Please enter any unencrypted private keys below and click 'Import'</p>
+    <textarea class="btc-wallet-blackbox text-left form-control" id="importPrivateKey" name="privateKeys" autocomplete="off" rows="8" placeholder="Private Keys - One Per Line"></textarea>
+
+    <div class="action-buttons pull-right">
+        <div id="btn-ok" class="btn btn-ok btn-success pull-right margin-left-5"><i class="fa fa-lg fa-fw fa-thumbs-up"></i> Import</div>
+        <div id="btn-cancel" class="btn btn-ok btn-danger pull-right margin-left-5"><i class="fa fa-lg fa-fw fa-thumbs-down"></i> Cancel</div>
+    </div>
+    <div class="clear-both"></div>
+</form>
+
+<script>
+$(document).ready(function(){
+
+    // Focus the input field
+    $('#importPrivateKey').focus();
+
+    // Submit form when user click 'Add New Addresses' button
+    $('#btn-ok').click($.debounce(100,function(e){
+        $('#import-privkey-form').submit();
+    }));
+
+    // Submit form when user click 'Add New Addresses' button
+    $('#btn-cancel').click($.debounce(100,function(e){
+        dialogClose('dialog-import-privkey');
+    }));
+
+    // Handle form validation and displaying any errors
+    $('#import-privkey-form').validator().on('submit', function(e){
+        // prevent form submission
+        e.preventDefault(); 
+        // Get object with form values
+        var vals   = array2Object($(this).serializeArray()),
+            errors = [];
+        console.log('vals=',vals);
+        // Remove error indicators from any fields 
+        $('.form-group').removeClass('has-error has-danger');
+        // Verify at least one item on watchlist
+        if(vals.privateKeys==''){
+            errors.push('You must enter at least one private key!');
+            $('#importPrivateKey').addClass('has-error has-danger');
+        }
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+        } else {
+            var keys = String(vals.privateKeys).split("\n"),
+                bad   = 0;
+            keys.forEach(function(key){
+                key  = String(key).trim();
+                addr = addWalletPrivkey(key);
+                if(!addr)
+                    bad++;
+            });
+            // Display status message to users
+            dialogClose('dialog-import-privkey');
+            dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Private Keys Imported', 'Added ' + (keys.length - bad) + ' private keys to your wallet and ignored ' + bad + ' invalid private keys');
+        }
+    });
+
+});
+</script>

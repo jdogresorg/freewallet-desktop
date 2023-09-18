@@ -375,19 +375,13 @@ function createWallet( passphrase, isBip39=false ){
     // Add the first 10 addresses to the wallet (both mainnet and testnet)
     var networks = ['mainnet','testnet'];
     networks.forEach(function(net){
-        var network = bc.Networks[net],
-            netname = (net=='testnet') ? 'testnet' : 'bitcoin';
-        var s = bc.HDPrivateKey.fromSeed(wallet, network);
         for(var i=0;i<10;i++){
-            var d = s.derive("m/0'/0/" + i),
-                a = bc.Address(d.publicKey, network).toString();
-                b = bitcoinjs.payments.p2wpkh({ pubkey: d.publicKey.toBuffer(), network: bitcoinjs.networks[netname] }).address;
-            addWalletAddress(net, a, 'Address #' + (i + 1), 1, i);
-            addWalletAddress(net, b, 'Segwit Address #' + (i + 1), 7, i);
+            addNewWalletAddress(net, 'normal');
+            addNewWalletAddress(net, 'bech32');
         }
     });
     // Set current address to first address in wallet
-    // This also handles saving TBE.WALLET_ADDRESSES to disk
+    // This also handles saving FW.WALLET_ADDRESSES to disk
     setWalletAddress(getWalletAddress(0), true);
 }
 
@@ -397,8 +391,18 @@ function addNewWalletAddress(net=1, type='normal'){
     var ls   = localStorage;
     net      = (net=='testnet' || net==2) ? 2 : 1;
     network  = (net==2) ? 'testnet' : 'mainnet',
-    addrtype = (type=='segwit') ? 7 : 1; 
+    addrtype = 1, // 1=Normal, 7=Bech32, 8=Taproot
     address  = false;
+    // Normalize types
+    if(type=='p2pkh')
+        type = 'normal';
+    if(type=='segwit')
+        type = 'bech32';
+    // Set the address type
+    if(type=='bech32')
+        addrtype = 7;
+    if(type=='taproot')
+        addrtype = 8;
     // Lookup the highest indexed address so far
     var idx = 0;
     FW.WALLET_ADDRESSES.forEach(function(item){
@@ -411,13 +415,20 @@ function addNewWalletAddress(net=1, type='normal'){
         n = bc.Networks[network],
         s = bc.HDPrivateKey.fromSeed(w, n),
         d = s.derive("m/0'/0/" + idx);
-    address = bc.Address(d.publicKey, n).toString();
-    label   = 'Address #' + (idx + 1);
-    // Support generating Segwit Addresses (Bech32)
-    if(type=='segwit'){
+    label = 'Address #' + idx;
+    // Support generating Normal Addresses (P2PKH)
+    if(type=='normal')
+        address = bc.Address(d.publicKey, n).toString();
+    // Support generating Bech32 Addresses (Segwit)
+    if(type=='bech32'){
         var netname = (net==2) ? 'testnet' : 'bitcoin';
         var address = bitcoinjs.payments.p2wpkh({ pubkey: d.publicKey.toBuffer(), network: bitcoinjs.networks[netname] }).address;
         label = 'Segwit ' + label;
+    }
+    // Support generating Taproot Addresses (Segwit)
+    if(type=='taproot'){
+        // Coming soon
+        label = 'Taproot ' + label;
     }
     // Add the address to the wallet
     addWalletAddress(network, address, label, addrtype, idx);
@@ -529,10 +540,12 @@ function setWalletAddress( address, load=0 ){
     if(!info)
         info = addWalletAddress(address);
     // Save the label info to disk
-    FW.WALLET_ADDRESS_LABEL = info.label;
+    if(info){
+        FW.WALLET_ADDRESS_LABEL = info.label;
+        ls.setItem('walletAddressLabel', FW.WALLET_ADDRESS_LABEL);
+    }
     // Save updated information to disk
     ls.setItem('walletAddress', address);
-    ls.setItem('walletAddressLabel', info.label);
     ls.setItem('walletAddresses', JSON.stringify(FW.WALLET_ADDRESSES));
     // Update the wallet display to reflect the new address
     updateWalletOptions();
@@ -561,7 +574,7 @@ function addWalletAddress( network=1, address='', label='', type=1, index='', pa
         address: address, // Address to add
         network: network, // Default to mainnet (1=mainnet, 2=testnet)
         label: label,     // Default to blank label
-        type: type,       // 1=indexed, 2=imported (privkey), 3=watch-only, 4=trezor, 5=ledger, 6=keepkey, 7=segwit
+        type: type,       // 1=indexed, 2=imported (privkey), 3=watch-only, 4=trezor, 5=ledger, 6=keepkey, 7=bech32, 8=taproot
         path: path,       // node path for address (ex: m/44'/0'/0)
         index: index      // wallet address index (used in address sorting)
     };
@@ -587,7 +600,7 @@ function removeWalletAddress( address ){
     encryptWallet(getWalletPassword(), true);
 }
 
-// Handle returning the information from TBE.WALLET_ADDRESSES for a given address
+// Handle returning the information from FW.WALLET_ADDRESSES for a given address
 function getWalletAddressInfo( address ){
     var info = false;
     FW.WALLET_ADDRESSES.forEach(function(item){
@@ -3787,116 +3800,17 @@ function dialogNewPassphrase(){
     });
 }
 
-// 'Import Private Key' dialog box
+// 'Import Private Keys' dialog box
 function dialogImportPrivateKey(){
     BootstrapDialog.show({
         type: 'type-default',
+        id: 'dialog-import-privkey',
         closeByBackdrop: false,
-        title: '<i class="fa fa-lg fa-fw fa-upload"></i> Import Private Key',
-        message: function(dialog){
-            var msg = $('<div class="center"></div>');
-            msg.append('<p>Please enter your unencrypted private key and click \'Ok\'</p>');
-            msg.append('<input type="text" class="btc-wallet-blackbox" id="importPrivateKey" autocomplete="off">');
-            return msg;
-        },
-        onshown: function(dialog){
-            $('#importPrivateKey').focus();
-        },
-        buttons:[{
-            label: 'Cancel',
-            icon: 'fa fa-lg fa-fw fa-thumbs-down',       
-            cssClass: 'btn-danger', 
-            action: function(dialog){
-                dialog.close();
-            }
-        },{
-            label: 'Ok',
-            icon: 'fa fa-lg fa-fw fa-thumbs-up',       
-            cssClass: 'btn-success', 
-            hotkey: 13,
-            action: function(dialog){
-                var val  = $('#importPrivateKey').val().trim();
-                    addr = addWalletPrivkey(val);
-                if(addr){
-                    dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Private Key Imported', 'Address ' + addr + ' has been added to your wallet.');
-                    dialog.close();
-                    updateAddressList();
-                } else {
-                    dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Error', 'Unable to import the private key you have provided!');
-                }
-            }
-        }]
+        title: '<i class="fa fa-lg fa-fw fa-key"></i> Import Private Keys',
+        message: $('<div></div>').load('html/address/import.html')
     });
 }
 
-// 'Import Watch-Only' dialog box
-function dialogImportWatchAddress(){
-    BootstrapDialog.show({
-        type: 'type-default',
-        closeByBackdrop: false,
-        title: '<i class="fa fa-lg fa-fw fa-eye"></i> Add Watch-Only Address',
-        message: function(dialog){
-            var msg = $('<div class="center"></div>');
-            msg.append('<p>Please enter the address you would like to add and click \'Ok\'</p>');
-            msg.append('<input type="text" class="btc-wallet-blackbox" id="importWatchOnlyAddress">');
-            return msg;
-        },
-        onshown: function(dialog){
-            $('#importWatchOnlyAddress').focus();
-        },
-        buttons:[{
-            label: 'Cancel',
-            icon: 'fa fa-lg fa-fw fa-thumbs-down',       
-            cssClass: 'btn-danger', 
-            action: function(dialog){
-                dialog.close();
-            }
-        },{
-            label: 'Ok',
-            icon: 'fa fa-lg fa-fw fa-thumbs-up',       
-            cssClass: 'btn-success', 
-            hotkey: 13,
-            action: function(dialog){
-                var address = $('#importWatchOnlyAddress').val(),
-                    network = 'mainnet',
-                    valid   = false;
-                // Check if the address is valid on mainnet
-                NETWORK  = bc.Networks[network];
-                if(CWBitcore.isValidAddress(address))
-                    valid = true;
-                // Check if address is valid on testnet
-                if(!valid){
-                    network = 'testnet';
-                    NETWORK = bc.Networks[network];
-                    if(CWBitcore.isValidAddress(address))
-                        valid = true;
-                }
-                if(valid){
-                    var cnt   = 0,
-                        found = false;
-                    FW.WALLET_ADDRESSES.forEach(function(item){
-                        if(item.address==address)
-                            found = true;
-                        if(item.type==3)
-                            cnt++;
-                    });
-                    // Only add address if it does not exist in the wallet
-                    if(!found){
-                        addWalletAddress(network, address, 'Watch-Only Address #' + (cnt + 1), 3, null);
-                        // Save wallet addresses info to disk
-                        ls.setItem('walletAddresses', JSON.stringify(FW.WALLET_ADDRESSES));
-                    }
-                    // Display success message to users
-                    dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Watch-Only Address Added', 'Address ' + address + ' has been added to your wallet.');
-                    updateAddressList();
-                    dialog.close();
-                } else {
-                    dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Error', 'Invalid Address! Please enter a valid address!');
-                }
-            }
-        }]
-    });
-}
 
 // 'New Version Available' dialog box
 function dialogUpdateAvailable(version){
@@ -3960,6 +3874,18 @@ function dialogImportHardwareAddress(){
         message: $('<div></div>').load('html/address/import-hardware-wallet.html'),
     });
 }
+
+// 'Add New Address' dialog box
+function dialogAddAddress(){
+    BootstrapDialog.show({
+        type: 'type-default',
+        id: 'dialog-add-new-address',
+        closeByBackdrop: false,
+        title: '<i class="fa fa-fw fa-plus-circle"></i> Add New Address',
+        message: $('<div></div>').load('html/address/add.html'),
+    });
+}
+
 
 // Function to handle checking if the wallet is unlocked and displaying an error, and return false if 
 function dialogCheckLocked(action, callback){

@@ -1,0 +1,205 @@
+<form class="form-horizontal" id="add-address-form" data-toggle="validator" role="form">
+    <!-- Address Type -->
+    <div class="form-group">
+        <label for="addressType" class="col-sm-3 control-label text-left">
+            Address Type
+            <a href="#" data-toggle="tooltip" title='This is the type of address you would like to add' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <select class="form-control" name="addressType" id="addressType">
+                <option value="p2pkh" selected>P2PKH (Normal) - begins with 1</option>
+                <!-- <option value="p2sh" disabled>P2SH (multisig) - begins with 3</option> -->
+                <option value="bech32">Bech32 (Segwit) - begins with bc1q</option>
+                <option value="taproot" disabled>Taproot (Segwit) - begins with bc1p</option>
+                <option value="watch">Watch-Only</option>
+                <option value="hardware">Hardware Wallet - Trezor, Ledger, KeepKey</option>
+            </select>
+        </div>
+    </div>
+    <!-- Address Count -->
+    <div class="form-group" id="addressCountWrapper">
+        <label for="addressCount" class="col-sm-3 control-label text-left">
+            # Addresses
+            <a href="#" data-toggle="tooltip" title='This is the number of addresses to add' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <input type="number" class="form-control" id="addressCount" name="addressCount" placeholder="# Addresses" min=1 max=100 value=1>
+        </div>
+    </div>
+    <!-- Watch-Only Address List -->
+    <div class="form-group" id="watchAddressesWrapper" style="display:none;">
+        <label for="watchAddresses" class="col-sm-3 control-label text-left">
+            Address List
+            <a href="#" data-toggle="tooltip" title='This is a list of the addresses you would like to add' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+        </label>
+        <div class="col-sm-9">
+            <textarea type="number" class="form-control" id="watchAddresses" name="watchAddresses" placeholder="Watch Addresses - One Per Line" rows="5"></textarea>
+        </div>
+    </div>
+    <!-- Hardware wallet options -->
+    <div class="row" id="hardwareWalletWrapper" style="display:none;">
+        <div class="col-sm-4">
+            <img src="images/trezor.jpg" class="img-responsive hardware-logo" alt="Trezor">
+            <a id="btn-trezor" class="btn btn-block btn-success">Choose</a>
+        </div>
+        <div class="col-sm-4">
+            <img src="images/ledger.jpg" class="img-responsive hardware-logo" alt="Keepkey">
+            <a id="btn-ledger" class="btn btn-block btn-success">Choose</a>
+        </div>
+        <div class="col-sm-4">
+            <img src="images/keepkey.jpg" class="img-responsive hardware-logo" alt="Keepkey">
+            <a id="btn-keepkey" class="btn btn-block btn-success">Choose</a>
+        </div>
+    </div>
+    <div id="btn-submit" class="btn btn-success w-100"><i class="fa fa-lg fa-fw fa-thumbs-up"></i> Add New Addresses</div>
+</form>
+
+<script>
+// Simple function to notify users that they are being taken to an external URL to import addresses
+function displayConfirmation(url){
+    // Display message 
+    dialogConfirm('Import Hardware wallet addresses', 'You will now be taken to freewallet.io to import addresses from your hardware device.', false, false, function(confirm){
+        if(confirm){
+            console.log('sending user to url:', url);
+            // Close all open dialog boxes
+            dialogClose();
+            // Open external window to sign the transaction
+            if(is_nwjs()){
+                var nw   = require('nw.gui');
+                nw.Shell.openExternal(url);
+            } else {
+                window.open(url,'_blank');
+            }
+        } else {
+            dialogAddAddress();
+        }
+    }, true);
+}
+
+$(document).ready(function(){
+
+    // Determine which network we are on
+    var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
+
+    // Setup aliases for the various form fields
+    var watch = $('#watchAddressesWrapper'),
+        count = $('#addressCountWrapper'),
+        hard  = $('#hardwareWalletWrapper'),
+        submit = $('#btn-submit');
+
+    $('#addressType').change(function(){
+        var val = $(this).val();
+        // Display textarea for entering watch-only addresses
+        if(val=='watch'){
+            watch.show();
+            count.hide();
+            hard.hide();
+            submit.show();
+        // Display hardware wallet list for hardware wallets
+        } else if(val=='hardware'){
+            watch.hide();
+            count.hide();
+            hard.show();
+            submit.hide();
+        // Display address count field
+        } else {
+            watch.hide();
+            count.show();
+            hard.hide();
+            submit.show();
+        }
+    });
+
+    // Submit form when user click 'Add New Addresses' button
+    $('#btn-submit').click($.debounce(100,function(e){
+        $('#add-address-form').submit()
+    }));
+
+    // Handle form validation and displaying any errors
+    $('#add-address-form').validator().on('submit', function(e){
+        // prevent form submission
+        e.preventDefault(); 
+        // Get object with form values
+        var vals   = array2Object($(this).serializeArray()),
+            errors = [];
+        console.log('vals=',vals);
+        // Remove error indicators from any fields 
+        $('.form-group').removeClass('has-error has-danger');
+        // Verify at least one item on watchlist
+        if(vals.addressType=='watch' && vals.watchAddresses==''){
+            errors.push('You must enter at least one address!');
+            $('#watchAddresses').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Verify max quantity of 100
+        if(vals.addressCount<=0 || vals.addressCount>100){
+            errors.push('Number of addresses must be between 1-100!');
+            $('#addressCount').closest('.form-group').addClass('has-error has-danger');
+
+        }
+
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+        } else {
+            var type = vals.addressType;
+
+            // Handle adding any watchlist addresses
+            if(type=='watch'){
+                var addrs = String(vals.watchAddresses).split("\n"),
+                    bad   = 0;
+                addrs.forEach(function(addr){
+                    addr = String(addr).trim();
+                    // Check if the address is valid
+                    if(isValidAddress(addr)){
+                        var cnt   = 0,
+                            found = false;
+                        FW.WALLET_ADDRESSES.forEach(function(item){
+                            if(item.address==addr)
+                                found = true;
+                            if(item.type==3)
+                                cnt++;
+                        });
+                        // Only add address if it does not exist in the wallet
+                        if(!found)
+                            addWalletAddress(network, addr, 'Watch-Only Address #' + (cnt + 1), 3, null);
+                    } else {
+                        bad++;
+                    }
+                });
+                // Display status message to users
+                dialogClose('dialog-add-new-address');
+                dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Watch-Only Address Added', 'Added ' + (addrs.length - bad) + ' addresses to your wallet and ignored ' + bad + ' invalid addresses');
+            }
+
+            // Handle Adding the desired number of addresses
+            if(['p2pkh','bech32','taproot'].indexOf(type)!=-1){
+                // Loop, adding addresses to wallet, until we hit desired amount
+                for(var i=0;i<vals.addressCount;i++)
+                    addNewWalletAddress(network, type);
+                // Display status message to users
+                dialogClose('dialog-add-new-address');
+                dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> New Addresses Added',  vals.addressCount + ' new addresses have been added to your wallet.');
+            }
+        }
+    });
+
+    // Trezor
+    $('#btn-trezor').click(function(){
+        dialogClose('dialog-add-new-address');
+        displayConfirmation('https://freewallet.io/hardware/trezor/import.html?network=' + network );
+
+    });
+
+    // Ledger
+    $('#btn-ledger').click(function(){
+        dialogComingSoon();
+    });
+
+    // Keepkey
+    $('#btn-keepkey').click(function(){
+        dialogComingSoon();
+    });
+
+
+});
+</script>

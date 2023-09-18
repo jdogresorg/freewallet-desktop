@@ -71,8 +71,10 @@
                         <ul class="dropdown-menu" role="menu">
                             <div class="dropdown-menu-header">Address Actions</div>
                             <li><a href="#" id="action-change-address"><i class="fa fa-lg fa-edit"></i> Change Address</a></li>
-                            <li><a href="#" id="action-view-address"><i class="fa fa-lg fa-qrcode"></i> View Address</a></li>
+                            <li><a href="#" id="action-add-address"><i class="fa fa-lg fa-plus-circle"></i> Add New Address</a></li>
+                            <li><a href="#" id="action-import-privkey"><i class="fa fa-lg fa-key"></i> Import Private Keys</a></li>
                             <li><a href="#" id="action-sweep"><i class="fa fa-lg fa-truck"></i> Sweep Address</a></li>
+                            <li><a href="#" id="action-view-address"><i class="fa fa-lg fa-qrcode"></i> View Address</a></li>
                             <li><a href="#" id="action-view-privkey"><i class="fa fa-lg fa-user-secret"></i> View Private Key</a></li>
                         </ul>
                     </li>
@@ -242,8 +244,10 @@
 
             // Handle clicks on items in the action menu
             $('#action-change-address').click($.debounce(100,function(e){       dialogChangeAddress();      }));
+            $('#action-add-address').click($.debounce(100,function(e){          dialogAddAddress();         }));
             $('#action-view-address').click($.debounce(100,function(e){         dialogViewAddress();        }));
             $('#action-sweep').click($.debounce(100,function(e){                dialogSweep();              }));
+            $('#action-import-privkey').click($.debounce(100,function(e){       dialogImportPrivateKey();   }));
             $('#action-view-privkey').click($.debounce(100,function(e){         dialogViewPrivateKey();     }));
             $('#action-send').click($.debounce(100,function(e){                 dialogSend();               }));
             $('#action-asset-create').click($.debounce(100,function(e){         dialogCreateToken();        }));
@@ -262,6 +266,7 @@
             $('#action-dispenser').click($.debounce(100,function(e){            dialogDispenser();          }));
             $('#action-cancel-order').click($.debounce(100,function(e){         dialogCancelOrder();        }));
             $('#action-close-dispenser').click($.debounce(100,function(e){      dialogCloseDispenser();     }));
+
 
             // Detect when running in nwjs and setup some additional listeners
             if(is_nwjs()){

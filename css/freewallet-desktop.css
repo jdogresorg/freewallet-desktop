@@ -660,7 +660,7 @@ li.history-list-received .history-list-amount {
 
 /* Address List CSS */
 .address-list {
-    height: 230px;
+    height: 330px;
     margin-top: 10px;
     border: 1px solid #e5e5e5;
     overflow-x: hidden;
@@ -671,7 +671,7 @@ li.history-list-received .history-list-amount {
 }
 .address-list-search {
     margin-top: 10px;
-    width: 145px;
+    width: 270px;
 }
 .address-list li {
     position: relative;
@@ -1274,4 +1274,18 @@ a.red:hover {
 }
 .border-bottom-0 {
     border-bottom: 0px !important;
+}
+.w-100 {
+    width: 100%;
+}
+.text-left {
+    text-align: left !important;
+}
+
+.import-privkey {
+    padding: 10px;
+    margin: 0px auto 10px auto;
+    text-align: left;
+    width: 100%;
+    border: 1px solid !important;
 }

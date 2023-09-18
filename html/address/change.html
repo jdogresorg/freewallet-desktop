@@ -1,9 +1,8 @@
 <div class="center">
-    <p>Please select an address from the list below and click 'Ok'</p>
     <!-- Search Toolbar -->
     <div class="btn-toolbar" role="toolbar" aria-label="">
         <div class="btn-group address-list-type" role="group" aria-label="">
-            <button type="button" value="0" class="btn btn-default active" style="width:60px">All</button>
+            <button type="button" value="0" class="btn btn-default active" style="width:72px">All</button>
             <button type="button" value="1" class="btn btn-default">Normal</button>
             <button type="button" value="5" class="btn btn-default">Segwit</button>
             <button type="button" value="2" class="btn btn-default">Imported</button>
@@ -22,18 +21,6 @@
     <div class="action-buttons pull-right">
         <div id="btn-ok" class="btn btn-ok btn-success pull-right margin-left-5"><i class="fa fa-lg fa-fw fa-thumbs-up"></i> Ok</div>
         <div id="btn-cancel" class="btn btn-ok btn-danger pull-right margin-left-5"><i class="fa fa-lg fa-fw fa-thumbs-down"></i> Cancel</div>
-        <div class="dropdown pull-right">
-            <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
-            <i class="fa fa-lg fa-cog"></i> Options
-            <span class="caret"></span></button>
-            <ul class="dropdown-menu">
-                <li><a href="#" id="btn-add-normal"><i class="fa fa-lg fa-plus-circle"></i> Add New Normal Address</a></li>
-                <li><a href="#" id="btn-add-segwit"><i class="fa fa-lg fa-plus-circle"></i> Add New Segwit Address</a></li>
-                <li><a href="#" id="btn-import"><i class="fa fa-lg fa-key"></i> Import Private Key</a></li>
-                <li><a href="#" id="btn-hardware"><i class="fa fa-lg fa-lock"></i> Add Hardware Wallet Address</a></li>
-                <li><a href="#" id="btn-watch"><i class="fa fa-lg fa-eye"></i> Add 'Watch Only' Address</a></li>
-            </ul>
-        </div>
     </div>
     <div class="clear-both"></div>
 </div>
@@ -76,59 +63,12 @@ $(document).ready(function(){
         dialogClose('dialog-change-address');
     }));
 
-    // Handle generating new addresses
-    $('#btn-add-normal').click($.debounce(100,function(e){
-        // Make sure wallet is unlocked
-        if(dialogCheckLocked('generate a normal address'))
-            return;
-        addr = addNewWalletAddress(FW.WALLET_NETWORK);
-        // Only display confirmation message if we have an address
-        if(addr)
-            dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> New Wallet Address', 'Address ' + addr + ' has been added to your wallet.');
-        updateAddressList();
-    }));
-
-    // Handle generating segwit addresses
-    $('#btn-add-segwit').click($.debounce(100,function(e){
-        // Make sure wallet is unlocked
-        if(dialogCheckLocked('generate a segwit address'))
-            return;
-        addr = addNewWalletAddress(FW.WALLET_NETWORK, 'segwit');
-        // Only display confirmation message if we have an address
-        if(addr)
-            dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> New Wallet Address', 'Address ' + addr + ' has been added to your wallet.');
-        updateAddressList();
-    }));
-
-    // Handle adding 'Watch Only' addresses
-    $('#btn-watch').click($.debounce(100,function(e){
-        // Make sure wallet is unlocked
-        if(dialogCheckLocked('add a watch-only address'))
-            return;
-        // Display the 'Add watch-only address' dialog box
-        dialogImportWatchAddress();
-    }));
-
-    // Handle importing private keys
-    $('#btn-import').click($.debounce(100,function(e){
-        // Make sure wallet is unlocked
-        if(dialogCheckLocked('import a private key'))
-            return;
-        // Display the 'Import Private Key' dialog box
-        dialogImportPrivateKey();
-    }));
 
     // Handle canceling the action
     $('#btn-cancel').click($.debounce(100,function(e){
         dialogClose('dialog-change-address');
     }));
 
-    // Handle prompting user to choose their hardware device
-    $('#btn-hardware').click($.debounce(100,function(e){
-        // Make sure wallet is unlocked
-        if(dialogCheckLocked('add a hardware wallet address'))
-            return;
-        dialogImportHardwareAddress();
-    }));
+
 });
 </script>
