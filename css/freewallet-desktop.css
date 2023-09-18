@@ -1281,11 +1281,3 @@ a.red:hover {
 .text-left {
     text-align: left !important;
 }
-
-.import-privkey {
-    padding: 10px;
-    margin: 0px auto 10px auto;
-    text-align: left;
-    width: 100%;
-    border: 1px solid !important;
-}
