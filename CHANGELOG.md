@@ -1,6 +1,19 @@
-Version 0.9.23 - May 3rd, 2023
+Version 0.9.24 - September 19th, 2023
+- Added support for pooling ADS donations
+- Added support for reviewing license agreement
+- Started passing forward `advanced` params in CP API requests
+- Fixed issues with sweep form
+- Fixed issue with fee not being properly passed on issuances
+- Added Betting tab back with build bounty
+- Added support for adding up to 100 new addresses at once
+- Added support for importing many private keys at once
+- Added support for auto-lock feature
+- Added support for decoding XCP transactions in sign transactions
+
+Version 0.9.23 - May 4th, 2023
 - Added support for editing DUST preferences
-- Added support for CIP25
+- Added support for CIP25 (Viewing NFTs and Stamps)
+- Increase max asset description length to 10k characters
 - Fixed security issue with autocomplete
 - Fixed Trezor Support
 - Added issuance data encoding cost notification
