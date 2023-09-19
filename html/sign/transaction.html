@@ -131,20 +131,38 @@ $(document).ready(function(){
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            // Handle signing the message and populating the 'Signed' box
-            var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
-            updateTransactionStatus('pending', 'Signing transaction...');
-            signTransaction(network, vals.source, vals.source, vals.transaction, function(tx){
-                var val = '';
-                if(tx){
-                    updateTransactionStatus('success', 'Transaction successfully signed!');
-                    val = tx;
-                } else {
-                    updateTransactionStatus('error', 'Error signing transaction!');
-                    dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', 'Error while trying to sign transaction!' );
+            // Try to decode what the transaction is doing
+            updateTransactionStatus('pending', 'Decoding transaction...');
+            decodeTransaction('mainnet', vals.transaction, function(tx){
+                var title = '<i class="fa fa-lg fa-fw fa-file-text"></i> Confirm Sign?',
+                    msg   = 'This is does not appear to be a counterparty transaction.<br>Do you still want to sign this transaction?';
+                // If this is a Counterparty transaction, display the decoded data
+                if(tx && tx.xcp){
+                    msg = 'Counterparty Transaction Data<br>';
+                    msg += '<pre><code class="language-css" style="white-space: pre !important;">' + JSON.stringify(tx.xcp, null, 4) + '</code></pre>';
                 }
-                $('#signed-transaction').val(val);
+                // Callback to run if user confirms action
+                var confirmCb = function(){
+                    // Handle signing the message and populating the 'Signed' box
+                    var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
+                    updateTransactionStatus('pending', 'Signing transaction...');
+                    signTransaction(network, vals.source, vals.source, vals.transaction, function(tx){
+                        var val = '';
+                        if(tx){
+                            updateTransactionStatus('success', 'Transaction successfully signed!');
+                            val = tx;
+                        } else {
+                            updateTransactionStatus('error', 'Error signing transaction!');
+                            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', 'Error while trying to sign transaction!' );
+                        }
+                        $('#signed-transaction').val(val);
+                    });    
+                }
+                updateTransactionStatus('clear');
+                // Confirm the action with the user before signing                    
+                dialogConfirm(title, msg, false, true, confirmCb)
             });            
+        
         }
     })
 
