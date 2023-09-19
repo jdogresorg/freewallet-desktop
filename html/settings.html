@@ -63,6 +63,21 @@
                 <div id="preferences" class="tab-pane">
                     <fieldset>
                         <div class="form-group">
+                            <label for="wallet-autolock" class="col-sm-3 control-label no-right-padding">
+                                Auto-Lock
+                                <a href="#" data-toggle="tooltip" title='This is the amount of time before the wallet automatically locks' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <select class="col-sm-9 selectpicker"  name="wallet-autolock" id="wallet-autolock">
+                                <option value="1">1 minute</option>
+                                <option value="5">5 minutes</option>
+                                <option value="10">10 minutes</option>
+                                <option value="15">15 minutes</option>
+                                <option value="30">30 minutes</option>
+                                <option value="60">60 minutes</option>
+                                <option value="0">Disabled - Do Not Auto-Lock</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label for="current-theme" class="col-sm-3 control-label no-right-padding">
                                 Theme
                                 <a href="#" data-toggle="tooltip" title='This is the current theme being used' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
@@ -389,6 +404,9 @@ $(document).ready(function(){
         $('#settings-form').submit();
     });
 
+    // Set auto-lock field 
+    $('#wallet-autolock').val(FW.WALLET_AUTOLOCK);
+
     // Set fee priority based on current value
     var val = ls.getItem('feePriority') || 'High';
     $('#current-priority').val(val);
@@ -518,6 +536,16 @@ $(document).ready(function(){
         setWalletNetwork(net);
     });
 
+    // Handle Updating the auto-lock function
+    $('#wallet-autolock').change(function(){
+        // Make sure wallet is unlocked
+        if(dialogCheckLocked('change wallet auto-lock time'))
+            return;
+        var val = $(this).val();
+        FW.WALLET_AUTOLOCK = val;
+        ls.setItem('walletAutoLock', FW.WALLET_AUTOLOCK);
+    });
+
     // Handle saving regular dust size on change
     $('#regular-dust-size').change(function(e){
         var val = $(this).val(),
@@ -638,7 +666,6 @@ $(document).ready(function(){
             usd = $('#donate-value'),
             btc = getAssetPrice('BTC',true),
             errors = [];
-        console.log('btc=',btc);
         if(val>=1)
             val = val * 0.00000001;
         // Convert from 0.00000000 to sats format

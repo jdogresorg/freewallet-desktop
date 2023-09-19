@@ -159,6 +159,10 @@ FW.DONATE_STATUS  = ls.getItem('donateStatus')  || 1; // 1=enabled, 0=disabled, 
 FW.DONATE_ADDRESS = ls.getItem('donateAddress') || 'bc1qd0nateja8l9am8tqpzjn9uazhf6dlp9qer2tra';
 FW.DONATE_AMOUNT  = ls.getItem('donateAmount')  || FW.DONATE_DEFAULT;
 
+// Load any auto-lock settings (default to 15 minutes)
+FW.WALLET_AUTOLOCK      = ls.getItem('walletAutoLock') || 15;
+FW.WALLET_LAST_UNLOCKED = Date.now();
+
 // Define cache for asset divisibility
 FW.ASSET_DIVISIBLE = {};
 FW.ASSET_DIVISIBLE['BTC'] = true;
@@ -865,7 +869,17 @@ function checkUpdateWallet(){
             updateDispensersLists();
     }
     updateNFTInfo();
+    checkAutoLock();
 };
+
+// Check if we should auto-lock wallet based on the users preferences
+function checkAutoLock(){
+    // If wallet is unlocked, auto-lock is enabled, and we are past the auto-lock time, then lock the wallet
+    if(ss.getItem('wallet') && FW.WALLET_AUTOLOCK>0 && (FW.WALLET_LAST_UNLOCKED + (FW.WALLET_AUTOLOCK * 60 * 1000)) < Date.now()){
+        lockWallet();
+        updateWalletOptions();
+    }
+}
 
 // Handle checking for special tokens to enable access to features
 // Check access each time a feature is accessed instead of setting a localStorage flag (make it a pain to access feature without access token)
@@ -3720,6 +3734,7 @@ function dialogPassword( enable, callback ){
                         if(isValidWalletPassword(pass)){
                             decryptWallet(pass);
                             dialog.close();
+                            FW.WALLET_LAST_UNLOCKED = Date.now();
                             dialogMessage('<i class="fa fa-lg fa-fw fa-unlock"></i> Wallet unlocked', 'Your wallet is now unlocked and available for use');
                             updateWalletOptions();
                         } else {
