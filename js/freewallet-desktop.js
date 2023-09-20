@@ -408,18 +408,24 @@ function addNewWalletAddress(net=1, type='normal'){
     if(type=='taproot')
         addrtype = 8;
     // Lookup the highest indexed address so far
-    var idx = 0;
+    var idx  = 0,
+        init = true;
     FW.WALLET_ADDRESSES.forEach(function(item){
-        if(item.type==addrtype && item.network==net && item.index>idx)
-            idx = item.index;
+        if(item.type==addrtype && item.network==net){
+            init = false;
+            if(item.index>idx)
+                idx = item.index;
+        }
     });
-    idx++; // Increase index for new address
+    // Increase index for new address
+    if(!init)
+        idx++; 
     // Generate new address
     var w = getWallet(),
         n = bc.Networks[network],
         s = bc.HDPrivateKey.fromSeed(w, n),
         d = s.derive("m/0'/0/" + idx);
-    label = 'Address #' + idx;
+    label = 'Address #' + (idx + 1);
     // Support generating Normal Addresses (P2PKH)
     if(type=='normal')
         address = bc.Address(d.publicKey, n).toString();
