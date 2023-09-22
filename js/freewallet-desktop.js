@@ -27,6 +27,9 @@ FW.NETWORK_INFO =  JSON.parse(ls.getItem('networkInfo')) || {};
 // Wallet format (0=Counterwallet, 1=BIP39)
 FW.WALLET_FORMAT = ls.getItem('walletFormat') || 0;
 
+// Wallet encryption status (0=default, 1=encrypted with password)
+FW.WALLET_ENCRYPTED = parseInt(ls.getItem('walletEncrypted')) || 0;
+
 // Minimum transaction fee
 FW.MINIMUM_TX_FEE_DEFAULT = 1000;
 FW.MINIMUM_TX_FEE = ls.getItem('feeMinimum') || FW.MINIMUM_TX_FEE_DEFAULT;
@@ -269,7 +272,7 @@ function loadPage(page){
 function initWallet(){
     if(ss.getItem('wallet') == null){
         if(ls.getItem('wallet')){
-            if(parseInt(ls.getItem('walletEncrypted'))==1){
+            if(FW.WALLET_ENCRYPTED){
                 // Try to unlock the wallet when app first opens
                 // if(parseInt(ss.getItem('skipWalletAuth'))!=1)
                 //     dialogPassword();
@@ -329,6 +332,7 @@ function resetWallet(){
     FW.WALLET_HISTORY   = [];
     FW.WALLET_KEYS      = {};
     FW.WALLET_FORMAT    = 0;
+    FW.WALLET_ENCRYPTED = 0;
     FW.BTCPAY_ORDERS    = {};
     FW.BTCPAY_MATCHES   = {};
     FW.BTCPAY_QUEUE     = {};
@@ -477,7 +481,8 @@ function encryptWallet( password, skip=false ){
     ls.setItem('wallet', encWallet);
     // Mark wallet as encrypted and save encrypted password unless instructed not to
     if(!skip){
-        ls.setItem('walletEncrypted',1);
+        FW.WALLET_ENCRYPTED = 1;
+        ls.setItem('walletEncrypted',FW.WALLET_ENCRYPTED);
         ls.setItem('walletPassword', encPass);
     }
     ls.setItem('walletKeys', encKeys);
@@ -880,8 +885,8 @@ function checkUpdateWallet(){
 
 // Check if we should auto-lock wallet based on the users preferences
 function checkAutoLock(){
-    // If wallet is unlocked, auto-lock is enabled, and we are past the auto-lock time, then lock the wallet
-    if(ss.getItem('wallet') && FW.WALLET_AUTOLOCK>0 && (FW.WALLET_LAST_UNLOCKED + (FW.WALLET_AUTOLOCK * 60 * 1000)) < Date.now()){
+    // If wallet is encrypted, unlocked, auto-lock is enabled, and we are past the auto-lock time, then lock the wallet
+    if(FW.WALLET_ENCRYPTED && ss.getItem('wallet') && FW.WALLET_AUTOLOCK>0 && (FW.WALLET_LAST_UNLOCKED + (FW.WALLET_AUTOLOCK * 60 * 1000)) < Date.now()){
         lockWallet();
         updateWalletOptions();
     }
