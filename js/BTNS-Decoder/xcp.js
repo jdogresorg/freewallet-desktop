@@ -150,7 +150,7 @@ function decodeXCPTransaction(network=null, tx=null, callback=null){
                 o.address         = (addr.length) ? hex2address(addr) : source;
             }
             // Issuance
-            if(type==20){
+            if(type==20||type==22){
                 o.type                 = 'issuance';
                 o.source               = source;
                 o.asset                = getAssetName(msg.substring(0,16));
@@ -169,7 +169,7 @@ function decodeXCPTransaction(network=null, tx=null, callback=null){
                 o.description          = hex2ascii(msg.substring(38));
             }
             // Issuance (subasset)
-            if(type==21){ 
+            if(type==21||type==23){ 
                 o.type                 = 'issuance';
                 o.source               = source;
                 o.asset                = getAssetName(msg.substring(0,16));
@@ -213,6 +213,10 @@ function decodeXCPTransaction(network=null, tx=null, callback=null){
             if(typeof callback === 'function')
                 callback(o);
         });
+    } else {
+        // Pass the information to the callback 
+        if(typeof callback === 'function')
+            callback();
     }
 }
 

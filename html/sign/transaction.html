@@ -126,6 +126,8 @@ $(document).ready(function(){
             errors.push('You must enter a transaction to sign! ');
             $('#sign-transaction').closest('.form-group').addClass('has-error has-danger');
         }
+        // Determine wallet network so we can pass in API requests
+        var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
         updateTransactionStatus('clear');
         // Display any error message
         if(errors.length){
@@ -133,7 +135,7 @@ $(document).ready(function(){
         } else {
             // Try to decode what the transaction is doing
             updateTransactionStatus('pending', 'Decoding transaction...');
-            decodeTransaction('mainnet', vals.transaction, function(tx){
+            decodeTransaction(network, vals.transaction, function(tx){
                 var title = '<i class="fa fa-lg fa-fw fa-file-text"></i> Confirm Sign?',
                     msg   = 'This is does not appear to be a counterparty transaction.<br>Do you still want to sign this transaction?';
                 // If this is a Counterparty transaction, display the decoded data

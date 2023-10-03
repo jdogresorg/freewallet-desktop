@@ -63,8 +63,10 @@ function decodeTransaction(network=null, tx_hash=null, callback=null){
         if(typeof o.results === "object")
             tx.btc = o.results;
         decodeXCPTransaction(network, tx.btc, function(xcp){ 
-            tx.xcp = xcp;
-            tx.btns = decodeBTNSTransaction(xcp);
+            if(xcp){
+                tx.xcp = xcp;
+                tx.btns = decodeBTNSTransaction(xcp);
+            }
             if(typeof callback === 'function')
                 callback(tx);
         });
