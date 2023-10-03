@@ -3828,6 +3828,9 @@ function dialogNewPassphrase(){
 
 // 'Import Private Keys' dialog box
 function dialogImportPrivateKey(){
+    // Make sure wallet is unlocked
+    if(dialogCheckLocked('import private keys'))
+        return;
     BootstrapDialog.show({
         type: 'type-default',
         id: 'dialog-import-privkey',
@@ -3892,6 +3895,9 @@ function dialogUpdateAvailable(version){
 
 // Import Hardware wallet address dialog box
 function dialogImportHardwareAddress(){
+    // Make sure wallet is unlocked
+    if(dialogCheckLocked('add new addresses'))
+        return;
     BootstrapDialog.show({
         type: 'type-default',
         id: 'dialog-import-hardware-address',
@@ -3903,6 +3909,9 @@ function dialogImportHardwareAddress(){
 
 // 'Add New Address' dialog box
 function dialogAddAddress(){
+    // Make sure wallet is unlocked
+    if(dialogCheckLocked('add new addresses'))
+        return;
     BootstrapDialog.show({
         type: 'type-default',
         id: 'dialog-add-new-address',
