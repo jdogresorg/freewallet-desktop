@@ -3017,7 +3017,8 @@ function createIssuance(network, source, asset, quantity, divisible, description
             divisible: (divisible) ? 1 : 0,
             description:  (description) ? description : null,
             transfer_destination: (destination) ? destination : null,
-            reset: (reset) ? true : false,            
+            reset: (reset) ? true : false,
+            lock: (description=='LOCK') ? true : false,
             fee: parseInt(fee)
         },
         jsonrpc: "2.0",
