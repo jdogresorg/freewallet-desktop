@@ -107,7 +107,7 @@ $(document).ready(function(){
                 title   = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Issuance?',
                 msg     = 'Issue  <b>' + numeral(vals.amount).format(fmt) + ' ' + vals.name + '</b>?';                
             // Confirm the issuance details with the user
-            confirmIssuance(title, msg, network, vals.source, vals.name, amt_sat, info.divisible, info.description, null, fee_sat, false, function(tx){
+            confirmIssuance(title, msg, network, vals.source, vals.name, amt_sat, info.divisible, null, null, fee_sat, false, function(tx){
                 dialogClose('dialog-issue-supply');
                 dialogMessage('<i class="fa fa-lg fa-bank"></i> Issue Supply Successful', '<center>Your issuance has been broadcast to the network and your additional supply should be available shortly.' +
                               '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');

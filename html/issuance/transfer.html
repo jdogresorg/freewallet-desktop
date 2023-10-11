@@ -100,7 +100,7 @@ $(document).ready(function(){
                 title   = '<i class="fa fa-lg fa-fw fa-exchange"></i> Confirm Transfer Ownership?',
                 msg     = 'Transfer ownership of <b>' + vals.name + '</b> to ' + vals.destination + ' ?';
             // Confirm the issuance details with the user
-            confirmIssuance(title, msg, network, vals.source, vals.name, 0, info.divisible, vals.description, vals.destination, fee_sat, false, function(tx){
+            confirmIssuance(title, msg, network, vals.source, vals.name, 0, info.divisible, null, vals.destination, fee_sat, false, function(tx){
                     dialogClose('dialog-transfer-ownership');
                     dialogMessage('<i class="fa fa-lg fa-exchange"></i> Transfer Successful', '<center>Your transfer has been broadcast to the network and the token owner should be updated shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');

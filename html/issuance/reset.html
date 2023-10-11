@@ -103,7 +103,7 @@ $(document).ready(function(){
                 title     = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Reset?',
                 msg       = 'Destroy any existing supply and<br>Issue  <b>' + numeral(vals.amount).format(fmt) + ' ' + vals.name + '</b>?';
             // Confirm the issuance details with the user
-            confirmIssuance(title, msg, network, vals.source, vals.name, amt_sat, divisible, info.description, null, fee_sat, true, function(tx){
+            confirmIssuance(title, msg, network, vals.source, vals.name, amt_sat, divisible, null, null, fee_sat, true, function(tx){
                 dialogClose('dialog-reset-supply');
                 dialogMessage('<i class="fa fa-lg fa-refresh"></i> Reset Supply Successful', '<center>Your issuance has been broadcast to the network and your new supply should be available shortly.' +
                               '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
