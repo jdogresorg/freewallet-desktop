@@ -1,3 +1,13 @@
+Version 0.9.26 - November 30th, 2023
+- Added support for new issuance IDs (22/23)
+- Added checks to verify wallet is unlocked before allowing add/import addresses
+- Update to pass `null` for description in asset issuance transfers
+- Update to start using `lock` flag in issuances instead of `LOCK` text
+
+Version 0.9.25 - September 22nd, 2023
+- Fixed issue with missing first address
+- Fixed issue with wallet auto-locking
+
 Version 0.9.24 - September 19th, 2023
 - Added support for pooling ADS donations
 - Added support for reviewing license agreement
