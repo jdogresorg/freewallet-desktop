@@ -49,6 +49,8 @@ $(document).ready(function(){
     $('#source-address-field').load('html/fields/source-address.html');
     $('#timestamp-field').load('html/fields/timestamp.html');
     $('#tx-fee-field').load('html/fields/tx-fee.html');
+    
+    var createTxTimeoutId = null
 
     // Delay initializing some fields to give things a chance to load
     setTimeout(function(){
@@ -69,9 +71,52 @@ $(document).ready(function(){
 
         // Remove any error indicators when user changes a field value
         $('#broadcast-message-form input').change(function(e){
+            let feeTxSizeElement = $('#broadcast-message-form #fee-tx-size')
+            let feeAmountElement = $('#broadcast-message-form #fee-amount')
+            
             $(this).closest('.form-group').removeClass('has-error has-danger');
-        });
+    
+            // Cancel the timeout if it exists
+            if (createTxTimeoutId) {
+                clearTimeout(createTxTimeoutId);
+            }
 
+            console.log($(this).is($('#broadcast-message-form #fee-tx-size'))?"true":"false")
+            console.log($(this).is($('#broadcast-message-form #fee-amount'))?"true":"false")
+
+            
+            if ((feeTxSizeElement.val() == 0) || !($(this).is(feeTxSizeElement) || $(this).is(feeAmountElement))){
+                feeAmountElement.prop("disabled", true)
+
+                // Create a new timeout
+                createTxTimeoutId = setTimeout(() => {
+                    var vals   = array2Object($('#broadcast-message-form').serializeArray())
+                    var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                        fee_sat  = getSatoshis(vals['fee-amount']),
+                        feed_fee = parseFloat(numeral(vals.fee).format('0.00000000')),
+                        value    = parseInt(numeral(vals.value).value()),
+                        tstamp   = moment(vals.timestamp).unix();
+                    
+                    if (vals.source != null){   
+                        createBroadcast(network, vals.source, vals.message, value, feed_fee, tstamp, fee_sat, function(tx){
+                            if(tx && tx.result){
+                                txHex = tx.result
+                                txFromHex = bitcoinjs.Transaction.fromHex(txHex)
+                                //alert("the size of the tx is "+txFromHex.virtualSize())
+                                
+                                $('#broadcast-message-form #fee-tx-size').val(txFromHex.virtualSize())
+                                $('#broadcast-message-form #fee-tx-size').trigger("change")
+                                
+                            }
+                        }); 
+                    }
+                    
+                }, 1000);
+            }
+        });
+        
+        
+        
     },100);
 
     // Submit form if user clicks 'Submit' button

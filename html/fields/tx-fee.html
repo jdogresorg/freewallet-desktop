@@ -17,6 +17,7 @@
     <div class="input-group pull-right" id="fee-value-wrapper" style="width:100px;">
         <a class="input-group-addon" id=""><i class="fa fa-usd"></i></a>
         <input type="text" class="form-control" name="fee-value"  id="fee-value" placeholder="0.00" readonly>
+        <input type="hidden" class="form-control" name="fee-tx-size"  id="fee-tx-size" placeholder="0.00" readonly>
     </div>
 </div>
 
@@ -44,18 +45,29 @@ $(document).ready(function(){
     // Make priority a dropdown
     $('#fee-priority').selectpicker();
 
+    $('#fee-tx-size').change($.debounce(100,function(e){
+        $('#fee-priority').trigger("change")
+    }));
+
     // When user changes priority, set fee amount based on priority selected
     $('#fee-priority').change($.debounce(100,function(e){
         var val = $(this).val(),
             o   = FW.NETWORK_INFO.fee_info,
             avg = 265,       // Average send is 265 bytes (come back in future and base on actual tx size, not average)
+            txSize = $('#fee-tx-size').val(), //The actual tx size
             fee = o.optimal; // default to high priority
         if(val=='Low')
             fee = o.low_priority;
         if(val=='Medium')
             fee = ((o.low_priority + o.optimal) / 2); // Medium fee is between high and low
-        // Calculate the actual fee cost for this transaction
+        // Calculate the actual fee cost for this transaction. First the default is calculated (using the tx avg size)
         var cost = numeral(((fee / 1000) * avg) * 0.00000001).format('0.00000000');
+        
+        if (txSize > 0){
+            cost = numeral(((fee / 1000) * txSize) * 0.00000001).format('0.00000000');
+            $('#fee-amount').prop("disabled", false)
+        }
+        
         // Set fee to minimum if user selects Custom
         if(val=='Custom')
             cost = numeral(FW.MINIMUM_TX_FEE * 0.00000001).format('0.00000000');
@@ -92,6 +104,9 @@ $(document).ready(function(){
     // Trigger a change on the priority field so we re-calculate price
     $('#fee-priority').change();
 
+    // Now the fee is disabled until the tx-size is obtained
+    $('#fee-amount').prop("disabled", true)
+    
     // Don't throw a minimum fee alert when form first loads.. give 500ms then can start throwing minimum fee alerts
     setTimeout(function(){ doMinimumFeeAlert = true; },500);
 
