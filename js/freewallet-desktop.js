@@ -6516,11 +6516,16 @@ function updateTransactionSize(){
     updateTransactionStatus('pending', 'Calculating transaction fees...');
     generateTransaction(function(o){
         if(o && o.result){
-            var tx = bitcoinjs.Transaction.fromHex(o.result),
-                sz = tx.virtualSize();
-            $('#tx-size').val(sz);
-            $('#tx-hex').val(o.result);
-            updateMinersFee();
+            var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+                source  = FW.WALLET_ADDRESS;
+            // Sign the tx, so we can get the actual transaction size
+            signTransaction(network, source, source, o.result, function(signedTx){
+                var tx = bitcoinjs.Transaction.fromHex(signedTx),
+                    sz = tx.virtualSize();
+                $('#tx-size').val(sz);
+                $('#tx-hex').val(o.result);
+                updateMinersFee();
+            });
         } 
         // Enable submit button and set flag to ignore clicks
         FW.IGNORE_SUBMIT = false;
