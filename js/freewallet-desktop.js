@@ -6517,20 +6517,30 @@ function updateTransactionSize(){
     generateTransaction(function(o){
         if(o && o.result){
             var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                source  = FW.WALLET_ADDRESS;
+                source  = FW.WALLET_ADDRESS,
+                dest    = (FW.SEND_DESTINATIONS) ? FW.SEND_DESTINATIONS : source;
             // Sign the tx, so we can get the actual transaction size
-            signTransaction(network, source, source, o.result, function(signedTx){
-                var tx = bitcoinjs.Transaction.fromHex(signedTx),
-                    sz = tx.virtualSize();
+            signTransaction(network, source, dest, o.result, function(signedTx){
+                var txHex = (signedTx) ? signedTx : o.result;
+                    tx    = bitcoinjs.Transaction.fromHex(txHex),
+                    sz    = tx.virtualSize();
+                // If we failed to get unsigned tx, add 200 bytes more to account for signatures
+                if(!signedTx)
+                    sz = sz + 200;
                 $('#tx-size').val(sz);
                 $('#tx-hex').val(o.result);
                 updateMinersFee();
+                // Enable submit button and set flag to ignore clicks
+                FW.IGNORE_SUBMIT = false;
+                submit.removeClass("disabled")
+                updateTransactionStatus('clear');
             });
-        } 
-        // Enable submit button and set flag to ignore clicks
-        FW.IGNORE_SUBMIT = false;
-        submit.removeClass("disabled")
-        updateTransactionStatus('clear');
+        } else {
+            // Enable submit button and set flag to ignore clicks
+            FW.IGNORE_SUBMIT = false;
+            submit.removeClass("disabled")
+            updateTransactionStatus('clear');
+        }
     });
 }
 

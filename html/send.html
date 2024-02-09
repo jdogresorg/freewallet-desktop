@@ -56,6 +56,8 @@ function generateTransaction(callback=null, broadcast=false){
         command = (broadcast) ? 'cpSend' : 'createSend';
     // Single Sends
     if(vals.type=='single'){
+        // Placeholder to easily reference destinations in updateTransactionSize()
+        FW.SEND_DESTINATIONS = vals.destination;
         eval(command)(network, vals.source, vals.destination, vals.memo, is_data, vals.name, amt_sat, fee_sat, callback);
     }
     // MPMA Sends        
@@ -94,6 +96,8 @@ function generateTransaction(callback=null, broadcast=false){
         vals.quantity    = quantities;
         vals.memo        = memos;
         vals.memo_is_hex = memo_is_hex;
+        // Placeholder to easily reference destinations in updateTransactionSize()
+        FW.SEND_DESTINATIONS = vals.destination;
         eval(command)(network, vals.source, vals.destination, vals.memo, vals.memo_is_hex, vals.asset, vals.quantity, fee_sat, null, callback);
     }
 }
@@ -174,6 +178,7 @@ $(document).ready(function(){
 
     // Hide the send form if users clicks 'cancel' button
     $('#btn-cancel').click($.debounce(100,function(e){
+        FW.SEND_DESTINATIONS = false;
         dialogClose('dialog-send');
     }));
 
