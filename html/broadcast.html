@@ -43,6 +43,18 @@
 
 
 <script>
+// Handle generating a transaction using current data and passing it to a callback function
+function generateTransaction(callback=null, broadcast=false){
+    var vals     = array2Object($('#broadcast-message-form').serializeArray()),
+        network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+        fee_sat  = getSatoshis(vals['fee-amount']),
+        feed_fee = parseFloat(numeral(vals.fee).format('0.00000000')),
+        value    = parseInt(numeral(vals.value).value()),
+        tstamp   = moment(vals.timestamp).unix(),
+        command  = (broadcast) ? 'cpBroadcast' : 'createBroadcast';
+    eval(command)(network, vals.source, vals.message, value, feed_fee, tstamp, fee_sat, callback);
+}
+
 $(document).ready(function(){
 
     // Load any field content
@@ -72,12 +84,22 @@ $(document).ready(function(){
             $(this).closest('.form-group').removeClass('has-error has-danger');
         });
 
+        // Handle updating the transaction fee based on actual tx size
+        updateTransactionSize();
+
     },100);
 
     // Submit form if user clicks 'Submit' button
     $('#btn-submit').click($.debounce(100,function(e){
+        if(FW.IGNORE_SUBMIT)
+            return;
         $('#broadcast-message-form').submit();
     }));
+
+    // Handle recalculating the tx fee if the message changes
+    $('#broadcast-message').change(function(e){
+        updateTransactionSize();
+    });
 
     // Hide the form if users clicks 'Cancel' button
     $('#btn-cancel').click($.debounce(100,function(e){
@@ -125,31 +147,19 @@ $(document).ready(function(){
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            // Callback to run after broadcasting send
+            // Callback to run after broadcasting transaction
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-broadcast-message');
-                    dialogMessage('<i class="fa fa-lg fa-bullhorn"></i> Broadcast Successful', '<center>Your broadcast has been sent to the network and should be included to a block shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                    dialogMessage('<i class="fa fa-lg fa-bullhorn"></i> Broadcast Successful', '<div class="text-center">Your broadcast has been sent to the network and should be included to a block shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></div>');
                 }
-            }
-            // Callback to run if user confirms action
-            var confirmCb = function(){
-                var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                    fee_sat  = getSatoshis(vals['fee-amount']),
-                    feed_fee = parseFloat(numeral(vals.fee).format('0.00000000')),
-                    value    = parseInt(numeral(vals.value).value()),
-                    tstamp   = moment(vals.timestamp).unix();
-                cpBroadcast(network, vals.source, vals.message, value, feed_fee, tstamp, fee_sat, doneCb);
             }
             // Confirm the action with the user
             var title = '<i class="fa fa-lg fa-fw fa-question-circle"></i> Confirm Broadcast?',
-                fmt   = ($('#asset-divisible').val()=='Yes') ? '0,0.00000000' : '0,0',
-                msg   = 'Broadcast the message \'<b>' + vals.message + '</b>\'';
-            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+                msg   = getConfirmationMessage('<center>Broadcast the message \'<b>' + vals.message + '</b>\'</center>', vals);
+            dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
         }
-    })
-
-
+    });
 });
 </script>
