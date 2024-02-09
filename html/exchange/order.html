@@ -74,6 +74,17 @@
 </form>
 
 <script>
+// Handle generating a transaction using current data and passing it to a callback function
+function generateTransaction(callback=null, broadcast=false){
+    var vals     = array2Object($('#create-order-form').serializeArray()),
+        network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+        fee_sat  = getSatoshis(vals['fee-amount']),
+        get_sat  = getSatoshis(vals.get_amount),
+        give_sat = getSatoshis(vals.give_amount);
+        expires  = numeral(vals.expires).value(),
+        command  = (broadcast) ? 'cpOrder' : 'createOrder';
+    eval(command)(network, vals.source, vals.get_asset, vals.give_asset, get_sat, give_sat, expires, fee_sat, callback);
+}
 
 // Handle updating the confirmation text based off selected value
 var updateAutopayConfirm = function(){
@@ -137,6 +148,9 @@ $(document).ready(function(){
             placement: 'bottom'
         }); 
 
+        // Handle updating the transaction fee based on actual tx size
+        updateTransactionSize();
+
     },100);
 
     // Display the correct confirmation option
@@ -149,6 +163,8 @@ $(document).ready(function(){
 
     // Submit form if user clicks 'Submit' button
     $('#btn-submit').click($.debounce(100,function(e){
+        if(FW.IGNORE_SUBMIT)
+            return;
         $('#create-order-form').submit();
     }));
 
@@ -187,12 +203,7 @@ $(document).ready(function(){
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                fee_sat  = getSatoshis(vals['fee-amount']),
-                get_sat  = getSatoshis(vals.get_amount),
-                give_sat = getSatoshis(vals.give_amount);
-                expires  = numeral(vals.expires).value(),
-                autopay  = (vals.autopay=='Y') ? 1 : 0;
+            var autopay = (vals.autopay=='Y') ? 1 : 0;
             // Callback to run after broadcasting tx
             var doneCb = function(tx){
                 if(tx){
@@ -217,10 +228,8 @@ $(document).ready(function(){
                     }
                 }
             }
-            cpOrder(network, vals.source, vals.get_asset, vals.give_asset, get_sat, give_sat, expires, fee_sat, doneCb);
+            generateTransaction(doneCb, true);
         }
-    })
-
-
+    });
 });
 </script>

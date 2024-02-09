@@ -46,5 +46,12 @@ $(document).ready(function(){
     // Make memo type a dropdown
     $('#memo-type').selectpicker();
 
+    $('#memo').change(function(e){
+        // Handle updating the transaction fee based on actual tx size
+        if(type=='sweep'||type=='destroy'||type=='send')
+            updateTransactionSize();
+    });
+
+
 });
 </script>

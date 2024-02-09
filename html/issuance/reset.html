@@ -21,6 +21,19 @@
 
 
 <script>
+// Handle generating a transaction using current data and passing it to a callback function
+function generateTransaction(callback=null, broadcast=false){
+    var vals      = array2Object($('#reset-supply-form').serializeArray()),
+        network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+        asset     = (vals.name!='') ? vals.name : false,
+        amt_sat   = getSatoshis(vals.amount),
+        fee_sat   = getSatoshis(vals['fee-amount']),
+        divisible = (FW.ASSET_INFO.divisible) ? true : false,
+        command   = (broadcast) ? 'cpIssuance' : 'createIssuance';
+    if(asset)
+        eval(command)(network, vals.source, asset, amt_sat, divisible, null, null, fee_sat, true, callback);
+}
+
 $(document).ready(function(){
 
     // Load any field content
@@ -62,6 +75,8 @@ $(document).ready(function(){
 
     // Submit form when user clicks 'Submit' button
     $('#btn-submit').click($.debounce(100,function(e){
+        if(FW.IGNORE_SUBMIT)
+            return;
         $('#reset-supply-form').submit()
     }));
 
@@ -94,23 +109,20 @@ $(document).ready(function(){
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            var network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                amt_sat   = getSatoshis(vals.amount),
-                fee_sat   = getSatoshis(vals['fee-amount']),
-                divisible = (vals.divisible=='Yes') ? true : false,
-                info      = FW.ASSET_INFO,
-                fmt       = (vals.divisible=='Yes') ? '0,0.00000000' : '0,0',
-                title     = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Reset?',
-                msg       = 'Destroy any existing supply and<br>Issue  <b>' + numeral(vals.amount).format(fmt) + ' ' + vals.name + '</b>?';
-            // Confirm the issuance details with the user
-            confirmIssuance(title, msg, network, vals.source, vals.name, amt_sat, divisible, null, null, fee_sat, true, function(tx){
-                dialogClose('dialog-reset-supply');
-                dialogMessage('<i class="fa fa-lg fa-refresh"></i> Reset Supply Successful', '<center>Your issuance has been broadcast to the network and your new supply should be available shortly.' +
-                              '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
-            });
+            // Callback to run after broadcasting transaction
+            var doneCb = function(tx){
+                if(tx){
+                    dialogClose('dialog-reset-supply');
+                    dialogMessage('<i class="fa fa-lg fa-refresh"></i> Reset Supply Successful', '<center>Your issuance has been broadcast to the network and your new supply should be available shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                }
+            }
+            // Confirm the action with the user
+            var title = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Reset?',
+                fmt     = (FW.ASSET_INFO.divisible) ? '0,0.00000000' : '0,0',
+                msg   = getConfirmationMessage('Destroy any existing supply and<br>Issue  <b>' + numeral(vals.amount).format(fmt) + ' ' + vals.name + '</b>?', vals);
+            dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
         }
-    })
-
-
+    });
 });
 </script>

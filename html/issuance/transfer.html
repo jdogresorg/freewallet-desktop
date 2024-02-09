@@ -21,6 +21,17 @@
 
 
 <script>
+// Handle generating a transaction using current data and passing it to a callback function
+function generateTransaction(callback=null, broadcast=false){
+    var vals      = array2Object($('#transfer-ownership-form').serializeArray()),
+        network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+        asset     = (vals.name!='') ? vals.name : false,
+        fee_sat   = getSatoshis(vals['fee-amount']),
+        divisible = (FW.ASSET_INFO.divisible) ? true : false,
+        command   = (broadcast) ? 'cpIssuance' : 'createIssuance';
+    if(asset)
+        eval(command)(network, vals.source, asset, 0, divisible, null, vals.destination, fee_sat, false, callback);
+}
 $(document).ready(function(){
 
     // Load any field content
@@ -62,6 +73,8 @@ $(document).ready(function(){
 
     // Submit form when user clicks 'Submit' button
     $('#btn-submit').click($.debounce(100,function(e){
+        if(FW.IGNORE_SUBMIT)
+            return;
         $('#transfer-ownership-form').submit()
     }));
 
@@ -94,20 +107,19 @@ $(document).ready(function(){
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                fee_sat = getSatoshis(vals['fee-amount']),
-                info    = FW.ASSET_INFO,
-                title   = '<i class="fa fa-lg fa-fw fa-exchange"></i> Confirm Transfer Ownership?',
-                msg     = 'Transfer ownership of <b>' + vals.name + '</b> to ' + vals.destination + ' ?';
-            // Confirm the issuance details with the user
-            confirmIssuance(title, msg, network, vals.source, vals.name, 0, info.divisible, null, vals.destination, fee_sat, false, function(tx){
+            // Callback to run after broadcasting transaction
+            var doneCb = function(tx){
+                if(tx){
                     dialogClose('dialog-transfer-ownership');
                     dialogMessage('<i class="fa fa-lg fa-exchange"></i> Transfer Successful', '<center>Your transfer has been broadcast to the network and the token owner should be updated shortly.' +
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
-            });
+                }
+            }
+            // Confirm the action with the user
+            var title = '<i class="fa fa-lg fa-fw fa-exchange"></i> Confirm Transfer Ownership?',
+                msg   = getConfirmationMessage('Transfer ownership of <b>' + vals.name + '</b> to ' + vals.destination + ' ?', vals);
+            dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
         }
-    })
-
-
+    });
 });
 </script>

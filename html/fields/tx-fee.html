@@ -18,10 +18,33 @@
         <a class="input-group-addon" id=""><i class="fa fa-usd"></i></a>
         <input type="text" class="form-control" name="fee-value"  id="fee-value" placeholder="0.00" readonly>
     </div>
+    <!-- Hidden fields to hold transaction hex and size for quick reference -->
+    <input type="hidden" id="tx-hex"  name="tx-hex"  value="">
+    <input type="hidden" id="tx-size" name="tx-size" value="100">
 </div>
 
 
 <script>
+
+// Handle calculating the miners fee and updating the displayed amount
+function updateMinersFee(){
+    var val  = $('#fee-priority').val(),
+        size = $('#tx-size').val(),
+        o    = FW.NETWORK_INFO.fee_info,
+        fee  = o.optimal; // default to high priority
+    if(val=='Low')
+        fee = o.low_priority;
+    if(val=='Medium')
+        fee = ((o.low_priority + o.optimal) / 2); // Medium fee is between high and low
+    // Calculate the actual fee cost for this transaction
+    var cost = numeral(((fee / 1000) * size) * 0.00000001).format('0.00000000');
+    // Set fee to minimum if user selects Custom
+    if(val=='Custom')
+        cost = numeral(FW.MINIMUM_TX_FEE * 0.00000001).format('0.00000000');
+    $('#fee-amount').val(cost);
+    $('#fee-amount').change();
+}
+
 $(document).ready(function(){
     var ls = localStorage,
     doMinimumFeeAlert = false;
@@ -46,21 +69,7 @@ $(document).ready(function(){
 
     // When user changes priority, set fee amount based on priority selected
     $('#fee-priority').change($.debounce(100,function(e){
-        var val = $(this).val(),
-            o   = FW.NETWORK_INFO.fee_info,
-            avg = 265,       // Average send is 265 bytes (come back in future and base on actual tx size, not average)
-            fee = o.optimal; // default to high priority
-        if(val=='Low')
-            fee = o.low_priority;
-        if(val=='Medium')
-            fee = ((o.low_priority + o.optimal) / 2); // Medium fee is between high and low
-        // Calculate the actual fee cost for this transaction
-        var cost = numeral(((fee / 1000) * avg) * 0.00000001).format('0.00000000');
-        // Set fee to minimum if user selects Custom
-        if(val=='Custom')
-            cost = numeral(FW.MINIMUM_TX_FEE * 0.00000001).format('0.00000000');
-        $('#fee-amount').val(cost);
-        $('#fee-amount').change();
+        updateMinersFee();
     }));
 
     // Validate that fee amount is not below minimum tx fee, and force BTC value to correct 0,0.00000000 format

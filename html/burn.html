@@ -24,6 +24,16 @@
 
 
 <script>
+// Handle generating a transaction using current data and passing it to a callback function
+function generateTransaction(callback=null, broadcast=false){
+    var vals      = array2Object($('#burn-form').serializeArray()),
+        network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+        amt_sat   = getSatoshis(vals.amount),
+        fee_sat   = getSatoshis(vals['fee-amount']),
+        command   = (broadcast) ? 'cpBurn' : 'createBurn';
+    eval(command)(network, vals.source, amt_sat, fee_sat, callback);
+}
+
 $(document).ready(function(){
 
     // Load any field content
@@ -46,6 +56,8 @@ $(document).ready(function(){
 
     // Submit form if user clicks 'Submit' button
     $('#btn-submit').click($.debounce(100,function(e){
+        if(FW.IGNORE_SUBMIT)
+            return;
         $('#burn-form').submit();
     }));
 
@@ -80,7 +92,7 @@ $(document).ready(function(){
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            // Callback to run after broadcasting send
+            // Callback to run after broadcasting transaction
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-burn');
@@ -88,20 +100,11 @@ $(document).ready(function(){
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
-            // Callback to run if user confirms action
-            var confirmCb = function(){
-                var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                    fee_sat = getSatoshis(vals['fee-amount']),
-                    amt_sat = getSatoshis(vals.amount);
-                cpBurn(network, vals.source, amt_sat, fee_sat, doneCb);
-            }
             // Confirm the action with the user
             var title = '<i class="fa fa-lg fa-fw fa-fire"></i> Confirm Burn?',
-                msg   = 'Burn <b>' + numeral(vals.amount).format('0,0.00000000') + '</b> BTC';
-            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+                msg   = '<center>Burn <b>' + numeral(vals.amount).format('0,0.00000000') + '</b> BTC?';
+            dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
         }
-    })
-
-
+    });
 });
 </script>

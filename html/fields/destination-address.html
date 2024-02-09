@@ -65,6 +65,9 @@ $(document).ready(function(){
         } else {
             me.val(addr);
         }
+        // Handle updating the transaction fee based on actual tx size
+        if(type=='sweep'||type=='send')
+            updateTransactionSize();
     });
 
     // Display 'Address Book' when user clicks address book link

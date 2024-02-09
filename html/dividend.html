@@ -26,6 +26,18 @@
 
 
 <script>
+// Handle generating a transaction using current data and passing it to a callback function
+function generateTransaction(callback=null, broadcast=false){
+    var vals      = array2Object($('#dividend-form').serializeArray()),
+        network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+        asset     = (vals.name!='') ? vals.name : false,
+        amt_sat   = getSatoshis(vals.amount),
+        fee_sat   = getSatoshis(vals['fee-amount']),
+        command   = (broadcast) ? 'cpDividend' : 'createDividend';
+    if(asset)
+        eval(command)(network, vals.source, asset, vals.dividend, amt_sat, fee_sat, callback);
+}
+
 $(document).ready(function(){
 
     // Load any field content
@@ -64,6 +76,8 @@ $(document).ready(function(){
 
     // Submit form if user clicks 'Submit' button
     $('#btn-submit').click($.debounce(100,function(e){
+        if(FW.IGNORE_SUBMIT)
+            return;
         $('#dividend-form').submit();
     }));
 
@@ -101,7 +115,7 @@ $(document).ready(function(){
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            // Callback to run after broadcasting send
+            // Callback to run after broadcasting transaction
             var doneCb = function(tx){
                 if(tx){
                     dialogClose('dialog-pay-dividend');
@@ -109,20 +123,11 @@ $(document).ready(function(){
                                   '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
-            // Callback to run if user confirms action
-            var confirmCb = function(){
-                var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                    amt_sat = getSatoshis(vals.amount),
-                    fee_sat = getSatoshis(vals['fee-amount']);
-                cpDividend(network, vals.source, vals.name, vals.dividend, amt_sat, fee_sat, doneCb);
-            }
             // Confirm the action with the user
             var title = '<i class="fa fa-lg fa-fw fa-sitemap"></i> Pay Dividends?',
-                msg   = 'Pay dividend of <b>' + vals.amount + ' ' + vals.dividend + '</b> per unit to <b>' + vals.name + '</b> holders?';
-            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+                msg   = getConfirmationMessage('<center>Pay dividend of <b>' + vals.amount + ' ' + vals.dividend + '</b> per unit to <b>' + vals.name + '</b> holders?', vals);
+            dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
         }
-    })
-
-
+    });
 });
 </script>

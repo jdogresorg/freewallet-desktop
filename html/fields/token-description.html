@@ -20,7 +20,7 @@ $(document).ready(function(){
         if(FW.ASSET_INFO && type=='')
             name = FW.ASSET_INFO.asset;
         desc = 'xcp.coindaddy.io/' + name + '.json';
-        $('#token-description').val(desc);
+        $('#token-description').val(desc).change();
     }); 
 
     // Trim any leading and trailing whitespace from description
@@ -28,7 +28,8 @@ $(document).ready(function(){
         var el  = $(this),
             val = el.val();
         el.val(val.trim());
+        // Handle recalculating the tx fee
+        updateTransactionSize();
     });
-
 });
 </script>

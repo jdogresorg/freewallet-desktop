@@ -91,10 +91,13 @@ $(document).ready(function(){
         }));
 
        
-        // Handle validating token name on 'Change Description' form
+        // Handle validating token name 
         $('#token-name').change($.debounce(100,function(e){
             var name = $(this).val();
             if(name!='' && name!=null && name!=last_asset){
+                // Handle updating tx size as token name changes
+                if(type=='issue-supply'||type=='reset-supply'||type=='lock-supply'||type=='transfer-ownership'||type=='dividend')
+                    updateTransactionSize();
                 last_asset = name;
                 // Lookup if this asset is already registered to another address... send to coindaddy to make purchase offer
                 $.getJSON( FW.XCHAIN_API + '/api/asset/' + name, function(o){
@@ -109,6 +112,8 @@ $(document).ready(function(){
                             action = 'issue additional supply for';
                         if(type=='lock-supply')
                             action = 'lock the supply of';
+                        if(type=='reset-supply')
+                            action = 'reset the supply of';
                         if(type=='transfer-ownership')
                             action = 'transfer ownership of';
                         if(type=='dispenser-watchlist-add')

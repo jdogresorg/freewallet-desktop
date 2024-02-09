@@ -16,13 +16,24 @@
 
     <div id="transaction-status"></div>
     <div class="text-right">
-        <div id="btn-submit" class="btn btn-success"><i class="fa fa-lg fa-fw fa-btc"></i> Buy Now</div>
         <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
+        <div id="btn-submit" class="btn btn-success"><i class="fa fa-lg fa-fw fa-btc"></i> Buy Now</div>
     </div>
 </form>
 
 
 <script>
+// Handle generating a transaction using current data and passing it to a callback function
+function generateTransaction(callback=null, broadcast=false){
+    var vals    = array2Object($('#dispenser-buy-form').serializeArray()),
+        network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+        source  = FW.WALLET_ADDRESS,
+        dest    = FW.DIALOG_DATA.destination,
+        amt_sat = getSatoshis(vals['btc-amount']),
+        fee_sat = getSatoshis(vals['fee-amount']),
+        command = (broadcast) ? 'cpSend' : 'createSend';
+    eval(command)(network, source, dest, null, null, 'BTC', amt_sat, fee_sat, callback);
+}
 
 // Callback to run after broadcasting send
 function doneCb(tx){
@@ -56,20 +67,11 @@ function dialogWarnEmptyDispenser(vals){
 
 // Handle confirming action with user
 function confirmDispenserPayment(vals){
-    // Callback to run if user confirms action
-    var confirmCb = function(){
-        var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-            source  = FW.WALLET_ADDRESS,
-            amt_sat = getSatoshis(vals['btc-amount']),
-            fee_sat = getSatoshis(vals['fee-amount']);
-        cpSend(network, source, data.destination, null, null, 'BTC', amt_sat, fee_sat, doneCb);
-    }
-    // Confirm the action with the user
-    var data    = FW.DIALOG_DATA;
-    var title = '<img src="' + FW.XCHAIN_API + '/icon/' + data.asset + '.png" class="fw-icon-20 margin-right-5"> Confirm Buy ' + data.name + '?';
-    var msg  = 'Buy <b>' + vals.amount + ' ' + data.name + '</b>';
-        msg += ' <br/>for <b>' + vals['btc-amount'] + ' BTC</b>';
-    dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+    var data  = FW.DIALOG_DATA,
+        title = '<img src="' + FW.XCHAIN_API + '/icon/' + data.asset + '.png" class="fw-icon-20 margin-right-5"> Confirm Buy ' + data.name + '?',
+        msg   = '<center>Buy <b>' + vals.amount + ' ' + data.name + '</b>';
+        msg  += ' <br/>for <b>' + vals['btc-amount'] + ' BTC</b></center>';
+    dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
 }
 
 // Handle checking for any pending dispenser vends and determine if the dispenser still has quantity to dispense 
@@ -116,6 +118,9 @@ $(document).ready(function(){
             placement: 'bottom'
         }); 
 
+        // Handle updating the transaction fee based on actual tx size
+        updateTransactionSize();
+
     },100);
 
     // Clear the dialog data
@@ -123,6 +128,8 @@ $(document).ready(function(){
 
     // Submit form if user clicks 'Submit' button
     $('#btn-submit').click($.debounce(100,function(e){
+        if(FW.IGNORE_SUBMIT)
+            return;
         $('#dispenser-buy-form').submit();
     }));
 

@@ -21,6 +21,18 @@
 
 
 <script>
+// Handle generating a transaction using current data and passing it to a callback function
+function generateTransaction(callback=null, broadcast=false){
+    var vals      = array2Object($('#change-description-form').serializeArray()),
+        network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+        amt_sat   = getSatoshis(vals.amount),
+        asset     = (vals.name!='') ? vals.name : 'A' + Math.floor(Math.random() * 9999999999999999999);
+        fee_sat   = getSatoshis(vals['fee-amount']),
+        divisible = (FW.ASSET_INFO.divisible) ? true : false,
+        command   = (broadcast) ? 'cpIssuance' : 'createIssuance';
+    eval(command)(network, vals.source, asset, amt_sat, divisible, vals.description, null, fee_sat, false, callback);
+}
+
 $(document).ready(function(){
 
     // Load any field content
@@ -53,10 +65,15 @@ $(document).ready(function(){
             $(this).closest('.form-group').removeClass('has-error has-danger');
         });
 
+        // Handle updating the transaction fee based on actual tx size
+        updateTransactionSize();
+
     },100);
 
     // Submit form if user clicks 'Submit' button
     $('#btn-submit').click($.debounce(100,function(e){
+        if(FW.IGNORE_SUBMIT)
+            return;
         $('#change-description-form').submit();
     }));
 
@@ -102,20 +119,19 @@ $(document).ready(function(){
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                fee_sat = getSatoshis(vals['fee-amount']),
-                info    = FW.ASSET_INFO,
-                title   = '<i class="fa fa-lg fa-fw fa-question-circle"></i> Confirm Description Change?',
-                msg     = 'Change <b>' + vals.name + '</b> description to \'' + stripHtml(vals.description) + '\'';
-            // Confirm the issuance details with the user
-            confirmIssuance(title, msg, network, vals.source, vals.name, 0, info.divisible, vals.description, null, fee_sat, false, function(tx){
-                dialogClose('dialog-change-description');
-                dialogMessage('<i class="fa fa-lg fa-edit"></i> Description Change Successful', '<center>Your issuance has been broadcast to the network and your token description should be updated shortly.' +
-                              '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
-            });
+            // Callback to run after broadcasting transaction
+            var doneCb = function(tx){
+                if(tx){
+                    dialogClose('dialog-change-description');
+                    dialogMessage('<i class="fa fa-lg fa-edit"></i> Description Change Successful', '<center>Your issuance has been broadcast to the network and your token description should be updated shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                }
+            }
+            // Confirm the action with the user
+            var title = '<i class="fa fa-lg fa-fw fa-question-circle"></i> Confirm Description Change?',
+                msg   = getConfirmationMessage('<center>Change <b>' + vals.name + '</b> description to \'' + stripHtml(vals.description) + '\'</center>', vals);
+            dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
         }
-    })
-
-
+    });
 });
 </script>

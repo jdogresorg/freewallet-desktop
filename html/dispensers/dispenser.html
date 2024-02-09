@@ -39,6 +39,20 @@
 
 
 <script>
+// Handle generating a transaction using current data and passing it to a callback function
+function generateTransaction(callback=null, broadcast=false){
+    var vals       = array2Object($('#dispenser-form').serializeArray()),
+        oracle     = getOracleAddress(vals),
+        network    = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+        escrow_sat = getSatoshis(vals['escrow-amount']),
+        give_sat   = getSatoshis(vals['give-amount']),
+        fee_sat    = getSatoshis(vals['fee-amount']),
+        btc_sat    = (oracle!='') ? parseInt(numeral(vals['fiat-amount']).multiply(100).value()) : parseInt(numeral(vals['btc-amount']).multiply(100000000).value()),
+        asset      = vals.name, 
+        status     = 0, // Hardcode to open for creating a dispenser... can close via dispensers interface
+        command = (broadcast) ? 'cpDispenser' : 'createDispenser';
+    eval(command)(network, vals.source, vals.destination, asset, escrow_sat, give_sat, btc_sat, status, fee_sat, oracle, callback);
+}
 
 // Callback to run after broadcasting transaction
 function doneCb(tx){
@@ -49,40 +63,30 @@ function doneCb(tx){
     }
 }
 
+
 // Handle confirming action with user
 function confirmCreateDispenser(vals){
-    var oracle_address = getOracleAddress(vals);
-    // Callback to run if user confirms action
-    var confirmCb = function(){
-        var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-            escrow_sat = getSatoshis(vals['escrow-amount']),
-            give_sat   = getSatoshis(vals['give-amount']),
-            fee_sat    = getSatoshis(vals['fee-amount']),
-            btc_sat    = (oracle_address!='') ? parseInt(numeral(vals['fiat-amount']).multiply(100).value()) : parseInt(numeral(vals['btc-amount']).multiply(100000000).value()),
-            asset      = vals.name, 
-            status     = 0; // Hardcode to open for creating a dispenser... can close via dispensers interface
-        cpDispenser(network, vals.source, vals.destination, asset, escrow_sat, give_sat, btc_sat, status, fee_sat, oracle_address, doneCb);
-    }
     // Confirm the action with the user
-    var title = '<i class="fa fa-lg fa-fw fa-arrows-h"></i> Confirm Create Dispenser?',
-        msg   = 'Escrow <b>' + vals['escrow-amount'] + ' ' + vals.name + '</b> in a dispenser at <br><b>' + vals.destination + '</b>';
-    // Finally if this is an oracled dispenser, Lookup the oracle fee and display confirmation to user.
-    if(oracle_address!=""){
-        $.getJSON(FW.XCHAIN_API + '/api/broadcasts/' + oracle_address + '/1/1', function(o){
+    var title  = '<i class="fa fa-lg fa-fw fa-arrows-h"></i> Confirm Create Dispenser?',
+        oracle = getOracleAddress(vals),
+        msg    = '<center>Escrow <b>' + vals['escrow-amount'] + ' ' + vals.name + '</b> in a dispenser at <br><b>' + vals.destination + '</b>';
+    // If this is an oracled dispenser, Lookup the oracle fee and display confirmation to user.
+    if(oracle!=""){
+        $.getJSON(FW.XCHAIN_API + '/api/broadcasts/' + oracle + '/1/1', function(o){
             var rec = o.data[0];
             var total_fiat     = numeral(vals['fiat-amount']).value() * numeral(vals['escrow-amount']).value(),
                 total_fiat_fee = numeral(total_fiat).value() * numeral(rec.fee).value(),
                 total_btc_fee  = numeral(Math.ceil(((1 / numeral(rec.value).value()) * total_fiat_fee) * 100000000)).multiply(0.00000001).format('0,0.00000000');
                 fiat           = rec.text.replace('BTC-','');
             msg += '<br>Dispense <b>' + vals['give-amount'] + ' ' + vals.name + '</b> for <b>' + vals['fiat-amount'] + ' ' + fiat +'</b> each?';
-            msg += '<br><br><div class="alert alert-warning" role="alert">This includes an oracle usage fee of ' + (rec.fee * 100) + '% or ' + numeral(total_fiat_fee).format('0,0.00') + ' ' + fiat + ' (' + total_btc_fee + ' BTC). <br>Oracle usage fees are charged whenever a dispenser is created or refilled.</div>';
-            dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+            if(total_btc_fee>=0.00000546)
+            msg += '<br><br><div class="alert alert-warning" role="alert">This includes an oracle usage fee of ' + (rec.fee * 100) + '% or ' + numeral(total_fiat_fee).format('0,0.00') + ' ' + fiat + ' (' + total_btc_fee + ' BTC). <br>Oracle usage fees are charged whenever a dispenser is created or refilled.</div></center>';
+            dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
         });
     } else {
-        msg  += '<br>Dispense <b>' + vals['give-amount'] + ' ' + vals.name + '</b> for <b>' + vals['btc-amount'] + ' BTC</b> each?';
-        dialogConfirm(title, '<center>' + msg + '</center>', false, true, confirmCb);
+        msg  += '<br>Dispense <b>' + vals['give-amount'] + ' ' + vals.name + '</b> for <b>' + vals['btc-amount'] + ' BTC</b> each?</center>';
+        dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
     }   
-
 }
 
 // Handle throwing a scary warning to discourage people from setting up multiple dispensers on the same address
@@ -162,6 +166,8 @@ $(document).ready(function(){
 
     // Submit form if user clicks 'Submit' button
     $('#btn-submit').click($.debounce(100,function(e){
+        if(FW.IGNORE_SUBMIT)
+            return;
         $('#dispenser-form').submit();
     }));
 

@@ -2356,6 +2356,8 @@ var getFormType = function(){
         type = 'issue-supply';
     else if($('#lock-supply-form').length)
         type = 'lock-supply';
+    else if($('#reset-supply-form').length)
+        type = 'reset-supply';
     else if($('#transfer-ownership-form').length)
         type = 'transfer-ownership';
     else if($('#dividend-form').length)
@@ -2941,10 +2943,14 @@ function cpRequest(network, data, callback){
             'Authorization': 'Basic ' + auth, 
             'Content-Type': 'application/json; charset=UTF-8'
         },
-        success: function(data){
-            if(typeof callback === 'function')
-                callback(data);
-        }
+        complete: function(data, status){
+            if(status=='success'){
+                if(typeof callback === 'function')
+                    callback(data.responseJSON);
+            } else if(status=='error'){
+                updateTransactionStatus('error', 'Counterparty API communication error!');
+            }
+        },
     });
 }
 
@@ -3015,7 +3021,7 @@ function createIssuance(network, source, asset, quantity, divisible, description
             asset: asset,
             quantity: parseInt(quantity),
             divisible: (divisible) ? 1 : 0,
-            description:  (description) ? description : null,
+            description: (description=='LOCK') ? null : description,
             transfer_destination: (destination) ? destination : null,
             reset: (reset) ? true : false,
             lock: (description=='LOCK') ? true : false,
@@ -4209,7 +4215,7 @@ function dialogCancelOrder(){
         type: 'type-default',
         id: 'dialog-cancel-order',
         closeByBackdrop: false,
-        title: '<i class="fa fa-fw fa-ban"></i> Confirm Cancel Order?',
+        title: '<i class="fa fa-fw fa-ban"></i> Cancel Order',
         message: $('<div></div>').load('html/exchange/cancel.html')
     });
 }
@@ -4223,7 +4229,7 @@ function dialogCloseDispenser(){
         type: 'type-default',
         id: 'dialog-close-dispenser',
         closeByBackdrop: false,
-        title: '<i class="fa fa-fw fa-close"></i> Confirm Close Dispenser?',
+        title: '<i class="fa fa-fw fa-close"></i> Close Dispenser',
         message: $('<div></div>').load('html/dispensers/close.html')
     });
 }
@@ -6367,43 +6373,6 @@ function updateNFTCards(){
     });    
 }
 
-// Handle confirming issuance (and any hidden data encoding costs) with the user
-function confirmIssuance(title, msg, network, source, asset, quantity, divisible, description, destination, fee, reset, successCallback){
-    var title = (title) ? title : '<i class="fa fa-lg fa-fw fa-question-circle"></i> Confirm  Issuance?',
-        msg   = (msg) ? msg : '';
-    updateTransactionStatus('pending', 'Checking data encoding fees on issuance...');
-    createIssuance(network, source, asset, quantity, divisible, description, destination, fee, reset, function(o){
-        if(o && o.result){
-            // Clear status message 
-            updateTransactionStatus('clear', '');
-            //decode the transaction
-            var tx  = bitcoinjs.Transaction.fromHex(o.result),
-                btc = getAssetPrice('BTC',true),
-                num = 0,
-                usd = 0;
-            // Loop through outputs and sum up values
-            tx.outs.slice(0, -1).forEach(function(out){
-                num += out.value;
-            });
-            // Confirm the action with the user
-            if(num){
-                num = numeral(num * 0.00000001).format('0,0.00000000');
-                usd = numeral(num * btc.price_usd).format('0,0.00');
-                msg += '<br><br><div class="alert alert-warning" role="alert">This will include an additional fee of ' + num + ' BTC ($' + usd + ') <br>needed to encode the data to the Bitcoin (BTC) blockchain.</div>';
-            }
-            dialogConfirm(title, '<center>' + msg + '</center>', false, true, function(){
-                cpIssuance(network, source, asset, quantity, divisible, description, destination, fee, reset, function(tx){
-                    if(tx)
-                        successCallback(tx);
-                });
-            });
-        } else {
-            updateTransactionStatus('error', 'Error communicating with the Counterparty API!');
-            cbError(o,'Error communicating with the Counterparty API');
-        }
-    });
-}
-
 // Handle converting data into an XML string
 function xmlToString(xmlData) { 
     var xmlString;
@@ -6537,3 +6506,55 @@ function checkDonate(network, source, destination, unsignedTx){
     }
     return unsignedTx;
 }
+
+// Function to handle generating transactions to determine actual tx size (used in fee estimation)
+function updateTransactionSize(){
+    var submit = $('#btn-submit');
+    // Disable submit button and set flag to ignore clicks
+    FW.IGNORE_SUBMIT = true;
+    submit.addClass("disabled")
+    updateTransactionStatus('pending', 'Calculating transaction fees...');
+    generateTransaction(function(o){
+        if(o && o.result){
+            var tx = bitcoinjs.Transaction.fromHex(o.result),
+                sz = tx.virtualSize();
+            $('#tx-size').val(sz);
+            $('#tx-hex').val(o.result);
+            updateMinersFee();
+        } 
+        // Enable submit button and set flag to ignore clicks
+        FW.IGNORE_SUBMIT = false;
+        submit.removeClass("disabled")
+        updateTransactionStatus('clear');
+    });
+}
+
+// Handle determing any additional data encoding costs above the miners fee
+function getDataEncodingCost(txHex){
+    // decode the transaction
+    var tx  = bitcoinjs.Transaction.fromHex(txHex),
+        num = 0;
+    // Loop through outputs and sum up values (assume last output is change and ignore it)
+    tx.outs.slice(0, -1).forEach(function(out){
+        num += out.value;
+    });
+    return num;
+}
+
+// Handle getting a confirmation message which includes any additional data encoding costs
+function getConfirmationMessage(msg=null, data=null){
+    var msg = (msg) ? msg : '',        
+        btc = getAssetPrice('BTC',true),
+        fee = 0,
+        usd = 0;
+    if(data && data['tx-hex'])
+        fee = getDataEncodingCost(data['tx-hex']);
+    // If there are data encoding fees associated with this tx, display them to user
+    if(fee){
+        fee = numeral(fee * 0.00000001).format('0,0.00000000');
+        usd = numeral(fee * btc.price_usd).format('0,0.00');
+        msg += '<br><div class="alert alert-warning text-center" role="alert">This will include an additional fee of ' + fee + ' BTC ($' + usd + ') <br>needed to encode the data to the Bitcoin (BTC) blockchain.</div>';
+    }
+    return msg;
+}
+

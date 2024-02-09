@@ -56,13 +56,14 @@ $(document).ready(function(){
             $('#fiat-amount-field').hide();
         } else {
             updateFiatInfo();
+            // Handle updating the transaction fee based on actual tx size
+            updateTransactionSize();
             $('#fiat-amount-field').show();
             $('#btc-amount-field').hide();
             if(val=='other'){
                 $('#oracle-address-wrapper').show();
                 $('#oracle-select-wrapper').hide();
             }
-
         }
 
     //     // Update the available amount if the function exist

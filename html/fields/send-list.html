@@ -74,6 +74,8 @@ $(document).ready(function(){
             $('#send-list').closest('.form-group').addClass('has-error has-danger');
         }
         $('#send-list').val(value);
+        // Handle updating the transaction fee based on actual tx size
+        updateTransactionSize();
     });
 
     // Handle enabling memo for multi-send 

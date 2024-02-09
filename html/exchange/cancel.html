@@ -1,4 +1,5 @@
 <form class="form-horizontal" id="cancel-order-form" data-toggle="validator" role="form">
+    <input type="hidden" name="market">
     <!-- Order Information -->
     <div class="form-group">
         <label class="col-sm-3 control-label text-left order-type">
@@ -21,6 +22,16 @@
 
 
 <script>
+// Handle generating a transaction using current data and passing it to a callback function
+function generateTransaction(callback=null, broadcast=false){
+    var vals    = array2Object($('#cancel-order-form').serializeArray()),
+        network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+        source  = FW.WALLET_ADDRESS,
+        fee_sat = getSatoshis(vals['fee-amount']),
+        command = (broadcast) ? 'cpCancel' : 'createCancel';
+    eval(command)(network, source, vals.tx_hash, fee_sat, callback);
+}
+
 $(document).ready(function(){
 
     // Load any field content
@@ -53,6 +64,8 @@ $(document).ready(function(){
 
     // Submit form if user clicks 'Submit' button
     $('#btn-submit').click($.debounce(100,function(e){
+        if(FW.IGNORE_SUBMIT)
+            return;
         $('#cancel-order-form').submit();
     }));
 
@@ -60,6 +73,44 @@ $(document).ready(function(){
     $('#btn-cancel').click($.debounce(100,function(e){
         dialogClose('dialog-cancel-order');
     }));
+
+    // Flag to indicate if we are in the middle of looking up transaction details
+    FW.PENDING_TX_LOOKUP = false;
+
+    // Handle looking up order information based on tx hash
+    $('#tx_hash').change(function(e){
+        var errors = [];
+        var val = $(this).val();
+        if(val.length==64){
+            FW.PENDING_TX_LOOKUP = true;
+            $.getJSON( FW.XCHAIN_API + '/api/tx/' + val, function(data){
+                if(data.tx_type=='Order' && data.status=='open'){
+                    // Verify source address is in wallet
+                    var found = false;
+                    FW.WALLET_ADDRESSES.forEach(function(item){
+                        if(item.address==data.source)
+                            found = true;
+                    });
+                    if(found){
+                        // Store market name for use in confirmation message
+                        $('#cancel-order-form [name="market"]').val(data.give_asset + '/' + data.get_asset);
+                        // Handle updating tx size
+                        updateTransactionSize();
+                    } else {
+                        errors.push('Transaction source address is not in wallet!');
+                    }
+                } else {
+                    errors.push('Transaction hash is not an open order!');
+                }
+                FW.PENDING_TX_LOOKUP = false;
+                // Display any error message
+                if(errors.length){
+                    $('#tx_hash').val('');
+                    dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+                }
+            });
+        }
+    });
 
     // Handle form validation and displaying any errors
     $('#cancel-order-form').validator().on('submit', function(e){
@@ -72,53 +123,40 @@ $(document).ready(function(){
         console.log('vals=',vals);
         // Remove error indicators from any fields 
         $('.form-group').removeClass('has-error has-danger');
-        // Verify we have valid fee amount 
+
+        // Ignore form submissions if we are in the middle of looking up tx details
+        if(FW.PENDING_TX_LOOKUP)
+            return;
+
+        // Verify we have valid tx hash
         if(vals['tx_hash'].length!=64){
             errors.push('You must enter a valid order transaction hash');
             $('#tx_hash').closest('.form-group').addClass('has-error has-danger');
         }
+
         // Verify we have valid fee amount 
         if(numeral(vals['fee-amount']).value()==0){
             errors.push('You must enter a fee which is greater than 0.00000000!');
             $('#fee-amount').closest('.form-group').addClass('has-error has-danger');
         }
+
         // Display any error message
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            // Lookup transaction data and verify it is a valid order and set source address
-            $.getJSON( FW.XCHAIN_API + '/api/tx/' + vals['tx_hash'], function(data){
-                if(data.tx_hash==vals['tx_hash'] && data.tx_type=='Order' && data.status=='open'){
-                    // Verify source address is in wallet
-                    var found = false;
-                    FW.WALLET_ADDRESSES.forEach(function(item){
-                        if(item.address==data.source)
-                            found = true;
-                    });
-                    if(found){
-                        // Callback to run after broadcasting tx
-                        var doneCb = function(tx){
-                            if(tx){
-                                dialogClose('dialog-cancel-order');
-                                dialogMessage('<i class="fa fa-lg fa-check"></i> Order Cancellation Successful', '<center>Your order cancellation has been broadcast to the network and your order should be cancelled shortly.' +
-                                              '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
-                            }
-                        }
-                        var network  = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                            fee_sat  = getSatoshis(vals['fee-amount']);
-                        cpCancel(network, data.source, data.tx_hash, fee_sat, doneCb);
-                    } else {
-                        dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', 'Transaction source address is not in wallet!' );
-                    }
-                } else {
-                    dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', 'Transaction is not an open order!' );
+            // Callback to run after broadcasting transaction
+            var doneCb = function(tx){
+                if(tx){
+                    dialogClose('dialog-cancel-order');
+                    dialogMessage('<i class="fa fa-lg fa-check"></i> Order Cancellation Successful', '<center>Your order cancellation has been broadcast to the network and your order should be cancelled shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
-            });
+            }
+            // Confirm the action with the user
+            var title = '<i class="fa fa-lg fa-fw fa-fire"></i> Confirm Cancel Order?',
+                msg   = getConfirmationMessage('<center>Are you sure you want to cancel this ' + vals.market + ' order?</center>', vals);
+            dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
         }
-    })
-
-
+    });
 });
 </script>
-
-

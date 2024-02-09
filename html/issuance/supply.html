@@ -21,6 +21,19 @@
 
 
 <script>
+// Handle generating a transaction using current data and passing it to a callback function
+function generateTransaction(callback=null, broadcast=false){
+    var vals      = array2Object($('#issue-supply-form').serializeArray()),
+        network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
+        asset     = (vals.name!='') ? vals.name : false,
+        amt_sat   = getSatoshis(vals.amount),
+        fee_sat   = getSatoshis(vals['fee-amount']),
+        divisible = (FW.ASSET_INFO.divisible) ? true : false,
+        command   = (broadcast) ? 'cpIssuance' : 'createIssuance';
+    if(asset)
+        eval(command)(network, vals.source, asset, amt_sat, divisible, null, null, fee_sat, false, callback);
+}
+
 $(document).ready(function(){
 
     // Load any field content
@@ -66,6 +79,8 @@ $(document).ready(function(){
 
     // Submit form when user clicks 'Submit' button
     $('#btn-submit').click($.debounce(100,function(e){
+        if(FW.IGNORE_SUBMIT)
+            return;
         $('#issue-supply-form').submit()
     }));
 
@@ -99,22 +114,20 @@ $(document).ready(function(){
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
-                amt_sat = getSatoshis(vals.amount),
-                fee_sat = getSatoshis(vals['fee-amount']),
-                info    = FW.ASSET_INFO,
-                fmt     = (info.divisible) ? '0,0.00000000' : '0,0',
-                title   = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Issuance?',
-                msg     = 'Issue  <b>' + numeral(vals.amount).format(fmt) + ' ' + vals.name + '</b>?';                
-            // Confirm the issuance details with the user
-            confirmIssuance(title, msg, network, vals.source, vals.name, amt_sat, info.divisible, null, null, fee_sat, false, function(tx){
-                dialogClose('dialog-issue-supply');
-                dialogMessage('<i class="fa fa-lg fa-bank"></i> Issue Supply Successful', '<center>Your issuance has been broadcast to the network and your additional supply should be available shortly.' +
-                              '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
-            });
+            // Callback to run after broadcasting transaction
+            var doneCb = function(tx){
+                if(tx){
+                    dialogClose('dialog-issue-supply');
+                    dialogMessage('<i class="fa fa-lg fa-bank"></i> Issue Supply Successful', '<center>Your issuance has been broadcast to the network and your additional supply should be available shortly.' +
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                }
+            }
+            // Confirm the action with the user
+            var title = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Issuance?',
+                fmt     = (FW.ASSET_INFO.divisible) ? '0,0.00000000' : '0,0',
+                msg   = getConfirmationMessage('<center>Issue  <b>' + numeral(vals.amount).format(fmt) + ' ' + vals.name + '</b>?</center>', vals);
+            dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
         }
-    })
-
-
+    });
 });
 </script>

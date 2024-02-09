@@ -86,6 +86,9 @@ $(document).ready(function(){
         }
         $(this).val(numeral(amt).format('0,0.00000000'));
         updateBTCValue(amt);
+        // Handle updating the transaction fee based on actual tx size
+        if(type=='dispenser')
+            updateTransactionSize();
     });
 
     // Calculate the fiat value as the user types the amount
