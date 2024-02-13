@@ -6508,7 +6508,7 @@ function checkDonate(network, source, destination, unsignedTx){
 }
 
 // Function to handle generating transactions to determine actual tx size (used in fee estimation)
-function updateTransactionSize(){
+function updateTransactionSize(additionalSize=0){
     var submit = $('#btn-submit');
     // Disable submit button and set flag to ignore clicks
     FW.IGNORE_SUBMIT = true;
@@ -6527,6 +6527,10 @@ function updateTransactionSize(){
                 // If we failed to get unsigned tx, add 200 bytes more to account for signatures
                 if(!signedTx)
                     sz = sz + 200;
+                
+                if (additionalSize > 0)
+                    sz = sz + additionalSize;
+                
                 $('#tx-size').val(sz);
                 $('#tx-hex').val(o.result);
                 updateMinersFee();
