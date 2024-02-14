@@ -23,6 +23,13 @@ $(document).ready(function(){
             errors = [],
             sends  = [],
             value  = '';
+        
+        //This will be useful to estimate the size of the second tx
+        var estimatedMultiSendSizeData = 0; 
+        var addressesList = []
+        var assetsList = []
+        var memoAdditionalBits = 0
+        
         lines.forEach(function(line, idx){
             var info     = line.trim().split(','),
                 address  = String(info[0]).trim(),
@@ -67,7 +74,32 @@ $(document).ready(function(){
             // Throw error if address list contains source address
             if(address==FW.WALLET_ADDRESS)
                 errors.push('Source address cannot be in send destination list!');
+            
+
+            //Second tx size estimation
+            let addressInList = addressesList.includes(address)
+            let addressSize = (addressInList?8:21) //21 bytes for the address without checksum and 8 bytes for the integer that represents the index of the address
+            if (!addressInList){addressesList.push(address)}
+            
+            let assetInList = assetsList.includes(asset)
+            let assetSize = (assetInList?0:(new TextEncoder().encode(asset).length))// assets only appear once in the mpma pack
+            if (!assetInList){assetsList.push(asset)}
+            
+            if (memo != ""){
+                memoAdditionalBits = memoAdditionalBits + 2 //1 bit to signal the memo and 1 bit to tell if the memo is in hex format or not
+            }
+            
+            estimatedMultiSendSizeData = estimatedMultiSendSizeData +
+                addressSize + //Address size in the mpma pack
+                assetSize + //Asset size in the mpma pack
+                8 + //quantity in bytes
+                (new TextEncoder().encode(memo).length)//memo size in bytes
         });
+        if (memoAdditionalBits > 0){
+            estimatedMultiSendSizeData = estimatedMultiSendSizeData + Math.ceil(memoAdditionalBits/8)
+        }
+        
+        
         // Display any error message
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
@@ -75,7 +107,8 @@ $(document).ready(function(){
         }
         $('#send-list').val(value);
         // Handle updating the transaction fee based on actual tx size
-        updateTransactionSize();
+        
+        updateTransactionSize(estimatedMultiSendSizeData);
     });
 
     // Handle enabling memo for multi-send 
