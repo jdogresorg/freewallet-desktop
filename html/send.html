@@ -98,7 +98,10 @@ function generateTransaction(callback=null, broadcast=false){
         vals.memo_is_hex = memo_is_hex;
         // Placeholder to easily reference destinations in updateTransactionSize()
         FW.SEND_DESTINATIONS = vals.destination;
-        eval(command)(network, vals.source, vals.destination, vals.memo, vals.memo_is_hex, vals.asset, vals.quantity, fee_sat, null, callback);
+        if(command=='cpMultiSend')
+            cpMultiSend(network, vals.source, vals.destination, vals.memo, vals.memo_is_hex, vals.asset, vals.quantity, fee_sat, callback);
+        if(command=='createMultiSend')
+            createMultiSend(network, vals.source, vals.destination, vals.memo, vals.memo_is_hex, vals.asset, vals.quantity, fee_sat, null, callback);
     }
 }
 
