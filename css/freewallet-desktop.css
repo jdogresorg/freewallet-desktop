@@ -1233,7 +1233,7 @@ a.red:hover {
 #transaction-status {
     float: left;
     width: 300px;
-    margin-top: 8px;
+/*    margin-top: 8px;*/
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

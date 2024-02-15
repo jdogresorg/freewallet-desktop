@@ -43,7 +43,29 @@ function updateMinersFee(){
         cost = numeral(FW.MINIMUM_TX_FEE * 0.00000001).format('0.00000000');
     $('#fee-amount').val(cost);
     $('#fee-amount').change();
+    // Display the current size/fee used to calculate the current fee
+    displayMinersFeeInfo(size,fee);
 }
+
+// Handle displaying the current size/fee used to calculate the current miners fee
+function displayMinersFeeInfo(){
+    var html = '',
+        size = $('#tx-size').val(),
+        fee  = $('#fee-amount').val(),
+        rate = numeral((fee * 100000000) / size).format('0,0.0');
+    // Display the Transaction Size
+    html += '<div class="input-group pull-left" id="fee-size-wrapper" style="width:120px;">' +
+                '<div class="input-group-addon" id="">Size</div>' +
+                '<input type="text" class="form-control" name="fee-size"  id="fee-size" placeholder="100" readonly value="' + size + '">' +
+            '</div>';
+    // Display the Transaction Fee
+    html += '<div class="input-group pull-left" id="fee-sats-wrapper" style="width:120px;margin-left: 15px">' +
+                '<input type="text" class="form-control" name="fee-sats"  id="fee-sats" placeholder="100" readonly value="' + rate + '">' +
+                '<div class="input-group-addon" id="">sat/vB</div>' +
+            '</div>';
+    $('#transaction-status').removeClass('red green').html(html);
+}
+
 
 $(document).ready(function(){
     var ls = localStorage,
@@ -83,6 +105,7 @@ $(document).ready(function(){
         }
         $(this).val(numeral(amt).format('0,0.00000000'));
         updateTxFeeValue(amt);
+        displayMinersFeeInfo();
     });
 
     // When user changes fee, update fee fiat

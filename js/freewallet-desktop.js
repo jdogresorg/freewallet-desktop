@@ -6527,23 +6527,22 @@ function updateTransactionSize(additionalSize=0){
                 // If we failed to get unsigned tx, add 200 bytes more to account for signatures
                 if(!signedTx)
                     sz = sz + 200;
-                
-                if (additionalSize > 0)
+                // Add any additional tx size to the total size (MPMA Sends, etc)
+                if(additionalSize > 0)
                     sz = sz + additionalSize;
-                
                 $('#tx-size').val(sz);
                 $('#tx-hex').val(o.result);
+                updateTransactionStatus('clear');
                 updateMinersFee();
                 // Enable submit button and set flag to ignore clicks
                 FW.IGNORE_SUBMIT = false;
                 submit.removeClass("disabled")
-                updateTransactionStatus('clear');
             });
         } else {
+            updateTransactionStatus('clear');
             // Enable submit button and set flag to ignore clicks
             FW.IGNORE_SUBMIT = false;
             submit.removeClass("disabled")
-            updateTransactionStatus('clear');
         }
     });
 }
