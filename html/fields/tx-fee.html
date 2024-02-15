@@ -25,11 +25,14 @@
 
 
 <script>
+lastFeePriority = null;
 
 // Handle calculating the miners fee and updating the displayed amount
 function updateMinersFee(){
     var val  = $('#fee-priority').val(),
         size = $('#tx-size').val(),
+        el   = $('#fee-amount'),
+        amt  = el.val(),
         o    = FW.NETWORK_INFO.fee_info,
         fee  = o.optimal; // default to high priority
     if(val=='Low')
@@ -38,13 +41,19 @@ function updateMinersFee(){
         fee = ((o.low_priority + o.optimal) / 2); // Medium fee is between high and low
     // Calculate the actual fee cost for this transaction
     var cost = numeral(((fee / 1000) * size) * 0.00000001).format('0.00000000');
-    // Set fee to minimum if user selects Custom
-    if(val=='Custom')
-        cost = numeral(FW.MINIMUM_TX_FEE * 0.00000001).format('0.00000000');
-    $('#fee-amount').val(cost);
-    $('#fee-amount').change();
+    // Set fee to minimum if user selects Custom, otherwise leave custom fee untouched
+    if(val=='Custom'){
+        if(lastFeePriority!=val)
+            cost = numeral(FW.MINIMUM_TX_FEE * 0.00000001).format('0.00000000');
+        else
+            cost = amt
+    }
+    // Store last fee priority
+    lastFeePriority = val;
+    el.val(cost);
+    el.change();
     // Display the current size/fee used to calculate the current fee
-    displayMinersFeeInfo(size,fee);
+    displayMinersFeeInfo();
 }
 
 // Handle displaying the current size/fee used to calculate the current miners fee
@@ -59,7 +68,7 @@ function displayMinersFeeInfo(){
                 '<input type="text" class="form-control" name="fee-size"  id="fee-size" placeholder="100" readonly value="' + size + '">' +
             '</div>';
     // Display the Transaction Fee
-    html += '<div class="input-group pull-left" id="fee-sats-wrapper" style="width:120px;margin-left: 15px">' +
+    html += '<div class="input-group pull-left" id="fee-sats-wrapper" style="width:130px;margin-left: 15px">' +
                 '<input type="text" class="form-control" name="fee-sats"  id="fee-sats" placeholder="100" readonly value="' + rate + '">' +
                 '<div class="input-group-addon" id="">sat/vB</div>' +
             '</div>';
