@@ -1,3 +1,8 @@
+Version 0.9.28 - February 15th, 2024
+- Improved transaction fee interface
+- Improved MPMA send transaction fee support
+- Adjusted default tx size to 256 bytes
+
 Version 0.9.27 - February 8th, 2024
 - Better transaction fee estimation support
 
