@@ -6405,6 +6405,9 @@ function checkDonate(network, source, destination, unsignedTx){
     var net    = (network=='testnet') ? 'testnet' : 'mainnet', 
         donate = false,
         change = false;
+    // Return untouched tx if the ADS system is temporarily disabled (fee calculation requests, etc)
+    if(FW.ADS_DISABLE)
+        return unsignedTx;
     // Increase the donation tx counter
     FW.DONATE_COUNT++;
     // If the donation system is enabled, check if we should donate on this tx
@@ -6519,11 +6522,15 @@ function updateTransactionSize(additionalSize=0){
             var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
                 source  = FW.WALLET_ADDRESS,
                 dest    = (FW.SEND_DESTINATIONS) ? FW.SEND_DESTINATIONS : source;
+            // Set flag to disable ADS system for tx fee calculations
+            FW.ADS_DISABLE = true;
             // Sign the tx, so we can get the actual transaction size
             signTransaction(network, source, dest, o.result, function(signedTx){
                 var txHex = (signedTx) ? signedTx : o.result;
                     tx    = bitcoinjs.Transaction.fromHex(txHex),
                     sz    = tx.virtualSize();
+                // Re-Enable the ADS system
+                FW.ADS_DISABLE = false;
                 // If we failed to get unsigned tx, add 200 bytes more to account for signatures
                 if(!signedTx)
                     sz = sz + 200;
