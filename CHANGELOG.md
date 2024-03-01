@@ -1,5 +1,6 @@
 Version 0.9.29 - February 29th, 2024
 - Fixed issue with ADS and tx fee calculations
+- Added "UTXO Usage" preference in settings 
 
 Version 0.9.28 - February 15th, 2024
 - Improved transaction fee interface
