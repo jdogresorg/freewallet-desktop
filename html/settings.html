@@ -118,7 +118,7 @@
                                 <option>Low</option>
                                 <option>Custom</option>
                             </select>
-                        </div>                
+                        </div>
                         <div class="form-group">
                             <label for="minimum-tx-fee" class="col-sm-3 control-label no-right-padding">
                                 Minimum Fee
@@ -130,6 +130,16 @@
                                     <a href="#" class="input-group-addon" id="reset-min-fee">Reset</a>
                                 </div>
                             </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="unconfirmed-utxos" class="col-sm-3 control-label no-right-padding">
+                                UTXO Usage 
+                                <a href="#" data-toggle="tooltip" title='This is where you decide if you want to use unconfirmed UTXOS in transactions, or only confirmed UTXOS' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                            </label>
+                            <select class="col-sm-9 selectpicker" name="unconfirmed-utxos" id="unconfirmed-utxos">
+                                <option value="1">All Available</option>
+                                <option value="0">Only Confirmed</option>
+                            </select>
                         </div>
                     </fieldset>
                     <fieldset>
@@ -411,6 +421,9 @@ $(document).ready(function(){
     var val = ls.getItem('feePriority') || 'High';
     $('#current-priority').val(val);
 
+    // Set UTXO usage value based on current value
+    $('#unconfirmed-utxos').val(FW.UNCONFIRMED_UTXOS);
+
     var fee = numeral(FW.MINIMUM_TX_FEE * 0.00000001).format('0.00000000');
     $('#minimum-tx-fee').val(fee);
 
@@ -637,6 +650,14 @@ $(document).ready(function(){
         $('#multisig-dust-value').val('0.00');
         ls.removeItem('dustSizeMultisig');
     });    
+
+    // Save UTXO preferences when it changes
+    $('#unconfirmed-utxos').change(function(e){
+        var val = $(this).val();
+        FW.UNCONFIRMED_UTXOS = val;
+        ls.setItem('unconfirmedUtxos', val);
+    });
+
 
     // Load the current dust preferences
     var dust1 = (FW.DUST_SIZE_REGULAR==false) ? '' : numeral(FW.DUST_SIZE_REGULAR * 0.00000001).format('0,0.00000000'),

@@ -166,6 +166,9 @@ FW.DONATE_AMOUNT  = ls.getItem('donateAmount')  || FW.DONATE_DEFAULT;
 FW.WALLET_AUTOLOCK      = ls.getItem('walletAutoLock') || 15;
 FW.WALLET_LAST_UNLOCKED = Date.now();
 
+// Load UTXO usage preferences (default to use all UTXOS)
+FW.UNCONFIRMED_UTXOS = ls.getItem('unconfirmedUtxos') || 1;
+
 // Define cache for asset divisibility
 FW.ASSET_DIVISIBLE = {};
 FW.ASSET_DIVISIBLE['BTC'] = true;
@@ -2910,8 +2913,9 @@ function setAdvancedCreateParams(data){
     // Only apply advanced params to 'create_' requests
     if(data.method.indexOf('create_')!=-1){
         var o = data.params;
-        // Allow usage of unconfirmed inputs (enables daisy-chaining pending txs)
-        o.allow_unconfirmed_inputs = true;
+        // Pass forward UTXO usage preferences
+        if(FW.UNCONFIRMED_UTXOS)
+            o.allow_unconfirmed_inputs = true;
         // Pass forward dust preferences in satoshis
         if(FW.DUST_SIZE_REGULAR)
             o.regular_dust_size = parseInt(FW.DUST_SIZE_REGULAR);
