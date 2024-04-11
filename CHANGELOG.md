@@ -1,3 +1,6 @@
+Version 0.9.30 - April 11th, 2024
+- Start using SSL by default for CP API
+
 Version 0.9.29 - February 29th, 2024
 - Fixed issue with ADS and tx fee calculations
 - Added "UTXO Usage" preference in settings 
