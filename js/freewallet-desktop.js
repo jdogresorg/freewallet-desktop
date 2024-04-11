@@ -64,7 +64,7 @@ FW.WALLET_SERVER_INFO = {
         port: 4000,
         user: 'rpc',
         pass: 'rpc',
-        ssl: false,
+        ssl: true,
         api_host: 'xchain.io',
         api_ssl: true
     },
@@ -73,7 +73,7 @@ FW.WALLET_SERVER_INFO = {
         port: 14000,
         user: 'rpc',
         pass: 'rpc',
-        ssl: false,
+        ssl: true,
         api_host: 'testnet.xchain.io',
         api_ssl: true
     }
