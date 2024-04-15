@@ -1,3 +1,7 @@
+Version 0.9.31 - April 15th, 2024
+- Set default CP API servers to public.xchain.io
+- Add ‘Reset to Defaults’ option in server settings
+
 Version 0.9.30 - April 11th, 2024
 - Start using SSL by default for CP API
 
