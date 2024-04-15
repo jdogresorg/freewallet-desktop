@@ -58,10 +58,10 @@ FW.WALLET_BALANCES = JSON.parse(ls.getItem('walletBalances')) || [];
 FW.WALLET_HISTORY  = JSON.parse(ls.getItem('walletHistory'))  || [];
 
 // Define default server info
-FW.WALLET_SERVER_INFO = {
+FW.WALLET_SERVER_INFO_DEFAULT = {
     mainnet: {
-        host: 'api.counterparty.io',
-        port: 4000,
+        host: 'public.xchain.io',
+        port: 4001,
         user: 'rpc',
         pass: 'rpc',
         ssl: true,
@@ -69,8 +69,8 @@ FW.WALLET_SERVER_INFO = {
         api_ssl: true
     },
     testnet: {
-        host: 'api.counterparty.io',
-        port: 14000,
+        host: 'public.xchain.io',
+        port: 14001,
         user: 'rpc',
         pass: 'rpc',
         ssl: true,
@@ -78,6 +78,9 @@ FW.WALLET_SERVER_INFO = {
         api_ssl: true
     }
 };
+
+// Set server info to default server info
+FW.WALLET_SERVER_INFO = FW.WALLET_SERVER_INFO_DEFAULT;
 
 // Define the default and base markets for the Decentralized Exchange (DEX)
 FW.DEFAULT_MARKETS = ['BTC','XCP','BITCRYSTALS','PEPECASH','WILLCOIN'];

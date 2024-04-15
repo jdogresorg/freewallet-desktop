@@ -235,7 +235,10 @@
                 <!-- Server Settings -->
                 <div id="servers" class="tab-pane">
                     <fieldset>
-                        <legend>Mainnet</legend>
+                        <legend>
+                            Mainnet
+                            <a href="#" id="reset-server-settings" class="btn btn-xs btn-info pull-right">Reset to Defaults</a>
+                        </legend>
                         <div class="form-group">
                             <label for="mainnet-api-host" class="col-sm-3 control-label no-right-padding">
                                 API Host
@@ -379,19 +382,11 @@
 </div>
 
 <script>
-$(document).ready(function(){
-    var ls = localStorage,
-        ss = sessionStorage;
+// Define possible networks
+var networks = ['mainnet','testnet'];
 
-    // Load the wallet address information
-    $('#settings-address').val(FW.WALLET_ADDRESS);
-    $('#settings-network').val(FW.WALLET_NETWORK);
-    $('#settings-address-label').val(FW.WALLET_ADDRESS_LABEL);
-
-    // Define possible networks
-    var networks = ['mainnet','testnet'];
-
-    // Populate the server info fields
+// Handle displaying current server settings
+function displayServerSettings(){
     $.each(networks,function(idx, name){
         var o = FW.WALLET_SERVER_INFO[name];
         $('#' + name + '-cp-host').val(o.host);
@@ -402,6 +397,19 @@ $(document).ready(function(){
         $('#' + name + '-api-host').val(o.api_host);
         $('#' + name + '-api-ssl').val((o.api_ssl) ? 1 : 0);
     });
+}
+
+$(document).ready(function(){
+    var ls = localStorage,
+        ss = sessionStorage;
+
+    // Load the wallet address information
+    $('#settings-address').val(FW.WALLET_ADDRESS);
+    $('#settings-network').val(FW.WALLET_NETWORK);
+    $('#settings-address-label').val(FW.WALLET_ADDRESS_LABEL);
+
+    // Display current server settings
+    displayServerSettings();
 
     // Initialize any tooltips
     $('[data-toggle="tooltip"]').tooltip({ 
@@ -724,6 +732,15 @@ $(document).ready(function(){
     // Load the current donation amount preferences
     $('#donate-amount').val(numeral(FW.DONATE_AMOUNT * 0.00000001).format('0,0.00000000')).change();
 
+    // Handle setting server settings back to the defaults
+    $('#reset-server-settings').click(function(){
+        // Delete server state from localStorage
+        ls.removeItem('serverInfo')
+        // Set server info to default server info
+        FW.WALLET_SERVER_INFO = FW.WALLET_SERVER_INFO_DEFAULT;
+        // Display current server settings
+        displayServerSettings();
+    });
     // Add default option and update list immediately
     var el   = $('#donate-cause'),
         html = '<option data-content="" value="bc1qd0nateja8l9am8tqpzjn9uazhf6dlp9qer2tra">FreeWallet Development Fund</option>';
