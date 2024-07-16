@@ -163,9 +163,8 @@
                                 <a href="#" data-toggle="tooltip" title='This is what cause you would like your donations to support' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
                             </label>
                             <select class="col-sm-9 selectpicker" name="donate-cause" id="donate-cause">
-                                <option value="1">Counterparty General Fund</option>
-                                <option value="1">XChain Hosting</option>
-                                <option value="1">Freewallet Development</option>
+                                <option value="1">Freewallet Development Fund</option>
+                                <option value="1">TokenScan.io Server Hosting Fund</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -242,16 +241,16 @@
                         <div class="form-group">
                             <label for="mainnet-api-host" class="col-sm-3 control-label no-right-padding">
                                 API Host
-                                <a href="#" data-toggle="tooltip" title='This is the hostname where the XChain API can be accessed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                                <a href="#" data-toggle="tooltip" title='This is the hostname where the explorer API can be accessed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
                             </label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" name="mainnet-api-host" id="mainnet-api-host" placeholder="xchain.io" required>
+                                <input type="text" class="form-control" name="mainnet-api-host" id="mainnet-api-host" placeholder="tokenscan.io" required>
                             </div>
                         </div>
                         <div class="form-group">
                             <label for="mainnet-api-ssl" class="col-sm-3 control-label no-right-padding">
                                 API SSL
-                                <a href="#" data-toggle="tooltip" title='This determines if requests to the XChain API use http or https (ssl)' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                                <a href="#" data-toggle="tooltip" title='This determines if requests to the explorer API use http or https (ssl)' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
                             </label>
                             <select class="col-sm-9 selectpicker" name="mainnet-api-ssl" id="mainnet-api-ssl">
                                 <option value="1">Yes</option>
@@ -264,7 +263,7 @@
                                 <a href="#" data-toggle="tooltip" title='This is the hostname where the Counterparty API can be accessed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
                             </label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" name="mainnet-cp-host" id="mainnet-cp-host" placeholder="public.coindaddy.io" required>
+                                <input type="text" class="form-control" name="mainnet-cp-host" id="mainnet-cp-host" placeholder="public.tokenscan.io" required>
                             </div>
                         </div>
                         <div class="form-group">
@@ -291,7 +290,7 @@
                                 <a href="#" data-toggle="tooltip" title='This is the password used to authenticate to the Counterparty API' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
                             </label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" name="mainnet-cp-pass" id="mainnet-cp-pass" placeholder="1234" required>
+                                <input type="text" class="form-control" name="mainnet-cp-pass" id="mainnet-cp-pass" placeholder="rpc" required>
                             </div>
                         </div>
                         <div class="form-group">
@@ -310,16 +309,16 @@
                         <div class="form-group">
                             <label for="testnet-api-host" class="col-sm-3 control-label no-right-padding">
                                 API Host
-                                <a href="#" data-toggle="tooltip" title='This is the hostname where the XChain API can be accessed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                                <a href="#" data-toggle="tooltip" title='This is the hostname where the explorer API can be accessed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
                             </label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control" name="testnet-api-host" id="testnet-api-host" placeholder="testnet.xchain.io" required>
+                                <input type="text" class="form-control" name="testnet-api-host" id="testnet-api-host" placeholder="testnet.tokenscan.io" required>
                             </div>
                         </div>
                         <div class="form-group">
                             <label for="mainnet-api-ssl" class="col-sm-3 control-label no-right-padding">
                                 API SSL
-                                <a href="#" data-toggle="tooltip" title='This determines if requests to the XChain API use http or https (ssl)' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
+                                <a href="#" data-toggle="tooltip" title='This determines if requests to the explorer API use http or https (ssl)' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
                             </label>
                             <select class="col-sm-9 selectpicker" name="testnet-api-ssl" id="testnet-api-ssl">
                                 <option value="1">Yes</option>
@@ -332,7 +331,7 @@
                                 <a href="#" data-toggle="tooltip" title='This is the hostname where the Counterparty API can be accessed' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
                             </label>
                             <div class="col-sm-9">
-                              <input type="text" class="form-control" name="testnet-cp-host" id="testnet-cp-host" placeholder="public.coindaddy.io" required>
+                              <input type="text" class="form-control" name="testnet-cp-host" id="testnet-cp-host" placeholder="public.tokenscan.io" required>
                             </div>
                         </div>
                         <div class="form-group">
@@ -522,7 +521,7 @@ $(document).ready(function(){
             // Save updated server information
             FW.WALLET_SERVER_INFO = o;
             ls.setItem('serverInfo',JSON.stringify(o));
-            // Handle setting the xchain URL
+            // Handle setting the explorer URL
             setExplorerAPI();
             // dialogMessage('<i class="fa fa-lg fa-fw fa-info-circle"></i> Information Saved', 'Your server information has been successfully saved.');
         }
