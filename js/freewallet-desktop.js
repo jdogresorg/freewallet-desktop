@@ -201,8 +201,8 @@ $(document).ready(function(){
     if(info)
         FW.WALLET_SERVER_INFO = JSON.parse(info);
 
-    // Setup the xchain API url
-    setXChainAPI(FW.WALLET_NETWORK);
+    // Setup the explorer API url
+    setExplorerAPI(FW.WALLET_NETWORK);
 
     // Initialize the wallet 
     initWallet();
@@ -216,8 +216,8 @@ function setTheme( theme ) {
     body.addClass(theme);        
 }
 
-// Handle getting XChain API url for given network
-function getXChainAPI( network ){
+// Handle getting explorer API url for given network
+function getExplorerAPI( network ){
     var name = (network==2||network=='testnet') ? 'testnet' : 'mainnet',
         o    = FW.WALLET_SERVER_INFO[name],
         url  = ((o.api_ssl) ? 'https' : 'http') + '://' + o.api_host;
@@ -225,8 +225,8 @@ function getXChainAPI( network ){
 }
 
 // Handle setting server information based off current network
-function setXChainAPI( network ){
-    FW.XCHAIN_API = getXChainAPI(network);
+function setExplorerAPI( network ){
+    FW.XCHAIN_API = getExplorerAPI(network);
 }
 
 // Handle checking for an updated wallet version
@@ -653,8 +653,8 @@ function setWalletNetwork(network, load=false){
     FW.DISPENSERS       = {};
     FW.ASSET_INFO       = {};
     FW.REPUTATION_INFO  = {};
-    // Update the xchain API url
-    setXChainAPI(network);
+    // Update the explorer API url
+    setExplorerAPI(network);
     // Set current address to first address in wallet
     setWalletAddress(getWalletAddress(0), load);
 }
