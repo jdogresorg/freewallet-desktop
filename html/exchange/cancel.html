@@ -83,7 +83,7 @@ $(document).ready(function(){
         var val = $(this).val();
         if(val.length==64){
             FW.PENDING_TX_LOOKUP = true;
-            $.getJSON( FW.XCHAIN_API + '/api/tx/' + val, function(data){
+            $.getJSON( FW.EXPLORER_API + '/api/tx/' + val, function(data){
                 if(data.tx_type=='Order' && data.status=='open'){
                     // Verify source address is in wallet
                     var found = false;
@@ -149,7 +149,7 @@ $(document).ready(function(){
                 if(tx){
                     dialogClose('dialog-cancel-order');
                     dialogMessage('<i class="fa fa-lg fa-check"></i> Order Cancellation Successful', '<center>Your order cancellation has been broadcast to the network and your order should be cancelled shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.EXPLORER_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
             // Confirm the action with the user

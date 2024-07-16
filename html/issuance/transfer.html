@@ -112,7 +112,7 @@ $(document).ready(function(){
                 if(tx){
                     dialogClose('dialog-transfer-ownership');
                     dialogMessage('<i class="fa fa-lg fa-exchange"></i> Transfer Successful', '<center>Your transfer has been broadcast to the network and the token owner should be updated shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.EXPLORER_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
             // Confirm the action with the user

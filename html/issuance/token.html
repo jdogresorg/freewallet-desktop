@@ -131,13 +131,13 @@ $(document).ready(function(){
         if(name && name!=val)
             $(this).val(name);
         if(val!='' && val!=null){
-            $.getJSON( FW.XCHAIN_API + '/api/asset/' + name, function(o){
+            $.getJSON( FW.EXPLORER_API + '/api/asset/' + name, function(o){
                 // An error indicates asset is not registered
                 if(o.error){
                     // Verify parent asset is owned by current address
                     if(type=='Subasset'){
                         // Lookup if this asset is already registered to another address... send to coindaddy to make purchase offer
-                        $.getJSON( FW.XCHAIN_API + '/api/asset/' + parent, function(data){
+                        $.getJSON( FW.EXPLORER_API + '/api/asset/' + parent, function(data){
                             // Parent asset does not exist yet, notify user they must first register named asset before child
                             if(data.error){
                                 dialogMessage('Notice', '<center>Before you can create <b><i>' + name + '</i></b>, you must first create the parent token <b><i>' + parent +'</i></b></center>', true);
@@ -268,7 +268,7 @@ $(document).ready(function(){
                 if(tx){
                     dialogClose('dialog-create-token');
                     dialogMessage('<i class="fa fa-lg fa-plus-circle"></i> Token Creation Successful', '<center>Your issuance has been broadcast to the network and your token should be created shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.EXPLORER_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
             // Confirm the action with the user

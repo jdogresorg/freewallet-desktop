@@ -135,7 +135,7 @@ FW.DISPENSERS_DATATABLE_CONFIG = {
         // Display Asset or address name and make it clickable
         if(id=='my-dispensers-table'){
             var [name, asset] = data[0].split('|');
-            html = '<img src="' + FW.XCHAIN_API + '/icon/' + asset + '.png" class="fw-icon-20 pull-left">&nbsp;';
+            html = '<img src="' + FW.EXPLORER_API + '/icon/' + asset + '.png" class="fw-icon-20 pull-left">&nbsp;';
         }
         html += '<a href="#" class="dispenser-link">' + name + '</a>';
         $('td', row).eq(0).html(html);
@@ -219,7 +219,7 @@ $(document).ready(function(){
     // When user clicks dispenser name, launch dispenser in external window
     $('#dispensers-lists').on('click', 'a.dispenser-link', $.debounce(100,function(e){ 
         var data = String($(e.target).closest('tr').attr('data')).split(','),
-            url  = FW.XCHAIN_API + '/tx/' + data[6];
+            url  = FW.EXPLORER_API + '/tx/' + data[6];
         if(typeof nw !== 'undefined'){
             nw.Shell.openExternal(url);
         } else {

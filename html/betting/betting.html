@@ -52,11 +52,11 @@ $(document).ready(function(){
         percent = 0;
 
     // Update bounty address and amount
-    $('#bounty-address').html('<a href="' + FW.XCHAIN_API + '/address/' + address + '" target="_blank">' + address + '</a>')
+    $('#bounty-address').html('<a href="' + FW.EXPLORER_API + '/address/' + address + '" target="_blank">' + address + '</a>')
     $('#bounty-amount').html(numeral(bounty).format('0,0') + ' XCP');
 
     // Lookup the current balance at the bounty address
-    $.getJSON(FW.XCHAIN_API + '/api/balances/' + address, function(o){
+    $.getJSON(FW.EXPLORER_API + '/api/balances/' + address, function(o){
         if(o.address==address){
             o.data.forEach(function(item){
                 if(item.asset=='XCP'){

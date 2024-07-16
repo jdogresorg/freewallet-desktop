@@ -120,7 +120,7 @@ $(document).ready(function(){
                 if(tx){
                     dialogClose('dialog-pay-dividend');
                     dialogMessage('<i class="fa fa-lg fa-check"></i> Dividend Successful', '<center>Your dividend transaction has been broadcast to the network and your dividends should be paid out updated shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.EXPLORER_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
             // Confirm the action with the user

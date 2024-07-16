@@ -66,7 +66,7 @@ function getMarketsRowCount(){
 
 // Handle adding a market tab and content table
 function addMarket(market){
-    var tab     = '<li class="tab" data-market="' + market +'"><a href="#' + market + '" data-toggle="tab"><img src="' + FW.XCHAIN_API + '/icon/' + market + '.png" class="fw-icon-20"></a></li>',
+    var tab     = '<li class="tab" data-market="' + market +'"><a href="#' + market + '" data-toggle="tab"><img src="' + FW.EXPLORER_API + '/icon/' + market + '.png" class="fw-icon-20"></a></li>',
         content = '<div class="tab-pane active" id="' + market + '">' +
                   '    <div class="panel panel-default table-responsive">' +
                   '        <table class="datatable table table-striped cell-border table-hover table-condensed text-right" width="100%">' +
@@ -144,7 +144,7 @@ FW.MARKETS_DATATABLE_CONFIG = {
         }
         $(row).attr('data-market', asset + '/' + asset2);
         if(String(asset).substr(0,4)!='<img')
-            $('td', row).eq(0).html('<img src="' + FW.XCHAIN_API + '/icon/' + asset + '.png" class="fw-icon-20 pull-left">&nbsp;<a href="#" class="market-link">' + name + '</a>');
+            $('td', row).eq(0).html('<img src="' + FW.EXPLORER_API + '/icon/' + asset + '.png" class="fw-icon-20 pull-left">&nbsp;<a href="#" class="market-link">' + name + '</a>');
         var fmtA = '0,0.00000000',
             fmtB = '0,0.00';
         $('td', row).eq(1).text(numeral(data[1]).format(fmtA));

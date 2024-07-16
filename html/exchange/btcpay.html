@@ -63,7 +63,7 @@ $(document).ready(function(){
                 format  = '0,0.00000000';
             $('#infoA').html(numeral(amountA).format(format) + '<br>BTC');
             $('#infoB').html(numeral(amountB).format(format) + '<br>' + asset);
-            $('#assetB-icon').attr('src', FW.XCHAIN_API + '/icon/' + asset + '.png');
+            $('#assetB-icon').attr('src', FW.EXPLORER_API + '/icon/' + asset + '.png');
             // Request info on the non-BTC asset and set the asset amount properly (divisible or not)
             getAssetInfo(asset, function(o){
                 var format = (o.divisible) ? '0,0.00000000' : '0,0';
@@ -129,7 +129,7 @@ $(document).ready(function(){
                 if(tx){
                     dialogClose('dialog-btcpay');
                     dialogMessage('<i class="fa fa-lg fa-check"></i> BTCPay Successful', '<center>Your BTC payment has been broadcast to the network and your order should complete shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.EXPLORER_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                     // Remove the order match from the queue and check the queue again after a brief delay to let the previous dialog box close 
                     removeFromBtcpayQueue(vals.tx0_hash, vals.tx1_hash);
                     setTimeout(function(){ processBtcpayQueue(); },1000);

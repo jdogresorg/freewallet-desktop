@@ -226,7 +226,7 @@ function getExplorerAPI( network ){
 
 // Handle setting server information based off current network
 function setExplorerAPI( network ){
-    FW.XCHAIN_API = getExplorerAPI(network);
+    FW.EXPLORER_API = getExplorerAPI(network);
 }
 
 // Handle checking for an updated wallet version
@@ -838,7 +838,7 @@ function getAssetInfo(asset, callback, force){
     if(!FW.ASSET_INFO[asset])
         FW.ASSET_INFO[asset] = {}
     if(update){
-        $.getJSON( FW.XCHAIN_API + '/api/asset/' + asset, function( o ){
+        $.getJSON( FW.EXPLORER_API + '/api/asset/' + asset, function( o ){
             o.block = block;
             o.collapsed = data.collapsed;
             FW.ASSET_INFO[asset] = o;
@@ -1032,7 +1032,7 @@ function cleanupBtcpay(){
             ls.setItem('btcpayQueue',JSON.stringify(FW.BTCPAY_QUEUE));
         // Remove expired orders from BTCPAY_ORDERS and BTCPAY_MATCHES
         if((parseInt(last) + ms)  <= Date.now()){
-            var host = getXChainAPI(network);
+            var host = getExplorerAPI(network);
             $.each(FW.BTCPAY_ORDERS[network], function(address, orders){
                 $.each(orders, function(order, autopay){
                     $.getJSON( host + '/api/tx/' + order, function(data){
@@ -1142,7 +1142,7 @@ function autoBtcpay(network, o){
         // Only proceed if we have a valid tx hash for the broadcast tx... otherwise leave in queue so we can try again
         if(tx){
             dialogMessage('<i class="fa fa-lg fa-check"></i> BTCPay Successful', '<center>Your BTC payment has been broadcast to the network and your order should complete shortly.' +
-                          '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                          '<br/><br/><a class="btn btn-success" href="' + FW.EXPLORER_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
             // Remove the order match from the queue and check the queue again after a brief delay
             removeFromBtcpayQueue(o.tx0_hash, o.tx1_hash);
             setTimeout(function(){ processBtcpayQueue(); },1000);
@@ -1158,7 +1158,7 @@ function updateBalances(address, page, full, callback){
     var page  = (page) ? page : 1,
         limit = 500, // max records returned by xchain
         count = (page==1) ? 0 : ((page-1)*limit),
-        url   = FW.XCHAIN_API + '/api/balances/' + address;
+        url   = FW.EXPLORER_API + '/api/balances/' + address;
     $.getJSON(url + '/' + page + '/' + limit, function(o){
         if(o.data){
             o.data.forEach(function(item){
@@ -1541,7 +1541,7 @@ function updateWalletHistory( address, force ){
         });
         // Handle updating XCP Transactions
         $.each(['/api/history/', '/api/mempool/'], function(idx, endpoint){
-            $.getJSON(FW.XCHAIN_API + endpoint + addr, function( data ){
+            $.getJSON(FW.EXPLORER_API + endpoint + addr, function( data ){
                 data.data.forEach(function(item){
                     var quantity = item.quantity,
                         tstamp   = item.timestamp,
@@ -1630,7 +1630,7 @@ function updateNetworkInfo( force ){
         ms   = 300000; // 5 minutes
     if((parseInt(last) + ms)  <= Date.now() || force ){
         // BTC/USD Price
-        $.getJSON( FW.XCHAIN_API + '/api/network', function( data ){
+        $.getJSON( FW.EXPLORER_API + '/api/network', function( data ){
             if(data){
                 FW.NETWORK_INFO = data;
                 ls.setItem('networkInfo',JSON.stringify(data));
@@ -1861,7 +1861,7 @@ function getBalanceHtml(data){
     var html_style    = (parent && parentInfo && parentInfo.collapsed == false && !isSearch) ? 'display: none;' : '';
     var html =  '<li class="balances-list-item ' + data.cls + '" data-asset="' + data.asset + '" data-parent="' + parent + '" style="' + html_style + '">' +
                 '    <div class="balances-list-icon' + ((parentInfo && data.isSearch != true) ? ' indented' : '') + '">' +
-                '        <img class="lazy-load" data-src="' + FW.XCHAIN_API + '/icon/' + data.icon + '.png" src="' + FW.XCHAIN_API + '/icon/XCP.png">' +
+                '        <img class="lazy-load" data-src="' + FW.EXPLORER_API + '/icon/' + data.icon + '.png" src="' + FW.EXPLORER_API + '/icon/XCP.png">' +
                 '    </div>' +
                 '    <div class="balances-list-info">' +
                 '        <table width="100%">' +
@@ -1952,7 +1952,7 @@ function getHistoryHtml(data){
     } else if(type=='cancel'){
         src = 'images/icons/cancel.png';
     } else if((type=='send'||type=='order'||type=='issuance'||type=='destruction') && data.asset!='BTC'){
-        src = FW.XCHAIN_API + '/icon/'  + String(data.icon).toUpperCase() + '.png';
+        src = FW.EXPLORER_API + '/icon/'  + String(data.icon).toUpperCase() + '.png';
     } else if(type=='sweep'){
         src = 'images/icons/sweep.png';
     }
@@ -2083,8 +2083,8 @@ function loadAssetInfo(asset){
         resetAssetInfo();
         // Name & Icon
         $('#asset-name').text(asset);
-        $('#asset-icon').attr('src', FW.XCHAIN_API + '/icon/' + icon + '.png');
-        $('#asset-info-more').attr('href', FW.XCHAIN_API + '/asset/' + asset);
+        $('#asset-icon').attr('src', FW.EXPLORER_API + '/icon/' + icon + '.png');
+        $('#asset-info-more').attr('href', FW.EXPLORER_API + '/asset/' + asset);
         // Estimated Value
         var val = balance.estimated_value;
         $('#asset-value-btc').text(numeral(val.btc).format('0,0.00000000'));
@@ -2234,7 +2234,7 @@ function loadExtendedInfo(data){
             showExtendedAssetInfo(o);
         }).fail(function(){
             // Try to request the JSON through the xchain relay
-            var url = FW.XCHAIN_API + '/relay?url=' + desc;
+            var url = FW.EXPLORER_API + '/relay?url=' + desc;
             $.getJSON( url, function( o ){ 
                 showExtendedAssetInfo(o);
             });
@@ -3455,7 +3455,7 @@ function broadcastTransaction(network, tx, callback){
     // First try to broadcast using the XChain API
     $.ajax({
         type: "POST",
-        url: FW.XCHAIN_API +  '/api/send_tx',
+        url: FW.EXPLORER_API +  '/api/send_tx',
         data: { 
             tx_hex: tx 
         },
@@ -4577,7 +4577,7 @@ function displayContextMenu(event){
         mnu.append(new nw.MenuItem({ 
             label: 'View on XChain.io',
             click: function(){ 
-                var url  = FW.XCHAIN_API + '/tx/' + tx;
+                var url  = FW.EXPLORER_API + '/tx/' + tx;
                 nw.Shell.openExternal(url);
             }
         }));
@@ -4930,7 +4930,7 @@ function updateMarkets(market, page, full, callback){
     var page  = (page) ? page : 1,
         limit = 1000,
         count = (page==1) ? 0 : ((page-1)*limit),
-        url   = FW.XCHAIN_API + '/api/markets';
+        url   = FW.EXPLORER_API + '/api/markets';
     if(market)
         url += '/' + market;
     $.getJSON(url + '/' + page + '/' + limit, function(o){
@@ -5091,7 +5091,7 @@ function updateMarket(market, force){
 
 // Handle updating market 'basics' data
 function updateMarketBasics( market ){
-    $.getJSON(FW.XCHAIN_API + '/api/market/' + market, function(o){
+    $.getJSON(FW.EXPLORER_API + '/api/market/' + market, function(o){
         if(o.error){
             console.log('Error: ',o.error);
         } else {
@@ -5103,7 +5103,7 @@ function updateMarketBasics( market ){
 
 // Handle updating market 'Orderbook' data
 function updateMarketOrderbook( market ){
-    $.getJSON(FW.XCHAIN_API + '/api/market/' + market + '/orderbook', function(o){
+    $.getJSON(FW.EXPLORER_API + '/api/market/' + market + '/orderbook', function(o){
         if(o.error){
             console.log('Error: ',o.error);
         } else {
@@ -5115,7 +5115,7 @@ function updateMarketOrderbook( market ){
 
 // Handle updating market history/trade data
 function updateMarketHistory(market, address){
-    var base = FW.XCHAIN_API + '/api/market/' + market + '/history',
+    var base = FW.EXPLORER_API + '/api/market/' + market + '/history',
         url  = (address) ? base + '/' + address : base;
     // console.log('updateMarketHistory url=',url);
     $.getJSON(url, function(o){
@@ -5136,7 +5136,7 @@ function updateMarketHistory(market, address){
 function updateMarketOrders(market, address){
     // console.log('updateMarketOrders market,address=',market,address);
     // Get Basic Market information (name, price, volume, etc)
-    $.getJSON(FW.XCHAIN_API + '/api/market/' + market + '/orders/' + address, function(o){
+    $.getJSON(FW.EXPLORER_API + '/api/market/' + market + '/orders/' + address, function(o){
         if(o.error){
             console.log('Error: ',o.error);
         } else {
@@ -5156,8 +5156,8 @@ function updateMarketBasicsView( market ){
         fullname = (o.longname!='') ? o.longname : o.name;
         fmt      = (o.price.last.indexOf('.')!=-1) ? '0,0.00000000' : '0,0';
     $('div.market-name').text(name + ' EXCHANGE');
-    $('.market-icon img').attr('src', FW.XCHAIN_API + '/icon/' + assets[0] + '.png');
-    $('.market-pair img').attr('src', FW.XCHAIN_API + '/icon/' + assets[1] + '.png');
+    $('.market-icon img').attr('src', FW.EXPLORER_API + '/icon/' + assets[0] + '.png');
+    $('.market-pair img').attr('src', FW.EXPLORER_API + '/icon/' + assets[1] + '.png');
     $('.market-pair span').text(o.name);
     $('#last-price').text(numeral(o.price.last).format(fmt));
     var pct = numeral(o['24hour'].percent_change).format('0,0.00') + '%',
@@ -5299,7 +5299,7 @@ function updateMarketHistoryView(market, address){
         createdRow: function( row, data, idx ){
             var fmt = '0,0.00000000'
             var cls = (data[1]=='sell') ? 'red' : 'green';
-            $('td', row).eq(0).html('<a href="' + FW.XCHAIN_API + '/tx/' + data[5] + '" target="_blank">' + moment.unix(data[0]).format('MM/DD/YY HH:mm') + '</a>');
+            $('td', row).eq(0).html('<a href="' + FW.EXPLORER_API + '/tx/' + data[5] + '" target="_blank">' + moment.unix(data[0]).format('MM/DD/YY HH:mm') + '</a>');
             $('td', row).eq(1).removeClass('red green').addClass(cls);
             $('td', row).eq(2).text(numeral(data[2]).format(fmt));
             $('td', row).eq(3).text(numeral(data[3]).format(fmt));
@@ -5334,8 +5334,8 @@ function updateMarketAssetInfo(market){
                 }
                 xcp.text(numeral(o.estimated_value.xcp).format('0,0.00000000'));
                 usd.text(numeral(o.estimated_value.usd).format('0,0.00'));
-                icon.attr('src',FW.XCHAIN_API + '/icon/' + asset + '.png');
-                more.attr('href',FW.XCHAIN_API + '/asset/' + asset);
+                icon.attr('src',FW.EXPLORER_API + '/icon/' + asset + '.png');
+                more.attr('href',FW.EXPLORER_API + '/asset/' + asset);
             }
         });
         // Handle requesting reputation info from coindaddy.io
@@ -5395,7 +5395,7 @@ function updateMarketOrdersView(market, address){
                 cls = (data[1]=='sell') ? 'red' : 'green',
                 blk = 
                 txt = '<a data-toggle="tooltip" data-placement="right" title="Order expires at block #' + numeral(data[6]).format('0,0') + '"><i class="fa fa-lg fa-info-circle"></i></a>';
-            txt += '<a href="' + FW.XCHAIN_API + '/tx/' + data[5] + '" target="_blank">' + moment.unix(data[0]).format('MM/DD/YY HH:mm') + '</a>';;
+            txt += '<a href="' + FW.EXPLORER_API + '/tx/' + data[5] + '" target="_blank">' + moment.unix(data[0]).format('MM/DD/YY HH:mm') + '</a>';;
             $('td', row).eq(0).html(txt);
             $('td', row).eq(1).removeClass('red green').addClass(cls);
             $('td', row).eq(2).text(numeral(data[2]).format(fmt));
@@ -5411,7 +5411,7 @@ function updateMarketChartData(market, page, full, callback){
     var page  = (page) ? page : 1,
         limit = 2500,
         count = (page==1) ? 0 : ((page-1)*limit),
-        url   = FW.XCHAIN_API + '/api/market/' + market + '/chart';
+        url   = FW.EXPLORER_API + '/api/market/' + market + '/chart';
     // Reset any stored chart data
     if(full && page==1)
         FW.RAW_CHART_DATA = [];
@@ -5503,7 +5503,7 @@ function getDispensersRowCount(){
 // Handle adding a market tab and content table
 function addDispenserWatchlist(asset){
     var id      = String(asset).replace(/\./g,'-'),
-        tab     = '<li class="tab" data-asset="' + asset +'"><a href="#' + id + '" data-toggle="tab"><img src="' + FW.XCHAIN_API + '/icon/' + asset + '.png" class="fw-icon-20"> ' + asset + '</a></li>',
+        tab     = '<li class="tab" data-asset="' + asset +'"><a href="#' + id + '" data-toggle="tab"><img src="' + FW.EXPLORER_API + '/icon/' + asset + '.png" class="fw-icon-20"> ' + asset + '</a></li>',
         content = '<div class="tab-pane" id="' + id + '">' +
                   '    <div class="panel panel-default table-responsive">' +
                   '        <table class="datatable table table-striped cell-border table-hover table-condensed text-right" width="100%">' +
@@ -5606,7 +5606,7 @@ function updateDispensersList(query, page, callback){
     var page  = (page) ? page : 1,
         limit = 100,
         count = (page==1) ? 0 : ((page-1)*limit),
-        url   = FW.XCHAIN_API + '/api/dispensers/' + query + '/' + page + '/' + limit;
+        url   = FW.EXPLORER_API + '/api/dispensers/' + query + '/' + page + '/' + limit;
     // Only display open dispensers for asset watchlists
     if(!isValidAddress(query))
         url += '?status=open';
@@ -6197,7 +6197,7 @@ function showAssetArtwork(o){
         // Force display image to use image from project (overrides JSON)
         // Except in the case of 'stamp', since image is already correct
         if(service!='stamp')
-            image = FW.XCHAIN_API + '/img/cards/' + info.image;
+            image = FW.EXPLORER_API + '/img/cards/' + info.image;
         $('#officialCard').html(html).show();
     }
     // If we have a title, display it
@@ -6294,7 +6294,7 @@ function showAssetArtwork(o){
 function setAssetIcon(image){
     var url = image;
     // var url = relay + image;
-    // var url = FW.XCHAIN_API + '/relay?url=' + image;
+    // var url = FW.EXPLORER_API + '/relay?url=' + image;
     $.get( url, function(data){
         if(String(data).trim().length)
             $('#assetIcon').attr('src', 'data:image/png;base64,' + data);
@@ -6355,7 +6355,7 @@ function updateNFTInfo( force ){
         ms   = 21600000; // 6 hours
     if((parseInt(last) + ms)  <= Date.now() || force ){
         // BTC/USD Price
-        $.getJSON( FW.XCHAIN_API + '/json/nfts.json', function( data ){
+        $.getJSON( FW.EXPLORER_API + '/json/nfts.json', function( data ){
             if(data){
                 FW.NFT_DATA = data;
                 ls.setItem('nftInfo',JSON.stringify(data));

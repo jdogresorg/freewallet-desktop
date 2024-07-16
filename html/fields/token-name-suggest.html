@@ -100,7 +100,7 @@ $(document).ready(function(){
                     updateTransactionSize();
                 last_asset = name;
                 // Lookup if this asset is already registered to another address... send to coindaddy to make purchase offer
-                $.getJSON( FW.XCHAIN_API + '/api/asset/' + name, function(o){
+                $.getJSON( FW.EXPLORER_API + '/api/asset/' + name, function(o){
                     var type = getFormType();
                     // An error indicates asset is not registered
                     if(o.error){
@@ -155,7 +155,7 @@ $(document).ready(function(){
                 update = false;
         });
         if(update){
-            $.getJSON(FW.XCHAIN_API + '/api/suggestions/' + query, function(o){
+            $.getJSON(FW.EXPLORER_API + '/api/suggestions/' + query, function(o){
                 if(o.data)
                     setupTokenNameField(o.data);
             });

@@ -53,10 +53,10 @@
     $(document).ready(function(){
 
         // Update 'more info' link to point to transaction url
-        $('#history-info-more').attr('href', FW.XCHAIN_API + '/tx/' + tx);
+        $('#history-info-more').attr('href', FW.EXPLORER_API + '/tx/' + tx);
 
         // Request transaction information
-        $.getJSON(FW.XCHAIN_API + '/api/tx/' + tx, function( o ){
+        $.getJSON(FW.EXPLORER_API + '/api/tx/' + tx, function( o ){
             if(!o.error){
                 $('#source').html(o.source);
                 $('#tx-hash').html(o.tx_hash);

@@ -246,13 +246,13 @@ $(document).ready(function(){
                 if(tx){
                     dialogClose('dialog-send');
                     dialogMessage('<i class="fa fa-lg fa-send"></i> Send Successful', '<center>Your send has been broadcast to the network and should complete shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.EXPLORER_API +'/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                 }
             }
             // Handle processing a single send
             if(type=='single'){
                 // Confirm the action with the user
-                var title = '<img src="' + FW.XCHAIN_API + '/icon/' + FW.ASSET_INFO.asset + '.png" class="fw-icon-20 margin-right-5"> Confirm ' + vals.name + ' Send?';
+                var title = '<img src="' + FW.EXPLORER_API + '/icon/' + FW.ASSET_INFO.asset + '.png" class="fw-icon-20 margin-right-5"> Confirm ' + vals.name + ' Send?';
                     msg   = '<center>Send <b>' + vals.amount + ' ' + vals.name + '</b><br/>to <b>' + vals.destination + '</b></center>';
             }
             if(type=='multiple'){

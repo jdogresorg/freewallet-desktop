@@ -59,7 +59,7 @@ function doneCb(tx){
     if(tx){
         dialogClose('dialog-dispenser');
         dialogMessage('<i class="fa fa-lg fa-arrows-h"></i> Create Dispenser Successful', '<center>Your dispenser transaction has been sent to the network and should be included to a block shortly.' +
-                      '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                      '<br/><br/><a class="btn btn-success" href="' + FW.EXPLORER_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
     }
 }
 
@@ -72,7 +72,7 @@ function confirmCreateDispenser(vals){
         msg    = '<center>Escrow <b>' + vals['escrow-amount'] + ' ' + vals.name + '</b> in a dispenser at <br><b>' + vals.destination + '</b>';
     // If this is an oracled dispenser, Lookup the oracle fee and display confirmation to user.
     if(oracle!=""){
-        $.getJSON(FW.XCHAIN_API + '/api/broadcasts/' + oracle + '/1/1', function(o){
+        $.getJSON(FW.EXPLORER_API + '/api/broadcasts/' + oracle + '/1/1', function(o){
             var rec = o.data[0];
             var total_fiat     = numeral(vals['fiat-amount']).value() * numeral(vals['escrow-amount']).value(),
                 total_fiat_fee = numeral(total_fiat).value() * numeral(rec.fee).value(),
@@ -238,7 +238,7 @@ $(document).ready(function(){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
             // Check if user has any dispensers setup on this address already
-            $.getJSON(FW.XCHAIN_API + '/api/dispensers/' + vals.destination, function(o){
+            $.getJSON(FW.EXPLORER_API + '/api/dispensers/' + vals.destination, function(o){
                 var found = false
                 o.data.forEach(function(item){
                     if(item.status==0)
@@ -249,7 +249,7 @@ $(document).ready(function(){
                     dialogWarnMultipleDispensers(vals);
                 } else {
                     // So far so good, now lets check mempool for any pending dispenser transactions
-                    $.getJSON(FW.XCHAIN_API + '/api/mempool/' + vals.destination, function(o){
+                    $.getJSON(FW.EXPLORER_API + '/api/mempool/' + vals.destination, function(o){
                         var found = false
                         o.data.forEach(function(item){
                             if(item.tx_type=='Dispenser')

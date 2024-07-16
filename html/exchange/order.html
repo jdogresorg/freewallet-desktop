@@ -131,8 +131,8 @@ $(document).ready(function(){
                 amountB = (data.type=='buy') ? numeral(data.give_amount).format(formatB) : numeral(data.get_amount).format(formatB);
             $('#infoA').html(amountA + '<br>' + assetA);
             $('#infoB').html(amountB + '<br>' + assetB);
-            $('#assetA-icon').attr('src', FW.XCHAIN_API + '/icon/' + assetA + '.png');
-            $('#assetB-icon').attr('src', FW.XCHAIN_API + '/icon/' + assetB + '.png');
+            $('#assetA-icon').attr('src', FW.EXPLORER_API + '/icon/' + assetA + '.png');
+            $('#assetB-icon').attr('src', FW.EXPLORER_API + '/icon/' + assetB + '.png');
             $('.order-type').html(data.type.charAt(0).toUpperCase() + data.type.slice(1));
             // Display additional options for auto-signing the BTCpay transaction
             if(data.give_asset=='BTC')
@@ -209,7 +209,7 @@ $(document).ready(function(){
                 if(tx){
                     dialogClose('dialog-create-order');
                     dialogMessage('<i class="fa fa-lg fa-check"></i> Order Creation Successful', '<center>Your order has been broadcast to the network and should be placed shortly.' +
-                                  '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                                  '<br/><br/><a class="btn btn-success" href="' + FW.EXPLORER_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
                     // Add transaction to BTCpay monitoring list
                     if(vals.give_asset=='BTC'){
                         if(!FW.BTCPAY_ORDERS[network])

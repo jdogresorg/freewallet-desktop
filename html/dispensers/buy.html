@@ -40,7 +40,7 @@ function doneCb(tx){
     if(tx){
         dialogClose('dialog-dispenser-buy');
         dialogMessage('<i class="fa fa-lg fa-truck"></i> Dispenser Buy Successful', '<center>Your buy transaction has been sent to the network and should be included to a block shortly.' +
-                      '<br/><br/><a class="btn btn-success" href="' + FW.XCHAIN_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
+                      '<br/><br/><a class="btn btn-success" href="' + FW.EXPLORER_API + '/tx/' + tx + '" target="_blank">View Transaction</a></center>');
     }
 }
 
@@ -68,7 +68,7 @@ function dialogWarnEmptyDispenser(vals){
 // Handle confirming action with user
 function confirmDispenserPayment(vals){
     var data  = FW.DIALOG_DATA,
-        title = '<img src="' + FW.XCHAIN_API + '/icon/' + data.asset + '.png" class="fw-icon-20 margin-right-5"> Confirm Buy ' + data.name + '?',
+        title = '<img src="' + FW.EXPLORER_API + '/icon/' + data.asset + '.png" class="fw-icon-20 margin-right-5"> Confirm Buy ' + data.name + '?',
         msg   = '<center>Buy <b>' + vals.amount + ' ' + data.name + '</b>';
         msg  += ' <br/>for <b>' + vals['btc-amount'] + ' BTC</b></center>';
     dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
@@ -78,7 +78,7 @@ function confirmDispenserPayment(vals){
 function checkDispenserQuantity(vals){
     var asset = FW.DIALOG_DATA.asset;
     // Check mempool for any pending dispenser transactions
-    $.getJSON(FW.XCHAIN_API + '/api/mempool/' + FW.DIALOG_DATA.destination, function(o){
+    $.getJSON(FW.EXPLORER_API + '/api/mempool/' + FW.DIALOG_DATA.destination, function(o){
         var give_remaining = numeral(FW.DIALOG_DATA.give_remaining);
         if(o.data){
             // Loop through any pending dispenses and determine how many dispenser has left to dispense

@@ -26,10 +26,10 @@ $(document).ready(function(){
         el       = $('#token-name-select');
     // Force "BTC" to be the only option for burning
     if(type=='burn'){
-        html += '<option data-content="<img src=\'' + FW.XCHAIN_API + '/icon/BTC.png\' class=\'fw-icon-20 margin-right-5\'>BTC">BTC</option>';
+        html += '<option data-content="<img src=\'' + FW.EXPLORER_API + '/icon/BTC.png\' class=\'fw-icon-20 margin-right-5\'>BTC">BTC</option>';
     } else if(type=='dispenser-buy'){
         var o = FW.DIALOG_DATA;
-        html += '<option data-content="<img src=\'' + FW.XCHAIN_API + '/icon/' + o.asset + '.png\' class=\'fw-icon-20 margin-right-5\'>' + o.name +'">' + o.name + '</option>';
+        html += '<option data-content="<img src=\'' + FW.EXPLORER_API + '/icon/' + o.asset + '.png\' class=\'fw-icon-20 margin-right-5\'>' + o.name +'">' + o.name + '</option>';
     } else {
         if(balances && balances.data){
             balances.data.forEach(function(item){
@@ -37,7 +37,7 @@ $(document).ready(function(){
                 if(item.asset=='BTC' && (type=='destroy'||type=='dispenser'))
                     return;
                 var asset = (item.asset_longname && item.asset_longname!='') ? item.asset_longname : item.asset;
-                html += '<option data-content="<img src=\'' + FW.XCHAIN_API + '/icon/XCP.png\' data-src=\'' + FW.XCHAIN_API + '/icon/' + item.asset + '.png\' class=\'fw-icon-20 margin-right-5 lazy-load\'>' + asset + '">' + asset + '</option>';
+                html += '<option data-content="<img src=\'' + FW.EXPLORER_API + '/icon/XCP.png\' data-src=\'' + FW.EXPLORER_API + '/icon/' + item.asset + '.png\' class=\'fw-icon-20 margin-right-5 lazy-load\'>' + asset + '">' + asset + '</option>';
             });
         }
 
