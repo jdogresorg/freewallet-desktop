@@ -826,7 +826,7 @@ function getAssetPrice(id, full){
     return price;
 }
 
-// Handle retrieving asset information from xchain and handing the data to a callback function
+// Handle retrieving asset information from explorer and handing the data to a callback function
 // We cache the information between blocks to reduce the number of duplicate API calls
 function getAssetInfo(asset, callback, force){
     var net    = (FW.WALLET_NETWORK==2)  ? 'testnet' : 'mainnet',
@@ -838,7 +838,7 @@ function getAssetInfo(asset, callback, force){
     if(!FW.ASSET_INFO[asset])
         FW.ASSET_INFO[asset] = {}
     if(update){
-        $.getJSON( FW.EXPLORER_API + '/api/asset/' + asset, function( o ){
+        $.getJSON(FW.EXPLORER_API + '/api/asset/' + asset, function( o ){
             o.block = block;
             o.collapsed = data.collapsed;
             FW.ASSET_INFO[asset] = o;
@@ -956,7 +956,7 @@ function checkBtcpayTransactions( force ){
             $.each(FW.BTCPAY_ORDERS[network],  function(address, orders){
                 // Only request data if we have orders to monitor
                 if(Object.keys(orders).length){
-                    // Set XChain url
+                    // Set Explorer url
                     var info = FW.WALLET_SERVER_INFO[network],
                         host = ((info.api_ssl) ? 'https' : 'http') + '://' + info.api_host;
                         url  = host + '/api/order_matches/' + address;
@@ -1156,7 +1156,7 @@ function autoBtcpay(network, o){
 // Handle loading address balance data, saving to memory, and passing to a callback function
 function updateBalances(address, page, full, callback){
     var page  = (page) ? page : 1,
-        limit = 500, // max records returned by xchain
+        limit = 500, // max records returned by explorer
         count = (page==1) ? 0 : ((page-1)*limit),
         url   = FW.EXPLORER_API + '/api/balances/' + address;
     $.getJSON(url + '/' + page + '/' + limit, function(o){
@@ -1624,7 +1624,7 @@ function getAddressHistory(address, asset=''){
     return info;
 }
 
-// Handle updating basic wallet information via a call to xchain.io/api/network
+// Handle updating basic wallet information via a call to explorer API
 function updateNetworkInfo( force ){
     var last = ls.getItem('networkInfoLastUpdated') || 0,
         ms   = 300000; // 5 minutes
@@ -2233,7 +2233,7 @@ function loadExtendedInfo(data){
         $.getJSON( url, function( o ){ 
             showExtendedAssetInfo(o);
         }).fail(function(){
-            // Try to request the JSON through the xchain relay
+            // Try to request the JSON through the explorer relay
             var url = FW.EXPLORER_API + '/relay?url=' + desc;
             $.getJSON( url, function( o ){ 
                 showExtendedAssetInfo(o);
@@ -3452,7 +3452,7 @@ function broadcastTransaction(network, tx, callback){
     }
     console.log('signed transaction=', tx);
     var net  = (network=='testnet') ? 'BTCTEST' : 'BTC';
-    // First try to broadcast using the XChain API
+    // First try to broadcast using the Explorer API
     $.ajax({
         type: "POST",
         url: FW.EXPLORER_API +  '/api/send_tx',
@@ -3469,7 +3469,7 @@ function broadcastTransaction(network, tx, callback){
                 if(txid)
                     console.log('Broadcasted transaction hash=',txid);
             } else {
-                // If the request to XChain API failed, fallback to blockcypher API
+                // If the request to explorer API failed, fallback to blockcypher API
                 var net = (network=='testnet') ? 'test3' : 'main',
                     url  = 'https://api.blockcypher.com/v1/btc/'+ net +'/txs/push';
                 $.ajax({
@@ -4575,17 +4575,17 @@ function displayContextMenu(event){
         }));
         mnu.append(new nw.MenuItem({ type: 'separator' }));
         mnu.append(new nw.MenuItem({ 
-            label: 'View on XChain.io',
+            label: 'View on TokenScan.io',
             click: function(){ 
                 var url  = FW.EXPLORER_API + '/tx/' + tx;
                 nw.Shell.openExternal(url);
             }
         }));
         mnu.append(new nw.MenuItem({ 
-            label: 'View on Blocktrail.com',
+            label: 'View on Blockstream.info',
             click: function(){ 
-                var net = (FW.WALLET_NETWORK==2) ? 'tBTC' : 'BTC',
-                    url  = 'https://www.blocktrail.com/' + net + '/tx/' + tx;
+                var net = (FW.WALLET_NETWORK==2) ? 'testnet/' : '',
+                    url  = 'https://www.blockstream.info/' + net + 'tx/' + tx;
                 nw.Shell.openExternal(url);
             }
         }));
@@ -6349,7 +6349,7 @@ function getNFTInfo(asset){
     return info;
 }
 
-// Handle updating basic wallet information via a call to xchain.io/api/network
+// Handle updating basic wallet information via a call to explorer api
 function updateNFTInfo( force ){
     var last = ls.getItem('nftInfoLastUpdated') || 0,
         ms   = 21600000; // 6 hours
