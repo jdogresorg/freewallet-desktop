@@ -65,7 +65,7 @@
                 $('#block').html(numeral(o.block_index).format('0,0'));
                 $('#tx-hash').text(o.tx_hash);
                 $('#tx-index').text(numeral(o.tx_index).format('0,0'));
-                $('#asset').html('<img src="https://xchain.io/icon/' + o.asset + '.png" class="asset-icon-sm pull-left">' + asset);
+                $('#asset').html('<img src="' + FW.EXPLORER_API + '/icon/' + o.asset + '.png" class="asset-icon-sm pull-left">' + asset);
                 $('#quantity').text(numeral(o.quantity).format(fmt));
                 $('#status').text(o.status);
                 $('#tag').text(hex2string(o.tag));

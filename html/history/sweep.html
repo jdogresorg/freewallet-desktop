@@ -64,7 +64,7 @@
         // Update 'more info' link to point to transaction url
         $('#history-info-more').attr('href', FW.EXPLORER_API + '/tx/' + tx);
 
-        // Request transaction information from xchain.io
+        // Request transaction information from explorer API
         $.getJSON(FW.EXPLORER_API + '/api/tx/' + tx, function( o ){
             if(!o.error){
                 $('#source').html(o.source);

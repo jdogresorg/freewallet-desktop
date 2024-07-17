@@ -99,13 +99,13 @@
             // Update 'more info' link to point to transaction url
             $('#history-info-more').attr('href', FW.EXPLORER_API + '/tx/' + tx);
 
-            // Request transaction information from xchain.io
+            // Request transaction information from explorer API
             $.getJSON(FW.EXPLORER_API + '/api/tx/' + tx, function( o ){
                 if(!o.error){
                     var asset = (o.asset_longname && o.asset_longname!='') ? o.asset_longname : o.asset;
                     $('#source').html(o.source);
                     $('#destination').html(o.destination);
-                    $('#asset').html('<img src="https://xchain.io/icon/' + o.asset + '.png" class="asset-icon-sm pull-left">' + asset);
+                    $('#asset').html('<img src="' + FW.EXPLORER_API + '/icon/' + o.asset + '.png" class="asset-icon-sm pull-left">' + asset);
                     $('#tx-hash').html(o.tx_hash);
                     var fmt = (String(o.quantity).indexOf('.')==-1) ? '0,0' : '0,0.00000000';
                     $('#quantity').text(numeral(o.quantity).format(fmt));
