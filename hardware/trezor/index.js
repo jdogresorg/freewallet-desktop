@@ -185,8 +185,8 @@ function signTx(net='mainnet', source, path, unsignedTx, callback){
 // @callback = Callback function
 function broadcastTx(network, signedTx, callback){
     var net  = (network=='testnet') ? 'BTCTEST' : 'BTC',
-        host = (network=='testnet') ? 'testnet.xchain.io' : 'xchain.io';
-    // First try to broadcast using the XChain API
+        host = (network=='testnet') ? 'testnet.tokenscan.io' : 'tokenscan.io';
+    // First try to broadcast using the TokenScan API
     $.ajax({
         type: "POST",
         url: 'https://' + host +  '/api/send_tx',
@@ -203,7 +203,7 @@ function broadcastTx(network, signedTx, callback){
                 if(txid)
                     console.log('Broadcasted transaction hash=',txid);
             } else {
-                // If the request to XChain API failed, fallback to chain.so API
+                // If the request to TokenScan API failed, fallback to chain.so API
                 $.ajax({
                     type: "POST",
                     url: 'https://chain.so/api/v2/send_tx/' + net,

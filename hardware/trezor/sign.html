@@ -48,7 +48,7 @@ $(document).ready(function(){
     var qs     = parseQueryString(),
         tx     = (qs.tx) ? qs.tx : false,
         status = $('#trezor-status');
-        host   = (qs.network=='testnet') ? 'testnet.xchain.io' : 'xchain.io';
+        host   = (qs.network=='testnet') ? 'testnet.tokenscan.io' : 'tokenscan.io';
 
     // Initialize connection to the Trezor
     trezor.initTrezor();

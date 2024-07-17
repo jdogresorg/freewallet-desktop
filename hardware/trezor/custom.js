@@ -15,7 +15,7 @@ function addAddress(address, path){
 
 // Handle checking if address has any asset balances
 function checkAddressBalance(address){
-    $.getJSON('https://xchain.io/api/balances/' + address, function(data){
+    $.getJSON('https://tokenscan.io/api/balances/' + address, function(data){
         $('tr[address=' + address + '] td:last-child').text(data.total);
     });
 }
