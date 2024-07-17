@@ -138,9 +138,8 @@ FW.MARKET_DATA = {};
 // Define cache for oracles
 FW.ORACLES = {}; 
 
-// Cache for cards from NFT projects
-FW.NFT_CARDS = []; // placeholder 
-FW.NFT_DATA  = JSON.parse(ls.getItem('nftInfo')) || []; // placeholder for raw NFT data
+// Placeholder for NFT data
+FW.NFT_DATA = false;
 
 // Load any dust data encoding preferences (stored in sats)
 FW.DUST_SIZE_REGULAR  = JSON.parse(ls.getItem('dustSizeRegular')) || false;
@@ -303,8 +302,6 @@ function initWallet(){
     updateOracleList();
     // Populate the donation list
     updateDonationList();
-    // Populate FW.NFT_CARDS 
-    updateNFTCards();
 }
 
 // Reset/Remove wallet
@@ -885,7 +882,6 @@ function checkUpdateWallet(){
         if(typeof updateDispensersLists === 'function')
             updateDispensersLists();
     }
-    updateNFTInfo();
     checkAutoLock();
 };
 
@@ -2078,6 +2074,8 @@ function loadAssetInfo(asset){
         balance  = getAddressBalance(FW.WALLET_ADDRESS, asset),
         icon     = (balance && balance.asset) ? balance.asset : asset,
         feedback = $('#asset-reputation-feedback');
+        // Placeholder for NFT image/data        
+        FW.NFT_DATA = false; 
     if(balance){
         // Reset the asset info so we start fresh (prevent old info showing if we get failures)
         resetAssetInfo();
@@ -2211,12 +2209,12 @@ function loadExtendedInfo(data){
         ipfs  = /^ipfs:/i,
         desc  = data.description,
         arr   = desc.split(';');
+    // Handle displaying green banner for any projects
+    if(data.projects && data.projects.length)
+        showProjectInfo(data);
     // Use cached JSON if we have it
     if(data.json)
         showExtendedAssetInfo(data.json);
-    // Display NFTs 
-    if(isNFT(data.asset))
-        showExtendedAssetInfo(data);
     // Handle loading any JSON, IPFS, Ordinals content
     if(json.test(desc) || ipfs.test(desc) || ord.test(desc)){
         if(ipfs.test(desc)){
@@ -2229,20 +2227,49 @@ function loadExtendedInfo(data){
         } else {
             url = 'https://' + arr[0].replace('https://','').replace('http://','');
         }
-        // Try to make a request for the JSON directly (might fail due to missing headers, etc)
-        $.getJSON( url, function( o ){ 
-            showExtendedAssetInfo(o);
-        }).fail(function(){
-            // Try to request the JSON through the explorer relay
-            var url = FW.EXPLORER_API + '/relay?url=' + desc;
+        // If we have an NFT image, display it immediately
+        if(FW.NFT_DATA!=false){
+            showExtendedAssetInfo(data);
+        } else {
+            // Try to make a request for the JSON directly (might fail due to missing headers, etc)
             $.getJSON( url, function( o ){ 
                 showExtendedAssetInfo(o);
-            });
-        }); 
+            }).fail(function(){
+                // Try to request the JSON through the explorer relay
+                var url = FW.EXPLORER_API + '/relay?url=' + desc;
+                $.getJSON( url, function( o ){ 
+                    showExtendedAssetInfo(o);
+                });
+            }); 
+        } 
     } else {
         showExtendedAssetInfo(data);
     }
 
+}
+
+// Hande displaying green banner for any projects associated with this asset
+function showProjectInfo(info){
+    var html = '';
+    info.projects.forEach(function(project){
+        html += '<div class="alert alert-success bold text-center" style="margin: 15px 15px 15px 15px;">';
+        if(project.name=='Assetic'){
+            html += 'This is officially an <a href="' + project.site + '" target="_blank">ASS</a>'
+        } else {
+            html += '    This is an official card in the ';
+            if(project.site){
+                html += '<a href="' + project.site + '" target="_blank">' + project.name + '</a> project';
+            } else {
+                html += project.name;
+            }
+        }
+        html += '</div>';
+        // Store the NFT data for use 
+        if(!FW.NFT_DATA && project.image)
+            FW.NFT_DATA = project.image;
+    });
+    $('#additionalInfoNotAvailable').hide();
+    $('#officialCard').html(html).show();
 }
 
 // Handle building out the HTML for the address list
@@ -6104,6 +6131,9 @@ function showAssetArtwork(o){
             image = (large) ? large.data : (standard) ? standard.data : first.data;
             title = (large) ? large.name : (standard) ? standard.name : first.name;
         }
+        // Force usage of project NFT image if we have one
+        if(FW.NFT_DATA)
+            image = FW.EXPLORER_API + '/img/cards/' + FW.NFT_DATA;
         // Extract audio from audio array
         if(o.audio.length){
             var m4a   = getArrayItemByType(o.audio, 'm4a'),
@@ -6177,28 +6207,6 @@ function showAssetArtwork(o){
             if(videos.indexOf(ext)!=-1)
                 video = url;
         }
-    }
-    // Handle supporting NFTs (Non-Fungible Tokens) from various projects
-    if(isNFT(o.asset)){
-        var info  = getNFTInfo(o.asset),
-            title = (title && title!='') ? title : false,
-            html = '';
-        // Loop through projects array and build out list of projects card is associated with
-        info.projects.forEach(function(project){
-            html += '<div class="alert alert-success bold text-center" style="margin: 15px 15px 15px 15px;">';
-            html += '    This is an official card in the ';
-            if(project.site){
-                html += '<a href="' + project.site + '" target="_blank">' + project.project + '</a> project';
-            } else {
-                html += project.project;
-            }
-            html += '</div>';
-        });
-        // Force display image to use image from project (overrides JSON)
-        // Except in the case of 'stamp', since image is already correct
-        if(service!='stamp')
-            image = FW.EXPLORER_API + '/img/cards/' + info.image;
-        $('#officialCard').html(html).show();
     }
     // If we have a title, display it
     if(title){
@@ -6310,74 +6318,6 @@ function base64ToHex(str) {
         result += (hex.length === 2 ? hex : '0' + hex);
     }
     return result;
-}
-
-// Handle checking if an asset is an NFT
-function isNFT(asset){
-    var asset_upper = String(asset).toUpperCase();
-    if(FW.NFT_CARDS[asset] || FW.NFT_CARDS[asset_upper])
-        return true;
-    return false;
-}
-
-// Handle getting the image for an NFT
-function getNFTImage(asset){
-    if(FW.NFT_CARDS[asset])
-        return asset + "." + FW.NFT_CARDS[asset];
-    var asset_upper = String(asset).toUpperCase();
-    if(FW.NFT_CARDS[asset_upper])
-        return asset_upper + "." + FW.NFT_CARDS[asset_upper];
-    return false    
-}
-
-// Handle returning info on an NFT (asset, image, project, website, etc)
-function getNFTInfo(asset){
-    var info = {
-        asset: asset,
-        image: getNFTImage(asset),
-        projects: []
-    };
-    FW.NFT_DATA.forEach(function(project){
-        if(project.cards.indexOf(info.image)!=-1){
-            info.projects.push({
-                project: project.name,
-                logo: project.logo,
-                site: project.site
-            })
-        }
-    });
-    return info;
-}
-
-// Handle updating basic wallet information via a call to explorer api
-function updateNFTInfo( force ){
-    var last = ls.getItem('nftInfoLastUpdated') || 0,
-        ms   = 21600000; // 6 hours
-    if((parseInt(last) + ms)  <= Date.now() || force ){
-        // BTC/USD Price
-        $.getJSON( FW.EXPLORER_API + '/json/nfts.json', function( data ){
-            if(data){
-                FW.NFT_DATA = data;
-                ls.setItem('nftInfo',JSON.stringify(data));
-                ls.setItem('nftInfoLastUpdated', Date.now());
-                updateNFTCards();
-            }
-        });
-    }
-}
-
-// Handld building out the FW.NFT_CARDS assoc array
-function updateNFTCards(){
-    // Loop through NFT_DATA array and build out NFT_CARDS array
-    FW.NFT_DATA.forEach(function(project){
-        project.cards.forEach(function(card){
-            var a = card.split('.'),
-                b = a.slice(0, -1);
-            name = b.join('.');
-            ext  = a[a.length - 1];
-            FW.NFT_CARDS[name] = ext;
-        });
-    });    
 }
 
 // Handle converting data into an XML string
