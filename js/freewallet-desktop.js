@@ -4588,20 +4588,6 @@ function displayContextMenu(event){
         var tx   = el.attr('txhash'),
             mnu  = new nw.Menu();
         mnu.append(new nw.MenuItem({ 
-            label: 'View Transaction',
-            click: function(){ 
-                var txhash = el.attr('txhash'),
-                    txtype = el.attr('txtype'),
-                    asset  = el.attr('asset');
-                loadTransactionInfo({
-                    tx: txhash, 
-                    type: txtype, 
-                    asset: asset
-                });
-            }
-        }));
-        mnu.append(new nw.MenuItem({ type: 'separator' }));
-        mnu.append(new nw.MenuItem({ 
             label: 'View on TokenScan.io',
             click: function(){ 
                 var url  = FW.EXPLORER_API + '/tx/' + tx;
@@ -4612,7 +4598,7 @@ function displayContextMenu(event){
             label: 'View on Blockstream.info',
             click: function(){ 
                 var net = (FW.WALLET_NETWORK==2) ? 'testnet/' : '',
-                    url  = 'https://www.blockstream.info/' + net + 'tx/' + tx;
+                    url = 'https://www.blockstream.info/' + net + 'tx/' + tx;
                 nw.Shell.openExternal(url);
             }
         }));
