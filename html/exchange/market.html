@@ -598,8 +598,9 @@ $(document).ready(function(){
             var sel = '#' + id + '-' + name;
             $(sel).blur(function(){
                 var me  = $(this),
-                    val = parseFloat(me.val().replace(',',''));
-                me.val(numeral(val).format('0,0.00000000'));
+                    val = parseFloat(me.val().replaceAll(',',''));
+                if(val)
+                    me.val(numeral(val).format('0,0.00000000'));
             });
             // Remove the error indicator off fields as user types
             $(sel).keyup(function(){
@@ -610,8 +611,8 @@ $(document).ready(function(){
         });
         // Handle re-calculating the total as a user types the price
         $('#' + id + '-price').keyup(function(){
-            var amount = $('#' + id + '-amount').val().replace(',',''),
-                price  = parseFloat($(this).val().replace(',',''));
+            var amount = $('#' + id + '-amount').val().replaceAll(',',''),
+                price  = parseFloat($(this).val().replaceAll(',',''));
             if(price){
                 total = numeral(amount * price).format('0,0.00000000');
                 $('#' + id + '-total').val(total);
@@ -619,8 +620,8 @@ $(document).ready(function(){
         });
         // Handle re-calculating the  total as a user types the amount
         $('#' + id + '-amount').keyup(function(){
-            var amount = parseFloat($(this).val().replace(',','')),
-                price  = $('#' + id + '-price').val().replace(',','');
+            var amount = parseFloat($(this).val().replaceAll(',','')),
+                price  = $('#' + id + '-price').val().replaceAll(',','');
             if(amount){
                 total = numeral(amount * price).format('0,0.00000000');
                 $('#' + id + '-total').val(total);
@@ -628,8 +629,8 @@ $(document).ready(function(){
         });
         // Handle re-calculating the amount as a user types the total
         $('#' + id + '-total').keyup(function(){
-            var total  = parseFloat($(this).val().replace(',','')),
-                price  = $('#' + id + '-price').val().replace(',','');
+            var total  = parseFloat($(this).val().replaceAll(',','')),
+                price  = $('#' + id + '-price').val().replaceAll(',','');
             if(total){
                 amount = numeral(total / price).format('0,0.00000000');
                 $('#' + id + '-amount').val(amount);
