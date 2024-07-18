@@ -1783,6 +1783,7 @@ function updateBalancesList(){
             }
             var show = (filter!='') ? false : true;
             item.isSearch = (filter!='') ? true : false;
+            item.type = type;
             // Filter results based on search
             if(filter!='')
                 show = (asset.search(new RegExp(filter, "i")) != -1) ? true : false;
@@ -1855,7 +1856,7 @@ function getBalanceHtml(data){
     var html_collapse = (isParent && !isSearch) ? '<td align="right"><a href="#" class="balances-list-collapsible" >' + isCollapsed + '</a></td>' : '';
     // Don't display the item if this is a subasset and the parent asset is collapsed (unless we are doing a search)
     var html_style    = (parent && parentInfo && parentInfo.collapsed == false && !isSearch) ? 'display: none;' : '';
-    var html =  '<li class="balances-list-item ' + data.cls + '" data-asset="' + data.asset + '" data-parent="' + parent + '" style="' + html_style + '">' +
+    var html =  '<li class="balances-list-item ' + data.cls + '" data-asset="' + data.asset + '" data-type="' + data.type + '" data-parent="' + parent + '" style="' + html_style + '">' +
                 '    <div class="balances-list-icon' + ((parentInfo && data.isSearch != true) ? ' indented' : '') + '">' +
                 '        <img class="lazy-load" data-src="' + FW.EXPLORER_API + '/icon/' + data.icon + '.png" src="' + FW.EXPLORER_API + '/icon/XCP.png">' +
                 '    </div>' +
@@ -4507,6 +4508,7 @@ function displayContextMenu(event){
     var el = $( event.target ).closest('.balances-list-item');
     if(el.length!=0){
         var asset = el.attr('data-asset'),
+            type  = el.attr('data-type'),
             mnu   = new nw.Menu();
         // Save asset data so it can be accessed in dialog boxes
         FW.DIALOG_DATA = { token: asset };
@@ -4555,6 +4557,19 @@ function displayContextMenu(event){
         if(asset!='BTC'){
             mnu.append(new nw.MenuItem({ type: 'separator' }));
             if(asset!='XCP'){
+                // Display subasset creation menu for named
+                if(type==1){
+                    mnu.append(new nw.MenuItem({ 
+                        label: 'Create ' + asset + ' Subasset',
+                        click: function(){ 
+                            FW.DIALOG_DATA = {
+                                'asset': asset
+                            };
+                            dialogCreateToken(); 
+                        }
+                    }));
+                }
+
                 mnu.append(new nw.MenuItem({ 
                     label: 'Issue ' + asset + ' Supply',
                     click: function(){ dialogIssueSupply(); }

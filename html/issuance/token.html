@@ -76,6 +76,16 @@ $(document).ready(function(){
             placement: 'bottom'
         }); 
 
+        // Populate the token name with any passed asset name
+        var o = FW.DIALOG_DATA;
+        if(o.asset){
+            $('#token-type').val('Subasset').change();
+            $('#token-name').val(o.asset + '.');
+        }
+
+        // Reset dialog data so we don't reuse data on form in the future
+        FW.DIALOG_DATA = {};
+
         // Remove any error indicators when user changes a field value
         $('#create-token-form input').change(function(e){
             $(this).closest('.form-group').removeClass('has-error has-danger');
