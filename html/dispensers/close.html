@@ -80,7 +80,7 @@ $(document).ready(function(){
             $.getJSON( FW.EXPLORER_API + '/api/tx/' + val, function(data){
                 if(data.tx_type=='Dispenser'){
                     if(data.status==0){
-                        if(data.source==FW.WALLET_ADDRESS){
+                        if(data.source==FW.WALLET_ADDRESS || data.origin==FW.WALLET_ADDRESS){
                             var name = (data.asset_longname!='') ? data.asset_longname : data.asset;
                             $('#close-dispenser-form [name="asset"]').val(data.asset);
                             // Handle updating tx size as when tx hash changes
@@ -91,7 +91,7 @@ $(document).ready(function(){
                     } else if(data.status=='Unconfirmed'){
                         errors.push('Transaction hash is for an unconfirmed dispenser that is not yet open!');
                     } else {
-                        errors.push('Transaction hash is for a dispenser that is already closed!');
+                        errors.push('Transaction hash is for a dispenser that is already closed or in the process of closing!');
                     }
                 } else {
                     errors.push('Transaction hash is not for a dispenser!');
