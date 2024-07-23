@@ -26,58 +26,63 @@ function decodeXCPTransaction(network=null, tx=null, callback=null){
     var o    = {},
         msg  = '',
         raw  = '',
-        txid = tx.vin[0].txid,
+        txid = '',
         dest = '';
+    // Parse in txid if we are able to detect one
+    if(tx && tx.vin && tx.vin.length && tx.vin[0].txid)
+        txid = tx.vin[0].txid;
     // Loop through outputs and extract any encoded data
-    tx.vout.forEach(function(out){
-        var script = out.scriptPubKey,
-            hex    = script.hex,
-            type   = script.type;
-        // OP_RETURN Encoded
-        if(type=='nulldata'){
-            raw = xcp_rc4(txid, hex.substr(4));
-            if(!isXCPTransaction(raw))
-                raw = '';
-            msg += raw;
-            console.log('opreturn: ' + msg);
-        }
-        // Multisig Encoded
-        if(type=='multisig' && hex.length==210){
-            raw = hex.substring(6, 68) + hex.substring(74, 136);
-            raw = xcp_rc4(txid, raw);
-            len = parseInt(hex2Dec(raw.substring(0, 2)));
-            raw = raw.substring(2, 2+(len*2));
-            if(isXCPTransaction(raw) && isXCPTransaction(msg)){
-                raw = raw.substring(16);
-            } else if(!isXCPTransaction(raw)){
-                raw = '';
-            }
-            msg += raw;
-            console.log('multisig: ' + msg);
-        }
-        // Multisg Encoded 2
-        if(type=='multisig' && hex.length==274){
-            console.log('decoding coming soon');
-            // Code here to parse in longer/larger multisigs... not working for some reason
-            // test with 29b362ef55d9dc10bde6e110b62772a466f6acc3267f80e782e59e5cc1e97411 
-            // above multisig code fails on parsing text
-        }
-        // Multisig Encoded (old type, not rc4 encoded)
-        if(type=='nonstandard' && hex.length==142){
-            len = parseInt(hex2Dec(hex.substring(72, 74)));
-            raw = hex.substring(74, 74+(len*2));                
-            if(isXCPTransaction(raw)||isXCPTransaction(msg))
+    if(tx && tx.vout && tx.vout.length){
+        tx.vout.forEach(function(out){
+            var script = out.scriptPubKey,
+                hex    = script.hex,
+                type   = script.type;
+            // OP_RETURN Encoded
+            if(type=='nulldata'){
+                raw = xcp_rc4(txid, hex.substr(4));
+                if(!isXCPTransaction(raw))
+                    raw = '';
                 msg += raw;
-            console.log('multisig (old): ' + msg);
-        }
-        // Pay 2 Public Key Hash (P2PKH)
-        if(type=='pubkeyhash'){
-            // Possibly a send, issuance, or BTCpay transaction
-            // these always send some BTC dust to recipient at output 0
-            if(out.n==0)
-                dest = script.address;
-        }
-    });
+                console.log('opreturn: ' + msg);
+            }
+            // Multisig Encoded
+            if(type=='multisig' && hex.length==210){
+                raw = hex.substring(6, 68) + hex.substring(74, 136);
+                raw = xcp_rc4(txid, raw);
+                len = parseInt(hex2Dec(raw.substring(0, 2)));
+                raw = raw.substring(2, 2+(len*2));
+                if(isXCPTransaction(raw) && isXCPTransaction(msg)){
+                    raw = raw.substring(16);
+                } else if(!isXCPTransaction(raw)){
+                    raw = '';
+                }
+                msg += raw;
+                console.log('multisig: ' + msg);
+            }
+            // Multisg Encoded 2
+            if(type=='multisig' && hex.length==274){
+                console.log('decoding coming soon');
+                // Code here to parse in longer/larger multisigs... not working for some reason
+                // test with 29b362ef55d9dc10bde6e110b62772a466f6acc3267f80e782e59e5cc1e97411 
+                // above multisig code fails on parsing text
+            }
+            // Multisig Encoded (old type, not rc4 encoded)
+            if(type=='nonstandard' && hex.length==142){
+                len = parseInt(hex2Dec(hex.substring(72, 74)));
+                raw = hex.substring(74, 74+(len*2));                
+                if(isXCPTransaction(raw)||isXCPTransaction(msg))
+                    msg += raw;
+                console.log('multisig (old): ' + msg);
+            }
+            // Pay 2 Public Key Hash (P2PKH)
+            if(type=='pubkeyhash'){
+                // Possibly a send, issuance, or BTCpay transaction
+                // these always send some BTC dust to recipient at output 0
+                if(out.n==0)
+                    dest = script.address;
+            }
+        });
+    }
     // Decode the Transaction data
     if(isXCPTransaction(msg)){
         // Get the source address for this transaction
@@ -93,6 +98,7 @@ function decodeXCPTransaction(network=null, tx=null, callback=null){
                   msg = msg.substring(2);
             }
             type = parseInt(id, 16);
+            console.log('type id=',type);
             // Classic Send
             if(type==0){
                 o.type        = 'send';
@@ -164,7 +170,7 @@ function decodeXCPTransaction(network=null, tx=null, callback=null){
                 // o.description_length   = parseInt(msg.substring(52,54), 16);
                 // o.description          = hex2ascii(msg.substring(54));
                 // NEW Format - LOCK and RESET added in block 753500
-                o.lock                    = parseInt(msg.substring(34,36), 16);
+                o.lock                 = parseInt(msg.substring(34,36), 16);
                 o.reset                = parseInt(msg.substring(36,38), 16);
                 o.description          = hex2ascii(msg.substring(38));
             }
@@ -177,10 +183,10 @@ function decodeXCPTransaction(network=null, tx=null, callback=null){
                 o.divisible            = parseInt(msg.substring(32,34), 16);
                 o.transfer_destination = (dest!='') ? dest : null;
                 // NEW Format - LOCK and RESET added in block 753500
-                o.lock                    = parseInt(msg.substring(34,36), 16);
+                o.lock                 = parseInt(msg.substring(34,36), 16);
                 o.reset                = parseInt(msg.substring(36,38), 16);
                 // Parse in variable-length subasset name and description
-                var    x   = 38; // FORMAT (OLD=34, NEW=38)
+                var x   = 38; // FORMAT (OLD=34, NEW=38)
                     off = (x+2)+(parseInt(msg.substring(x,(x+2)), 16)*2),
                     sub = hex2subasset(msg.substring((x+2),off));
                 o.asset_longname       = sub;
