@@ -2235,20 +2235,18 @@ function loadExtendedInfo(data){
             url = 'https://' + arr[0].replace('https://','').replace('http://','');
         }
         // If we have an NFT image, display it immediately
-        if(FW.NFT_DATA!=false){
+        if(FW.NFT_DATA!=false)
             showExtendedAssetInfo(data);
-        } else {
-            // Try to make a request for the JSON directly (might fail due to missing headers, etc)
+        // Try to make a request for the JSON directly (might fail due to missing headers, etc)
+        $.getJSON( url, function( o ){ 
+            showExtendedAssetInfo(o);
+        }).fail(function(){
+            // Try to request the JSON through the explorer relay
+            var url = FW.EXPLORER_API + '/relay?url=' + desc;
             $.getJSON( url, function( o ){ 
                 showExtendedAssetInfo(o);
-            }).fail(function(){
-                // Try to request the JSON through the explorer relay
-                var url = FW.EXPLORER_API + '/relay?url=' + desc;
-                $.getJSON( url, function( o ){ 
-                    showExtendedAssetInfo(o);
-                });
-            }); 
-        } 
+            });
+        }); 
     } else {
         showExtendedAssetInfo(data);
     }
