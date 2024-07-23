@@ -22,9 +22,10 @@
             <textarea type="text" class="form-control" id="signed-transaction" name="signed-transaction" placeholder="Signed Transaction" rows="3" readonly></textarea>
         </div>
     </div>
-    <div id="transaction-status" style="width: 260px !important;"></div>
+    <div id="transaction-status" style="width: 180px !important;"></div>
     <div class="text-right">
-        <div id="btn-cancel" class="btn btn-danger margin-right-5"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
+        <div id="btn-cancel" class="btn btn-danger"><i class="fa fa-lg fa-fw fa-ban"></i> Cancel</div>
+        <div id="btn-verify" class="btn btn-warning"><i class="fa fa-lg fa-fw fa-search"></i> Verify </div>
         <div id="btn-submit" class="btn btn-success"><i class="fa fa-lg fa-fw fa-file-text"></i> Sign </div>
         <div id="btn-broadcast" class="btn btn-info"><i class="fa fa-lg fa-fw fa-bullhorn"></i> Broadcast</div>
     </div>
@@ -72,7 +73,45 @@ $(document).ready(function(){
         updateTransactionStatus('clear');
     });
 
-    // Verify if transaction is signed, then confirm broadcast
+    // Verify transaction data by trying to decode it
+    $('#btn-verify').click($.debounce(100,function(e){
+        // build out object with name:value pairs
+        var arr    = $('#sign-transaction-form').serializeArray(),
+            vals   = {},
+            errors = [];
+        for(var i=0;i<arr.length;i++){
+            var o = arr[i];
+            vals[o.name] = o.value;
+        }
+        // Verify we have a message to broadcast
+        if(String(vals.transaction).length==0){
+            errors.push('You must enter a transaction to verify! ');
+            $('#sign-transaction').closest('.form-group').addClass('has-error has-danger');
+        }
+        // Determine wallet network so we can pass in API requests
+        var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
+        updateTransactionStatus('clear');
+        // Display any error message
+        if(errors.length){
+            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
+        } else {
+            // Try to decode what the transaction is doing
+            updateTransactionStatus('pending', 'Decoding...');
+            decodeTransaction(network, vals.transaction, function(tx){
+                var title = '<i class="fa fa-lg fa-fw fa-search"></i> Verify Transaction Data',
+                    msg   = 'This is does not appear to be a counterparty transaction.';
+                // If this is a Counterparty transaction, display the decoded data
+                if(tx && tx.xcp){
+                    msg = 'Counterparty Transaction Data<br>';
+                    msg += '<pre><code class="language-css" style="white-space: pre !important;">' + JSON.stringify(tx.xcp, null, 4) + '</code></pre>';
+                }
+                dialogMessage(title, msg);
+                updateTransactionStatus('clear');
+            });
+        }
+    }));
+
+    // Confirm broadcast
     $('#btn-broadcast').click($.debounce(100,function(e){
         var signedTx = $('#signed-transaction').val();
         if(signedTx==''){
@@ -89,7 +128,7 @@ $(document).ready(function(){
             // Callback to run if user confirms action
             var confirmCb = function(){
                 var network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
-                updateTransactionStatus('pending', 'Broadcasting transaction...');
+                updateTransactionStatus('pending', 'Broadcasting...');
                 // Broadcast the transaction
                 broadcastTransaction(network, signedTx, function(txid){
                     if(txid){
@@ -108,7 +147,7 @@ $(document).ready(function(){
         }
     }));
 
-    // Handle form validation and displaying any errors
+    // Handle form validation and displaying any errors, and try to sign the transaction
     $('#sign-transaction-form').validator().on('submit', function(e){
         // prevent form submission
         e.preventDefault(); 
@@ -126,44 +165,26 @@ $(document).ready(function(){
             errors.push('You must enter a transaction to sign! ');
             $('#sign-transaction').closest('.form-group').addClass('has-error has-danger');
         }
-        // Determine wallet network so we can pass in API requests
-        var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
         updateTransactionStatus('clear');
         // Display any error message
         if(errors.length){
             dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors.join('<br/>') );
         } else {
-            // Try to decode what the transaction is doing
-            updateTransactionStatus('pending', 'Decoding transaction...');
-            decodeTransaction(network, vals.transaction, function(tx){
-                var title = '<i class="fa fa-lg fa-fw fa-file-text"></i> Confirm Sign?',
-                    msg   = 'This is does not appear to be a counterparty transaction.<br>Do you still want to sign this transaction?';
-                // If this is a Counterparty transaction, display the decoded data
-                if(tx && tx.xcp){
-                    msg = 'Counterparty Transaction Data<br>';
-                    msg += '<pre><code class="language-css" style="white-space: pre !important;">' + JSON.stringify(tx.xcp, null, 4) + '</code></pre>';
+            // Handle signing the message and populating the 'Signed' box
+            var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
+            updateTransactionStatus('pending', 'Signing...');
+            signTransaction(network, vals.source, vals.source, vals.transaction, function(tx){
+                var val = '';
+                if(tx){
+                    updateTransactionStatus('success', 'Transaction successfully signed!');
+                    val = tx;
+                } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
+                    dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', 'Error while trying to sign transaction!' );
                 }
-                // Callback to run if user confirms action
-                var confirmCb = function(){
-                    // Handle signing the message and populating the 'Signed' box
-                    var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet';
-                    updateTransactionStatus('pending', 'Signing transaction...');
-                    signTransaction(network, vals.source, vals.source, vals.transaction, function(tx){
-                        var val = '';
-                        if(tx){
-                            updateTransactionStatus('success', 'Transaction successfully signed!');
-                            val = tx;
-                        } else {
-                            updateTransactionStatus('error', 'Error signing transaction!');
-                            dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', 'Error while trying to sign transaction!' );
-                        }
-                        $('#signed-transaction').val(val);
-                    });    
-                }
+                $('#signed-transaction').val(val);
                 updateTransactionStatus('clear');
-                // Confirm the action with the user before signing                    
-                dialogConfirm(title, msg, false, true, confirmCb)
-            });            
+            });    
         
         }
     })
