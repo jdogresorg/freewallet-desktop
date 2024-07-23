@@ -24,16 +24,17 @@ XCP = {
 // Decode any embedded XCP transaction data
 function decodeXCPTransaction(network=null, tx=null, callback=null){
     var o    = {},
-        msg  = '',
-        raw  = '',
-        txid = '',
-        dest = '';
+        chng = {}, // change address / amount
+        raw  = '', // raw message
+        msg  = '', // XCP message
+        txid = '', // tx hash
+        dest = ''; // destination address
     // Parse in txid if we are able to detect one
     if(tx && tx.vin && tx.vin.length && tx.vin[0].txid)
         txid = tx.vin[0].txid;
     // Loop through outputs and extract any encoded data
     if(tx && tx.vout && tx.vout.length){
-        tx.vout.forEach(function(out){
+        tx.vout.forEach(function(out, idx){
             var script = out.scriptPubKey,
                 hex    = script.hex,
                 type   = script.type;
@@ -80,6 +81,11 @@ function decodeXCPTransaction(network=null, tx=null, callback=null){
                 // these always send some BTC dust to recipient at output 0
                 if(out.n==0)
                     dest = script.address;
+            }
+            // Get change address and amount from last output
+            if(idx==tx.vout.length-1){
+                chng.address = script.address;
+                chng.amount  = out.value;
             }
         });
     }
@@ -215,6 +221,8 @@ function decodeXCPTransaction(network=null, tx=null, callback=null){
                 o.asset             = getAssetName(msg.substring(16,32));
                 o.dividend_asset    = getAssetName(msg.substring(32,48));
             }
+            // Pass forward change information last
+            o.change = chng;
             // Pass the information to the callback 
             if(typeof callback === 'function')
                 callback(o);
