@@ -238,13 +238,19 @@ function checkWalletUpgrade(version, message){
         if(current){
             var a  = version.trim().split('.'),
                 b  = current.trim().split('.'),
+                majorA = parseInt(a[0]),
+                majorB = parseInt(b[0]),
+                minorA = parseInt(a[1]),
+                minorB = parseInt(b[1]),
+                patchA = parseInt(a[2]),
+                patchB = parseInt(b[2]),
                 update = false;
             // Check for any semantic versioning differences
-            if(parseInt(a[0])<parseInt(b[0])){        // Major
+            if(majorA < majorB){ // Major
                 update = true;
-            } else if(parseInt(a[1])<parseInt(b[1])){ // Minor
+            } else if(majorA == majorB && minorA < minorB){ // Minor
                 update = true;
-            } else if(parseInt(a[2])<parseInt(b[2])){ // Patch
+            } else if(majorA == majorB && minorA == minorB && patchA < patchB){ // Patch
                 update = true;
             }
             // If an update is available, handle notifying the user
