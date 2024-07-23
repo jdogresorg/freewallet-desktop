@@ -1,3 +1,17 @@
+Version 0.9.32 - July 23rd, 2024
+- Set default CP API servers to public.tokenscan.io
+- Set default explorer API servers to tokenscan.io
+- Fixed numeric value parsing / validation for order forms
+- Fixed `checkWalletUpgrade()` to handle semantic versioning properly
+- Updated NFT display method to load data from API JSON projects array
+- Removed "Counterparty General Fund" from ADS donation options
+- Removed "View Transaction" context menu from history
+- Added "Create Subasset" context menu
+- Added "Verify" option to signing transaction dialog
+- Added support for displaying change address and amount when verifying transaction
+- Added support for closing dispensers from origin address
+- Added support for saving preferred sort order on markets and dispensers
+
 Version 0.9.31 - April 15th, 2024
 - Set default CP API servers to public.xchain.io
 - Add ‘Reset to Defaults’ option in server settings
