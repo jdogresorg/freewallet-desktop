@@ -56,6 +56,9 @@
 
 <script>
 
+// Setup alias for localStorage
+var ls = localStorage;
+
 // Handle calculating the number of rows we can fit on screen
 function getMarketsRowCount(){
     var height = $('#markets').height(),
@@ -92,6 +95,9 @@ function addMarket(market){
     // $('#markets-tabs').append($('#markets-last-tab'));
 }
 
+// Set default sort order based on any stored preferences
+var dtMarketsSortOrder = JSON.parse(ls.getItem('dtMarketsSortOrder')) || [0, 'asc'];
+
 // Define datatables config used on this page
 FW.MARKETS_DATATABLE_CONFIG = {
     dom: '<"datatable-options text-center"<"market-name"><"market-volume">p>t',
@@ -100,6 +106,7 @@ FW.MARKETS_DATATABLE_CONFIG = {
     pageLength: getMarketsRowCount(),
     pagingType: "full",
     autoWidth: false,
+    order: dtMarketsSortOrder,
     language: {
         lengthMenu: "_MENU_ per page",
         zeroRecords: "No records found",
@@ -206,12 +213,18 @@ $(document).ready(function(){
     // Reset dialog data so we don't reuse data on form in the future
     FW.DIALOG_DATA = {};
 
-    // FW.DIALOG_DATA
-
     // Initialize the 'View Options'
     if(FW.MARKET_OPTIONS.indexOf(1)!=-1) $(".checkbox [name='options-named']").prop('checked', true);
     if(FW.MARKET_OPTIONS.indexOf(2)!=-1) $(".checkbox [name='options-subassets']").prop('checked', true);
     if(FW.MARKET_OPTIONS.indexOf(3)!=-1) $(".checkbox [name='options-numeric']").prop('checked', true);
+
+    // Detect datatable sorts and store sorting preference for future use
+    $('#markets .datatable thead th').click($.debounce(100,function(e){ 
+        var table = $(e.target).closest('table').DataTable(),
+            order = table.order();
+        // Save sort order to localStorage
+        ls.setItem('dtMarketsSortOrder', JSON.stringify([order[0][0], order[0][1]]));
+    }));
 
     // Handle updating view when user changes the viewing options
     $('.dropdown-checkboxes .checkbox input').change($.debounce(100,function(e){ 

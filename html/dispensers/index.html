@@ -70,11 +70,13 @@
     </div>
 </div>
 
-∂
 <script>
 
+// Setup alias for localStorage
+var ls = localStorage;
 
-
+// Set default sort order based on any stored preferences
+var dtDispensersSortOrder = JSON.parse(ls.getItem('dtDispensersSortOrder')) || [0, 'asc'];
 
 // Define datatables config used on this page
 FW.DISPENSERS_DATATABLE_CONFIG = {
@@ -84,6 +86,7 @@ FW.DISPENSERS_DATATABLE_CONFIG = {
     pageLength: getDispensersRowCount(),
     pagingType: "full",
     autoWidth: false,
+    order: dtDispensersSortOrder,
     language: {
         lengthMenu: "_MENU_ per page",
         zeroRecords: "No dispensers found",
@@ -188,6 +191,15 @@ $(document).ready(function(){
 
     // Size the tabs to fit on screen and move any extras to the 'more' menu
     autoCollapseWatchlistTabs();
+
+
+    // Detect datatable sorts and store sorting preference for future use
+    $('#dispensers-lists .datatable thead th').click($.debounce(100,function(e){ 
+        var table = $(e.target).closest('table').DataTable(),
+            order = table.order();
+        // Save sort order to localStorage
+        ls.setItem('dtDispensersSortOrder', JSON.stringify([order[0][0], order[0][1]]));
+    }));
 
     // Initialize the 'View Options'
     if(FW.DISPENSER_OPTIONS.indexOf(1)!=-1) $(".checkbox [name='options-closed']").prop('checked', true);
