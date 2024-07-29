@@ -28,10 +28,11 @@ function generateTransaction(callback=null, broadcast=false){
     var vals    = array2Object($('#close-dispenser-form').serializeArray()),
         network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
         source  = FW.WALLET_ADDRESS,
+        disp    = FW.DISPENSER_ADDRESS, // Dispenser address
         status  = 10, // 10 = Close Dispenser
         fee_sat = getSatoshis(vals['fee-amount']),
         command = (broadcast) ? 'cpDispenser' : 'createDispenser';
-    eval(command)(network, source, source, vals.asset, 0, 0, 0, status, fee_sat, '', callback);
+    eval(command)(network, source, disp, vals.asset, 0, 0, 0, status, fee_sat, '', callback);
 }
 
 $(document).ready(function(){
@@ -71,6 +72,9 @@ $(document).ready(function(){
     // Flag to indicate if we are in the middle of looking up transaction details
     FW.PENDING_TX_LOOKUP = false;
 
+    // Default dispenser address to current wallet address
+    FW.DISPENSER_ADDRESS = FW.WALLET_ADDRESS;
+
     // Handle looking up dispenser information based on tx hash
     $('#tx_hash').change(function(e){
         var errors = [];
@@ -80,6 +84,8 @@ $(document).ready(function(){
             $.getJSON( FW.EXPLORER_API + '/api/tx/' + val, function(data){
                 if(data.tx_type=='Dispenser'){
                     if(data.status==0){
+                        // Set dispenser address (address where dispenser is living)
+                        FW.DISPENSER_ADDRESS = (data.origin==FW.WALLET_ADDRESS) ? data.source : data.origin;
                         if(data.source==FW.WALLET_ADDRESS || data.origin==FW.WALLET_ADDRESS){
                             var name = (data.asset_longname!='') ? data.asset_longname : data.asset;
                             $('#close-dispenser-form [name="asset"]').val(data.asset);

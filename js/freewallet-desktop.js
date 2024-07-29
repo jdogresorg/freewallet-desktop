@@ -3263,10 +3263,10 @@ function createDispenser(network, source, destination, asset, escrow_amount, giv
         jsonrpc: "2.0",
         id: 0
     };
-    // Handle opening dispensers on empty addresses by changing status=1 and passing open_address
+    // Handle opening and closing dispensers on empty addresses by passing open_address
     if(source!=destination){
         data.params.open_address = destination;
-        data.params.status = 1;
+        data.params.status = (status==10) ? 10 : 1;
     }
     // Handle setting up an oracled dispenser by passing forward the oracle address
     if(oracle_address!='')
