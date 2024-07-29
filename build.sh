@@ -5,7 +5,7 @@
 
 # Mac Developer Identity
 # You can find your identity by doing : security find-identity
-identity="0682F98695F753BAF4C7B9F6C2BD1CEACD736C40"
+identity="8C21C6C320C3FFA6ECFA042E29B4C9461C0497CD"
 
 # Path to nwjs executable
 nwjs=/Applications/nwjs.app/Contents/MacOS/nwjs
