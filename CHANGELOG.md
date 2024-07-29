@@ -1,3 +1,6 @@
+Version 0.9.33 - July 29th, 2024
+- Fix issue with closing dispensers from `origin` address
+
 Version 0.9.32 - July 23rd, 2024
 - Set default CP API servers to public.tokenscan.io
 - Set default explorer API servers to tokenscan.io
