@@ -148,8 +148,8 @@ FW.MARKETS_DATATABLE_CONFIG = {
         table.rows( { search: 'applied' } ).data().each(function(data){ volume += parseFloat(data[4]); });
         $(this).closest('.panel').find('.datatable-options .market-volume').text('24h Volume: ' + numeral(volume).format('0,0.00000000'));
         // Add 'Page X of Y' in between previous/next buttons
-        var txt = '&nbsp;&nbsp;Page ' + numeral(page).format('0,0') + ' of ' + numeral(pages).format('0,0') + '&nbsp;&nbsp;';
-        $(this).closest('.panel').find('.datatable-options .paginate_button.previous').after(txt);
+        var txt = '<li class="paging-location-text">&nbsp;&nbsp;Page ' + numeral(page).format('0,0') + ' of ' + numeral(pages).format('0,0') + '&nbsp;&nbsp;</li>';
+        $(this).closest('.panel').find('.datatable-options .page-link.previous').closest('.dt-paging-button').after(txt);
 
     },
     // Callback called whenever a row is created

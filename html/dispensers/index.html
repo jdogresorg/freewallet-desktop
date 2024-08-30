@@ -122,10 +122,8 @@ FW.DISPENSERS_DATATABLE_CONFIG = {
             pages = parseInt(pages) + 1;
         // Set table title
         // $(this).closest('.panel').find('.datatable-options .pull-left').html('<i class="fa fa-lg fa-arrows-h"></i> Dispensers');
-        // Add 'Page X of Y' in between previous/next buttons
-        var txt = '&nbsp;&nbsp;Page ' + numeral(page).format('0,0') + ' of ' + numeral(pages).format('0,0') + '&nbsp;&nbsp;';
-        $(this).closest('.panel').find('.datatable-options .paginate_button.previous').after(txt);
-
+        var txt = '<li class="paging-location-text">&nbsp;&nbsp;Page ' + numeral(page).format('0,0') + ' of ' + numeral(pages).format('0,0') + '&nbsp;&nbsp;</li>';
+        $(this).closest('.panel').find('.datatable-options .page-link.previous').closest('.dt-paging-button').after(txt);
     },
     // Callback called whenever a row is created
     createdRow: function( row, data, idx ){

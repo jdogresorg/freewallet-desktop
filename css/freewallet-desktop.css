@@ -1281,3 +1281,29 @@ a.red:hover {
 .text-left {
     text-align: left !important;
 }
+
+/* CSS to format datatables 2.1.5 nicely with bootstrap 3*/
+.dt-paging-button a {
+    padding: 0em 0.5em !important;
+    color: #fff !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+}
+.datatable-options nav {
+    height: 22px !important;
+}
+.datatable-options ul.pagination {
+    height: 22px;
+    padding-bottom: 0px;
+}
+.paging-location-text {
+    vertical-align: top;
+    margin-top: 2px;
+}
+.table > tbody > tr > td {
+    border-top: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+}
+span.dt-column-title {
+    margin-right: 5px;
+}
