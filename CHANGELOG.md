@@ -1,3 +1,7 @@
+Version 0.9.34 - August 30th, 2024
+- Fix issue with divisiblity on `Reset Supply` form
+- Updates to support datatables 2.1.5
+
 Version 0.9.33 - July 29th, 2024
 - Fix issue with closing dispensers from `origin` address
 
