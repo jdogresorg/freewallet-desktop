@@ -28,7 +28,7 @@ function generateTransaction(callback=null, broadcast=false){
         asset     = (vals.name!='') ? vals.name : false,
         amt_sat   = getSatoshis(vals.amount),
         fee_sat   = getSatoshis(vals['fee-amount']),
-        divisible = (FW.ASSET_INFO.divisible) ? true : false,
+        divisible = (vals.divisible=='Yes') ? true : false,
         command   = (broadcast) ? 'cpIssuance' : 'createIssuance';
     if(asset)
         eval(command)(network, vals.source, asset, amt_sat, divisible, null, null, fee_sat, true, callback);
@@ -119,8 +119,8 @@ $(document).ready(function(){
             }
             // Confirm the action with the user
             var title = '<i class="fa fa-lg fa-fw fa-bank"></i> Confirm Supply Reset?',
-                fmt     = (FW.ASSET_INFO.divisible) ? '0,0.00000000' : '0,0',
-                msg   = getConfirmationMessage('Destroy any existing supply and<br>Issue  <b>' + numeral(vals.amount).format(fmt) + ' ' + vals.name + '</b>?', vals);
+                fmt     = (vals.divisible=='Yes') ? '0,0.00000000' : '0,0',
+                msg   = getConfirmationMessage('<center>Destroy any existing supply and<br>Issue  <b>' + numeral(vals.amount).format(fmt) + ' ' + vals.name + '</b>?</center>', vals);
             dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
         }
     });
