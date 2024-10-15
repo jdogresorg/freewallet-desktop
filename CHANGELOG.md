@@ -1,3 +1,7 @@
+Version 0.9.35 - October 15th, 2024
+- Disable `origin` functionality in dispensers (10.4 Required)
+- Disable P2SH encoding on MPMA Sends (10.4 Required)
+
 Version 0.9.34 - August 30th, 2024
 - Fix issue with divisiblity on `Reset Supply` form
 - Updates to support datatables 2.1.5
