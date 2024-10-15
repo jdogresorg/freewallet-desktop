@@ -2466,7 +2466,7 @@ function cpSend(network, source, destination, memo, memo_is_hex, currency, amoun
     var cb  = (typeof callback === 'function') ? callback : false;
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
-    createSend(network, source, destination, memo, memo_is_hex, currency, getSatoshis(amount), fee, function(o){
+    createSend(network, source, destination, memo, memo_is_hex, currency, amount, fee, function(o){
         if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
@@ -2497,40 +2497,46 @@ function cpSend(network, source, destination, memo, memo_is_hex, currency, amoun
 }
 
 // Handle generating a multi-peer-multi-asset (MPMA) send transaction
+// Note: As of counterparty-core 10.4.XX, P2SH encoding is disabled and multisig is required
+//       Leaving this as a separate function in case P2SH encoding gets supported again in the future.
+// Github Issue: https://github.com/CounterpartyXCP/counterparty-core/issues/2277
 function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
-    updateTransactionStatus('pending', 'Generating first counterparty transaction...');
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, null, function(o){
         if(o && o.result){
-            updateTransactionStatus('pending', 'Signing first counterparty transaction...');
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
             signTransaction(network, source, destination, o.result, function(signedTx){
                 if(signedTx){
-                    updateTransactionStatus('pending', 'Broadcasting first counterparty transaction...');
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
+                            if(cb)
+                                cb(txid);
                             // Start trying to generate the second MPMA transaction
-                            cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee,  txid, 1, callback);
+                            // cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee,  txid, 1, callback);
                         } else {
-                            updateTransactionStatus('error', 'Error broadcasting first transaction!');
-                            cbError(o, 'Error while trying to broadcast first transaction', cb);
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
+                            cbError(o, 'Error while trying to broadcast send transaction', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing first transaction!');
-                    cbError(o,'Error while trying to sign first transaction', cb);
+                    cbError(o,'Error while trying to sign send transaction', cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating first transaction!');
-            cbError(o,'Error while trying to create first transaction', cb);
+            cbError(o,'Error while trying to create send transaction', cb);
         }
     });
 }
 
-// Handle generating the second MPMA transaction necessary for MPMA sends
+// Handle generating the second MPMA transaction necessary for P2SH MPMA sends
 // We have this in a separate function so we can detect when an API call fails and try again after X seconds up to Y times
 // Sometimes the first mpma tx has not propagated to mempool before second mpma tx is generated, resulting in API error when tx is not found
 // Now we retry the second mpma tx after a brief delay, to let the first tx propagate a bit
@@ -3019,7 +3025,7 @@ function createSend(network, source, destination, memo, memo_is_hex, asset, quan
     });
 }
 
-// Handle creating send transaction
+// Handle creating MPMA send transaction
 function createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, callback){
     // console.log('createMultiSend=',network, source, destination, memo, memo_is_hex, asset, quantity, fee, p2sh_pretx_txid);
     var data = {
@@ -3031,19 +3037,20 @@ function createMultiSend(network, source, destination, memo, memo_is_hex, asset,
             quantity: quantity,
             memo: memo,
             memo_is_hex: memo_is_hex,
-            fee: parseInt(fee),
-            encoding: "p2sh"
+            // Comment out p2sh encoding and use default
+            // encoding: "p2sh",
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
     };
-    // Pass forward txid if given (used in MPMA sends to reference pre-tx)
-    if(txid)
-        data.params.p2sh_pretx_txid = txid;
+    // Pass forward txid if given (used in P2SH MPMA sends to reference pre-tx)
+    // if(txid)
+    //     data.params.p2sh_pretx_txid = txid;
     // Pass forward public key
-    var pubkey = getPublicKey(network, source);
-    if(pubkey)
-        data.params.pubkey = pubkey;
+    // var pubkey = getPublicKey(network, source);
+    // if(pubkey)
+    //     data.params.pubkey = pubkey;
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
