@@ -2392,6 +2392,8 @@ var getFormType = function(){
         type = 'change-description';
     else if($('#issue-supply-form').length)
         type = 'issue-supply';
+    else if($('#mint-supply-form').length)
+        type = 'mint-supply';
     else if($('#lock-supply-form').length)
         type = 'lock-supply';
     else if($('#reset-supply-form').length)
@@ -2627,6 +2629,42 @@ function cpIssuance(network, source, asset, quantity, divisible, description, de
         } else {
             updateTransactionStatus('error', 'Error generating transaction!');
             cbError(o, 'Error while trying to create issuance transaction',cb);
+        }
+    });
+}
+
+// Handle generating a fairmint transaction
+function cpMint(network, source, asset, quantity, fee, callback){
+    var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
+    // Create unsigned send transaction
+    createMint(network, source, asset, quantity, fee, function(o){
+        var tx = getRawTransaction(o);
+        if(tx){
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
+            // Sign the transaction
+            signTransaction(network, source, source, tx, function(signedTx){
+                if(signedTx){
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
+                    // Broadcast the transaction
+                    broadcastTransaction(network, signedTx, function(txid){
+                        if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
+                            if(cb)
+                                cb(txid);
+                        } else {
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
+                            cbError(o,'Error while trying to broadcast send transaction', cb);
+                        }
+                    });
+                } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
+                    cbError(o,'Error while trying to sign send transaction', cb);
+                }
+            });
+        } else {
+            updateTransactionStatus('error', 'Error generating transaction!');
+            cbError(o,'Error while trying to create send transaction', cb);
         }
     });
 }
@@ -2951,8 +2989,9 @@ function cpDispenser(network, source, destination, asset, escrow_amount, give_am
 // Handle setting some 'advanced' params for counterparty API requests
 // https://docs.counterparty.io/docs/develop/api#advanced-create_-parameters
 function setAdvancedCreateParams(data){
-    // Only apply advanced params to 'create_' requests
-    if(data.method.indexOf('create_')!=-1){
+    // Only apply advanced params to 'create_' (POST) and compose (GET) requests
+    // TODO: Clean this logic up... its quick and dirty to get fairmints working quickly
+    if(( data.method && data.method.indexOf('create_')!=-1) || (data.endpoint && data.endpoint.indexOf('compose')!=-1)){
         var o = data.params;
         // Pass forward UTXO usage preferences
         if(FW.UNCONFIRMED_UTXOS)
@@ -2972,17 +3011,25 @@ function cpRequest(network, data, callback){
     var net  = (network=='testnet') ? 'testnet' : 'mainnet',
         info = FW.WALLET_SERVER_INFO[net],
         url  = ((info.ssl) ? 'https' : 'http') + '://' + info.host + ':' + info.port,
-        auth = $.base64.btoa(info.user + ':' + info.pass);
+        auth = $.base64.btoa(info.user + ':' + info.pass),
+        type = (data.type) ? data.type : 'POST'; // User preferred request method, default to form POST
         // console.log('info=',info);
         // console.log('url=',url);
     // Set any 'advanced' params for counterparty API requests
     data = setAdvancedCreateParams(data);
-    // Send request to server, process response
-    $.ajax({
-        type: "POST",
+    if(data.endpoint){
+        // If a specific endpoint start with http/https has been given, use the exact url
+        if(data.endpoint.indexOf('http')==0){
+            url = data.endpoint;
+        } else {
+            // If we have an endpoint which is noy an exact url, use the default server settings to build the url
+            url += data.endpoint;
+        }
+    }
+    // Build out the basic Jquery AJAX request
+    var req = {
+        type: type,
         url: url,
-        data: JSON.stringify(data),
-        dataType: 'json',
         crossDomain: false,
         headers: {
             'Authorization': 'Basic ' + auth, 
@@ -2993,10 +3040,43 @@ function cpRequest(network, data, callback){
                 if(typeof callback === 'function')
                     callback(data.responseJSON);
             } else if(status=='error'){
-                updateTransactionStatus('error', 'Counterparty API communication error!');
+                var errors = (data.responseJSON && data.responseJSON.error) ? data.responseJSON.error : false;
+                // If we have a specific list of errors, show them, otherwise just show communication failure
+                if(errors){
+                    dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors);
+                    updateTransactionStatus('clear');
+                } else {
+                    updateTransactionStatus('error', 'Counterparty API communication error!');
+                }
+
             }
-        },
-    });
+        }        
+    };
+    // Handle GET requests
+    if(type=='GET'){
+        req = Object.assign({}, req, {
+            data: data.params
+        });
+    }
+    // Handle POST requests
+    if(type=='POST'){
+        req = Object.assign({}, req, {
+            data: JSON.stringify(data),
+            dataType: 'json'
+        });
+    }
+    // Send request to server, process response
+    $.ajax(req);
+}
+
+// Handle extracting the raw unsigned transaction from an API response
+// API /v1/ = o.result
+// API /v2/ = o.result.rawtransaction
+function getRawTransaction(o){
+    var tx = null;
+    if(o && o.result)
+        tx = (o.result.rawtransaction) ? o.result.rawtransaction : o.result;
+    return tx;
 }
 
 
@@ -3081,6 +3161,28 @@ function createIssuance(network, source, asset, quantity, divisible, description
             callback(o);
     });
 }
+
+// Handle creating fairmint transaction
+function createMint(network, source, asset, quantity, fee, callback){
+    // console.log('createMint=', network, source, asset, quantity, fee, callback);
+    var data = {
+        type: 'GET',
+        // Hardcode the endpoint to an exact URL for now until other CP API servers are stable
+        endpoint: 'http://api2.tokenscan.io:4000/v2/addresses/' + source + '/compose/fairmint',
+        params: {
+            asset: asset,
+            quantity: parseInt(quantity),
+            exact_fee: parseInt(fee)
+        },
+        jsonrpc: "2.0",
+        id: 0
+    };
+    cpRequest(network, data, function(o){
+        if(typeof callback === 'function')
+            callback(o);
+    });
+}
+
 
 // Handle creating broadcast transaction
 function createBroadcast(network, source, text, value, feed_fee, timestamp, fee, callback){
@@ -4039,6 +4141,21 @@ function dialogIssueSupply(){
         message: $('<div></div>').load('html/issuance/supply.html'),
     });
 }
+
+// 'Mint Supply' dialog box
+function dialogMintSupply(){
+    // Make sure wallet is unlocked
+    if(dialogCheckLocked('mint token supply'))
+        return;
+    BootstrapDialog.show({
+        type: 'type-default',
+        id: 'dialog-mint-supply',
+        closeByBackdrop: false,
+        title: '<i class="fa fa-fw fa-printer"></i> Mint Supply',
+        message: $('<div></div>').load('html/issuance/mint.html'),
+    });
+}
+
 
 // 'Reset Supply' dialog box
 function dialogResetSupply(){
@@ -6480,12 +6597,13 @@ function updateTransactionSize(additionalSize=0){
         if(o && o.result){
             var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
                 source  = FW.WALLET_ADDRESS,
-                dest    = (FW.SEND_DESTINATIONS) ? FW.SEND_DESTINATIONS : source;
+                dest    = (FW.SEND_DESTINATIONS) ? FW.SEND_DESTINATIONS : source,
+                rawtx   = getRawTransaction(o);
             // Set flag to disable ADS system for tx fee calculations
             FW.ADS_DISABLE = true;
             // Sign the tx, so we can get the actual transaction size
-            signTransaction(network, source, dest, o.result, function(signedTx){
-                var txHex = (signedTx) ? signedTx : o.result;
+            signTransaction(network, source, dest, rawtx, function(signedTx){
+                var txHex = (signedTx) ? signedTx : rawtx;
                     tx    = bitcoinjs.Transaction.fromHex(txHex),
                     sz    = tx.virtualSize();
                 // Re-Enable the ADS system
@@ -6497,7 +6615,7 @@ function updateTransactionSize(additionalSize=0){
                 if(additionalSize > 0)
                     sz = sz + additionalSize;
                 $('#tx-size').val(sz);
-                $('#tx-hex').val(o.result);
+                $('#tx-hex').val(rawtx);
                 updateTransactionStatus('clear');
                 updateMinersFee();
                 // Enable submit button and set flag to ignore clicks

@@ -90,7 +90,7 @@ $(document).ready(function(){
     // Detect any amount change and format as valid number
     $('#amount').change(function(e){
         // Handle updating tx size as token name changes
-        if(type=='dividend'||type=='burn'||type=='send')
+        if(type=='dividend'||type=='burn'||type=='send'||type=='mint-supply')
             updateTransactionSize();
         var amt = String($(this).val()).replace(/[^0-9.]/g,''),
             val = $('#available').val(),
