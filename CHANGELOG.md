@@ -1,5 +1,5 @@
 Version 0.9.37 - October 21st, 2024
-- Updates to support /v2/ API
+- Updates to support counterparty-core /v2/ API
 
 Version 0.9.36 - October 17th, 2024
 - Updates to support Fair Minting
