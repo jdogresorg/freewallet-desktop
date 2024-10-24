@@ -2998,6 +2998,42 @@ function cpDispenser(network, source, destination, asset, escrow_amount, give_am
     });
 }
 
+// Handle generating a dispense transaction
+function cpdispense(network, source, destination, memo, memo_is_hex, currency, amount, fee, callback){
+    var cb  = (typeof callback === 'function') ? callback : false;
+    updateTransactionStatus('pending', 'Generating counterparty transaction...');
+    // Create unsigned send transaction
+    createDispense(network, source, destination, memo, memo_is_hex, currency, amount, fee, function(o){
+        var tx = getRawTransaction(o);
+        if(tx){
+            updateTransactionStatus('pending', 'Signing counterparty transaction...');
+            // Sign the transaction
+            signTransaction(network, source, destination, tx, function(signedTx){
+                if(signedTx){
+                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
+                    // Broadcast the transaction
+                    broadcastTransaction(network, signedTx, function(txid){
+                        if(txid){
+                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
+                            if(cb)
+                                cb(txid);
+                        } else {
+                            updateTransactionStatus('error', 'Error broadcasting transaction!');
+                            cbError(o,'Error while trying to broadcast dispense transaction', cb);
+                        }
+                    });
+                } else {
+                    updateTransactionStatus('error', 'Error signing transaction!');
+                    cbError(o,'Error while trying to sign dispense transaction', cb);
+                }
+            });
+        } else {
+            updateTransactionStatus('error', 'Error generating transaction!');
+            cbError(o,'Error while trying to create dispense transaction', cb);
+        }
+    });
+}
+
 // Handle setting some 'advanced' params for counterparty API requests
 // https://docs.counterparty.io/docs/develop/api#advanced-create_-parameters
 function setAdvancedCreateParams(data){
@@ -3428,6 +3464,25 @@ function createDispenser(network, source, destination, asset, escrow_amount, giv
     });
 }
 
+// Handle creating dispense transaction
+function createDispense(network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback){
+    // console.log('createDispense=',network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback);
+    var data = {
+        type: 'GET',
+        endpoint: '/v2/addresses/' + source + '/compose/dispense',
+        params: {
+            dispenser: destination,
+            quantity: parseInt(quantity),
+            exact_fee: parseInt(fee)
+        },
+        jsonrpc: "2.0",
+        id: 0
+    };
+    cpRequest(network, data, function(o){
+        if(typeof callback === 'function')
+            callback(o);
+    });
+}
 
 
 // Handle signing a transaction using a hardware wallet
@@ -5752,7 +5807,7 @@ function updateDispensersLists(force){
 // Handle updating a datatable view with data from a query (address/asset)
 function updateDispensersView(id, query, force){
     // console.log('updateDispensersView id, query, force=',id, query, force);
-    getDispensersList(query, force, function(list){
+    getDispensersList(query, force, null, function(list){
         // console.log('FW.DISPENSERS=',FW.DISPENSERS);
         var tid    = String(id).replace(/\./g,'-'),
             rows   = getDispensersRowCount(),
@@ -5783,7 +5838,7 @@ function updateDispensersView(id, query, force){
 }
 
 // Handle getting a list of dispensers for a given address or asset
-function getDispensersList(query, force, callback){
+function getDispensersList(query, force, status, callback){
     var info   = FW.DISPENSERS[query],
         update = (info) ? false : true;
     if(info){
@@ -5792,7 +5847,7 @@ function getDispensersList(query, force, callback){
             update = ((parseInt(last) + ms) <= Date.now()) ? true : false;
     }
     if(update || force){
-        updateDispensersList(query, 1, callback)
+        updateDispensersList(query, 1, status, callback)
     } else {
         if(typeof callback === 'function')
             callback(info.data);
@@ -5800,13 +5855,17 @@ function getDispensersList(query, force, callback){
 }
 
 // Handle loading dispensers data, saving to memory, and passing to a callback function
-function updateDispensersList(query, page, callback){
+function updateDispensersList(query, page, status, callback){
     var page  = (page) ? page : 1,
         limit = 100,
         count = (page==1) ? 0 : ((page-1)*limit),
-        url   = FW.EXPLORER_API + '/api/dispensers/' + query + '/' + page + '/' + limit;
-    // Only display open dispensers for asset watchlists
-    if(!isValidAddress(query))
+        url   = FW.EXPLORER_API + '/api/dispensers/' + query + '/' + page + '/' + limit,
+        type  = (!isValidAddress(query)) ? 'asset' : 'address';
+    // Only display open dispensers for asset watchlists 
+    if(type=='asset')
+        status = 'open';
+    // Display only open dispensers if option is given
+    if(status=='open')
         url += '?status=open';
     $.getJSON(url, function(o){
         // Bail out if we encountered any error (prevents looping requests)
@@ -5827,11 +5886,11 @@ function updateDispensersList(query, page, callback){
         }
         // If a full update was requested, keep updating
         if(count < o.total){
-            updateDispensersList(query, page+1, callback);
+            updateDispensersList(query, page+1, status, callback);
             return;
         }
         if(typeof callback === 'function')
-            getDispensersList(query, null, callback);
+            getDispensersList(query, null, status, callback);
     });
 }
 

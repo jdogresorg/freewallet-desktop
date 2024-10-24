@@ -92,6 +92,9 @@ $(document).ready(function(){
         // Handle updating tx size as token name changes
         if(type=='dividend'||type=='burn'||type=='send'||type=='mint-supply')
             updateTransactionSize();
+        // Handle doing pre-flight check for sends to determine if this is a send or a dispense
+        if(type=='send')
+            checkDestinationForDispenser();
         var amt = String($(this).val()).replace(/[^0-9.]/g,''),
             val = $('#available').val(),
             fmt = (FW.ASSET_INFO.divisible) ? '0,0.00000000' : '0,0',
