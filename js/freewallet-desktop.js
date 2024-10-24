@@ -3059,7 +3059,6 @@ function cpRequest(network, data, callback){
                     // Ignore stupid error messages returned by the counterparty-core API
                     if(errors == 'Destination output is dust.' && data.params.quantity==0)
                         showError = false;
-                    console.log('showError=',showError);
                     if(showError)
                         dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors);
                     updateTransactionStatus('clear');
