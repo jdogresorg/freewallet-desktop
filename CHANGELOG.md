@@ -1,3 +1,7 @@
+Version 0.9.35 - Version 0.9.37 Removed and replaced with:
+- `counterparty-classic` branch
+- `counterparty-2.0` branch
+
 Version 0.9.34 - August 30th, 2024
 - Fix issue with divisiblity on `Reset Supply` form
 - Updates to support datatables 2.1.5
