@@ -3190,6 +3190,7 @@ function createMultiSend(network, source, destination, memo, memo_is_hex, asset,
     var data = {
         method: "create_send",
         params: {
+            source: source,
             destination: destination,
             asset: asset,
             quantity: quantity,
