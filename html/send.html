@@ -73,20 +73,13 @@ function generateTransaction(callback=null, broadcast=false){
         var sends        = String($('#send-list').val()).split("\n"),
             destinations = [],
             assets       = [],
-            quantities   = [],
-            memos        = [],
-            memo_is_hex  = [],
-            isHex        = /^[0-9a-fA-F]+$/;
+            quantities   = [];
         // Convert send lines into arrays to pass with API call
         sends.forEach(function(send){
             var info     = String(send).trim().split(','),
                 address  = String(info[0]).trim(),
                 asset    = (info[1]) ? String(info[1]).trim() : '',
-                quantity = (info[2]) ? String(info[2]).trim() : '',
-                memo     = (info[3]) ? String(info[3]).trim().replace(/^"|"$/g,'') : '';
-            // Re-assemble any memos which have commas
-            if(memo!='')
-                memo = String(info.slice(3,info.length).join(',')).trim().replace(/^"|"$/g,'');
+                quantity = (info[2]) ? String(info[2]).trim() : '';
             if(quantity.indexOf('.')!=-1){
                 quantity = parseInt(quantity.replace('.',''));
             } else {
@@ -95,20 +88,16 @@ function generateTransaction(callback=null, broadcast=false){
             destinations.push(address);
             assets.push(asset);
             quantities.push(quantity);
-            memos.push(memo);
-            memo_is_hex.push(isHex.test(memo));
         });
         vals.destination = destinations;
         vals.asset       = assets;
         vals.quantity    = quantities;
-        vals.memo        = memos;
-        vals.memo_is_hex = memo_is_hex;
         // Placeholder to easily reference destinations in updateTransactionSize()
         FW.SEND_DESTINATIONS = vals.destination;
         if(command=='cpMultiSend')
-            cpMultiSend(network, vals.source, vals.destination, vals.memo, vals.memo_is_hex, vals.asset, vals.quantity, fee_sat, callback);
+            cpMultiSend(network, vals.source, vals.destination, vals.memo, is_data, vals.asset, vals.quantity, fee_sat, callback);
         if(command=='createMultiSend')
-            createMultiSend(network, vals.source, vals.destination, vals.memo, vals.memo_is_hex, vals.asset, vals.quantity, fee_sat, null, callback);
+            createMultiSend(network, vals.source, vals.destination, vals.memo, is_data, vals.asset, vals.quantity, fee_sat, null, callback);
     }
 }
 
@@ -172,8 +161,9 @@ $(document).ready(function(){
         $('#token-name-select-field').hide();
         $('#available-field').hide();
         $('#amount-field').hide();
-        $('#memo-field').hide();
+        $('#memo-field').show();
     });
+
     // Delay initializing some fields to give things a chance to load
     setTimeout(function(){
 
@@ -251,14 +241,14 @@ $(document).ready(function(){
                 errors.push('You must enter an amount which is greater than 0!');
                 $('#amount').closest('.form-group').addClass('has-error has-danger');
             }
-            // Verify that the memo is below the max allowed characters
-            if(vals['memo'] && vals['memo']!=''){
-                var memotype = vals['memo-type'],
-                    max      = (memotype=='data') ? 68 : 34;
-                if(vals['memo'].length>max){
-                    errors.push('Maximum memo length for a ' + memotype + ' memo is ' + max + ' characters!');
-                    $('#memo').closest('.form-group').addClass('has-error has-danger');
-                }
+        }
+        // Verify that the memo is below the max allowed characters
+        if(vals['memo'] && vals['memo']!=''){
+            var memotype = vals['memo-type'],
+                max      = (memotype=='data') ? 68 : 34;
+            if(vals['memo'].length>max){
+                errors.push('Maximum memo length for a ' + memotype + ' memo is ' + max + ' characters!');
+                $('#memo').closest('.form-group').addClass('has-error has-danger');
             }
         }
         // VALIDATION - Multi-Send (MPMA)
