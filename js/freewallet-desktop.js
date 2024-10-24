@@ -3127,38 +3127,21 @@ function createSend(network, source, destination, memo, memo_is_hex, asset, quan
 function createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, callback){
     // console.log('createMultiSend=',network, source, destination, memo, memo_is_hex, asset, quantity, fee, p2sh_pretx_txid);
     // Convert all the arrays of values to comma separated strings (POST->GET request)
-    // var destinations = destination.toString(),
-    //     assets       = asset.toString(),
-    //     memos        = memo.toString(),
-    //     memos_is_hex = memo_is_hex.toString(),
-    //     quantities   = quantity.toString();
-    // var data = {
-    //     type: 'GET',
-    //     endpoint: '/v2/addresses/' + source + '/compose/send',
-    //     params: {
-    //         address: source,
-    //         destination: destinations,
-    //         asset: assets,
-    //         quantity: quantities,
-    //         memo: memos,
-    //         memo_is_hex: memos_is_hex,
-    //         // Comment out p2sh encoding and use default
-    //         // encoding: "p2sh",
-    //         exact_fee: parseInt(fee)
-    //     },
-    //     jsonrpc: "2.0",
-    //     id: 0
-    // };
-    // POST request - v2 endpoint is throwing error on comma separated quantity values
-    // TODO: Switch this to a GET request once counterparty-core developers get their shit together and get MPMA sends working with their /v2/ send endpoint
+    var destinations = destination.toString(),
+        assets       = asset.toString(),
+        memos        = memo.toString(),
+        memos_is_hex = memo_is_hex.toString(),
+        quantities   = quantity.toString();
     var data = {
-        method: "create_send",
+        type: 'GET',
+        endpoint: '/v2/addresses/' + source + '/compose/mpma',
         params: {
-            destination: destination,
-            asset: asset,
-            quantity: quantity,
-            memo: memo,
-            memo_is_hex: memo_is_hex,
+            address: source,
+            destinations: destinations,
+            assets: assets,
+            quantities: quantities,
+            memo: memos,
+            memo_is_hex: memos_is_hex,
             // Comment out p2sh encoding and use default
             // encoding: "p2sh",
             exact_fee: parseInt(fee)
@@ -3166,6 +3149,7 @@ function createMultiSend(network, source, destination, memo, memo_is_hex, asset,
         jsonrpc: "2.0",
         id: 0
     };
+
     // Pass forward txid if given (used in P2SH MPMA sends to reference pre-tx)
     // if(txid)
     //     data.params.p2sh_pretx_txid = txid;
