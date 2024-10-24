@@ -3363,13 +3363,12 @@ function createDestroy(network, source, asset, quantity, memo, fee, callback){
         params: {
             asset: asset,
             quantity: parseInt(quantity),
+            tag: memo,
             exact_fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
     };
-    if(memo)
-        data.params.tag = memo;
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
