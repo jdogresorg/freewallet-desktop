@@ -60,21 +60,21 @@ FW.WALLET_HISTORY  = JSON.parse(ls.getItem('walletHistory'))  || [];
 // Define default server info
 FW.WALLET_SERVER_INFO_DEFAULT = {
     mainnet: {
-        host: 'public.tokenscan.io',
+        host: 'cp20-api.tokenscan.io',
         port: 4001,
         user: 'rpc',
         pass: 'rpc',
         ssl: true,
-        api_host: 'tokenscan.io',
+        api_host: 'cp20.tokenscan.io',
         api_ssl: true
     },
     testnet: {
-        host: 'public.tokenscan.io',
+        host: 'cp20-api.tokenscan.io',
         port: 14001,
         user: 'rpc',
         pass: 'rpc',
         ssl: true,
-        api_host: 'testnet.tokenscan.io',
+        api_host: 'cp20-testnet.tokenscan.io',
         api_ssl: true
     }
 };
