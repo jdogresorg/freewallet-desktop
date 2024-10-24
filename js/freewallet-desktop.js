@@ -2392,8 +2392,6 @@ var getFormType = function(){
         type = 'change-description';
     else if($('#issue-supply-form').length)
         type = 'issue-supply';
-    else if($('#mint-supply-form').length)
-        type = 'mint-supply';
     else if($('#lock-supply-form').length)
         type = 'lock-supply';
     else if($('#reset-supply-form').length)
@@ -2468,12 +2466,11 @@ function cpSend(network, source, destination, memo, memo_is_hex, currency, amoun
     var cb  = (typeof callback === 'function') ? callback : false;
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
-    createSend(network, source, destination, memo, memo_is_hex, currency, amount, fee, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
+    createSend(network, source, destination, memo, memo_is_hex, currency, getSatoshis(amount), fee, function(o){
+        if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
-            signTransaction(network, source, destination, tx, function(signedTx){
+            signTransaction(network, source, destination, o.result, function(signedTx){
                 if(signedTx){
                     updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
@@ -2500,47 +2497,40 @@ function cpSend(network, source, destination, memo, memo_is_hex, currency, amoun
 }
 
 // Handle generating a multi-peer-multi-asset (MPMA) send transaction
-// Note: As of counterparty-core 10.4.XX, P2SH encoding is disabled and multisig is required
-//       Leaving this as a separate function in case P2SH encoding gets supported again in the future.
-// Github Issue: https://github.com/CounterpartyXCP/counterparty-core/issues/2277
 function cpMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
-    updateTransactionStatus('pending', 'Generating counterparty transaction...');
+    updateTransactionStatus('pending', 'Generating first counterparty transaction...');
     // Create unsigned send transaction
     createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, null, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
-            updateTransactionStatus('pending', 'Signing counterparty transaction...');
+        if(o && o.result){
+            updateTransactionStatus('pending', 'Signing first counterparty transaction...');
             // Sign the transaction
-            signTransaction(network, source, destination, tx, function(signedTx){
+            signTransaction(network, source, destination, o.result, function(signedTx){
                 if(signedTx){
-                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
+                    updateTransactionStatus('pending', 'Broadcasting first counterparty transaction...');
                     // Broadcast the transaction
                     broadcastTransaction(network, signedTx, function(txid){
                         if(txid){
-                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
-                            if(cb)
-                                cb(txid);
                             // Start trying to generate the second MPMA transaction
-                            // cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee,  txid, 1, callback);
+                            cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee,  txid, 1, callback);
                         } else {
-                            updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError(o, 'Error while trying to broadcast send transaction', cb);
+                            updateTransactionStatus('error', 'Error broadcasting first transaction!');
+                            cbError(o, 'Error while trying to broadcast first transaction', cb);
                         }
                     });
                 } else {
                     updateTransactionStatus('error', 'Error signing first transaction!');
-                    cbError(o,'Error while trying to sign send transaction', cb);
+                    cbError(o,'Error while trying to sign first transaction', cb);
                 }
             });
         } else {
             updateTransactionStatus('error', 'Error generating first transaction!');
-            cbError(o,'Error while trying to create send transaction', cb);
+            cbError(o,'Error while trying to create first transaction', cb);
         }
     });
 }
 
-// Handle generating the second MPMA transaction necessary for P2SH MPMA sends
+// Handle generating the second MPMA transaction necessary for MPMA sends
 // We have this in a separate function so we can detect when an API call fails and try again after X seconds up to Y times
 // Sometimes the first mpma tx has not propagated to mempool before second mpma tx is generated, resulting in API error when tx is not found
 // Now we retry the second mpma tx after a brief delay, to let the first tx propagate a bit
@@ -2606,11 +2596,10 @@ function cpIssuance(network, source, asset, quantity, divisible, description, de
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createIssuance(network, source, asset, quantity, divisible, description, destination, fee, reset, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
+        if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
-            signTransaction(network, source, source, tx, function(signedTx){
+            signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
                     updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
@@ -2636,53 +2625,16 @@ function cpIssuance(network, source, asset, quantity, divisible, description, de
     });
 }
 
-// Handle generating a fairmint transaction
-function cpMint(network, source, asset, quantity, fee, callback){
-    var cb  = (typeof callback === 'function') ? callback : false;
-    updateTransactionStatus('pending', 'Generating counterparty transaction...');
-    // Create unsigned send transaction
-    createMint(network, source, asset, quantity, fee, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
-            updateTransactionStatus('pending', 'Signing counterparty transaction...');
-            // Sign the transaction
-            signTransaction(network, source, source, tx, function(signedTx){
-                if(signedTx){
-                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
-                    // Broadcast the transaction
-                    broadcastTransaction(network, signedTx, function(txid){
-                        if(txid){
-                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
-                            if(cb)
-                                cb(txid);
-                        } else {
-                            updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError(o,'Error while trying to broadcast send transaction', cb);
-                        }
-                    });
-                } else {
-                    updateTransactionStatus('error', 'Error signing transaction!');
-                    cbError(o,'Error while trying to sign send transaction', cb);
-                }
-            });
-        } else {
-            updateTransactionStatus('error', 'Error generating transaction!');
-            cbError(o,'Error while trying to create send transaction', cb);
-        }
-    });
-}
-
 // Handle creating/signing/broadcasting an 'Broadcast' transaction
 function cpBroadcast(network, source, text, value, feed_fee, timestamp, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createBroadcast(network, source, text, value, feed_fee, timestamp, fee, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
+        if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
-            signTransaction(network, source, source, tx, function(signedTx){
+            signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
                     updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
@@ -2714,11 +2666,10 @@ function cpDividend(network, source, asset, dividend_asset, quantity_per_unit, f
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createDividend(network, source, asset, dividend_asset, quantity_per_unit, fee, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
+        if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
-            signTransaction(network, source, source, tx, function(signedTx){
+            signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
                     updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
@@ -2750,11 +2701,10 @@ function cpCancel(network, source, tx_hash, fee, callback){
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createCancel(network, source, tx_hash, fee, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
+        if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
-            signTransaction(network, source, source, tx, function(signedTx){
+            signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
                     updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
@@ -2786,11 +2736,10 @@ function cpBtcpay(network, source, order_match_id, fee, callback){
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createBtcpay(network, source, order_match_id, fee, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
+        if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
-            signTransaction(network, source, source, tx, function(signedTx){
+            signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
                     updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
@@ -2823,11 +2772,10 @@ function cpOrder(network, source, get_asset, give_asset, get_quantity, give_quan
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createOrder(network, source, get_asset, give_asset, getSatoshis(get_quantity), getSatoshis(give_quantity), expiration, fee, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
+        if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
-            signTransaction(network, source, source, tx, function(signedTx){
+            signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
                     updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
@@ -2859,11 +2807,10 @@ function cpBurn(network, source, quantity, fee, callback){
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createBurn(network, source, quantity, fee, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
+        if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
-            signTransaction(network, source, source, tx, function(signedTx){
+            signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
                     updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
@@ -2895,11 +2842,10 @@ function cpDestroy(network, source, asset, quantity, memo, fee, callback){
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createDestroy(network, source, asset, quantity, memo, fee, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
+        if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
-            signTransaction(network, source, source, tx, function(signedTx){
+            signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
                     updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
@@ -2931,11 +2877,10 @@ function cpSweep(network, source, destination, flags, memo, fee, callback){
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createSweep(network, source, destination, flags, memo, fee, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
+        if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
-            signTransaction(network, source, destination, tx, function(signedTx){
+            signTransaction(network, source, destination, o.result, function(signedTx){
                 if(signedTx){
                     updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
@@ -2968,11 +2913,10 @@ function cpDispenser(network, source, destination, asset, escrow_amount, give_am
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
     createDispenser(network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, oracle_address, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
+        if(o && o.result){
             updateTransactionStatus('pending', 'Signing counterparty transaction...');
             // Sign the transaction
-            signTransaction(network, source, source, tx, function(signedTx){
+            signTransaction(network, source, source, o.result, function(signedTx){
                 if(signedTx){
                     updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
                     // Broadcast the transaction
@@ -2998,48 +2942,11 @@ function cpDispenser(network, source, destination, asset, escrow_amount, give_am
     });
 }
 
-// Handle generating a dispense transaction
-function cpdispense(network, source, destination, memo, memo_is_hex, currency, amount, fee, callback){
-    var cb  = (typeof callback === 'function') ? callback : false;
-    updateTransactionStatus('pending', 'Generating counterparty transaction...');
-    // Create unsigned send transaction
-    createDispense(network, source, destination, memo, memo_is_hex, currency, amount, fee, function(o){
-        var tx = getRawTransaction(o);
-        if(tx){
-            updateTransactionStatus('pending', 'Signing counterparty transaction...');
-            // Sign the transaction
-            signTransaction(network, source, destination, tx, function(signedTx){
-                if(signedTx){
-                    updateTransactionStatus('pending', 'Broadcasting counterparty transaction...');
-                    // Broadcast the transaction
-                    broadcastTransaction(network, signedTx, function(txid){
-                        if(txid){
-                            updateTransactionStatus('success', 'Transaction signed and broadcast!');
-                            if(cb)
-                                cb(txid);
-                        } else {
-                            updateTransactionStatus('error', 'Error broadcasting transaction!');
-                            cbError(o,'Error while trying to broadcast dispense transaction', cb);
-                        }
-                    });
-                } else {
-                    updateTransactionStatus('error', 'Error signing transaction!');
-                    cbError(o,'Error while trying to sign dispense transaction', cb);
-                }
-            });
-        } else {
-            updateTransactionStatus('error', 'Error generating transaction!');
-            cbError(o,'Error while trying to create dispense transaction', cb);
-        }
-    });
-}
-
 // Handle setting some 'advanced' params for counterparty API requests
 // https://docs.counterparty.io/docs/develop/api#advanced-create_-parameters
 function setAdvancedCreateParams(data){
-    // Only apply advanced params to 'create_' (POST) and compose (GET) requests
-    // TODO: Clean this logic up... its quick and dirty to get fairmints working quickly
-    if(( data.method && data.method.indexOf('create_')!=-1) || (data.endpoint && data.endpoint.indexOf('compose')!=-1)){
+    // Only apply advanced params to 'create_' requests
+    if(data.method.indexOf('create_')!=-1){
         var o = data.params;
         // Pass forward UTXO usage preferences
         if(FW.UNCONFIRMED_UTXOS)
@@ -3059,77 +2966,31 @@ function cpRequest(network, data, callback){
     var net  = (network=='testnet') ? 'testnet' : 'mainnet',
         info = FW.WALLET_SERVER_INFO[net],
         url  = ((info.ssl) ? 'https' : 'http') + '://' + info.host + ':' + info.port,
-        auth = $.base64.btoa(info.user + ':' + info.pass),
-        type = (data.type) ? data.type : 'POST'; // User preferred request method, default to form POST
+        auth = $.base64.btoa(info.user + ':' + info.pass);
         // console.log('info=',info);
         // console.log('url=',url);
     // Set any 'advanced' params for counterparty API requests
     data = setAdvancedCreateParams(data);
-    if(data.endpoint){
-        // If a specific endpoint start with http/https has been given, use the exact url
-        if(data.endpoint.indexOf('http')==0){
-            url = data.endpoint;
-        } else {
-            // If we have an endpoint which is noy an exact url, use the default server settings to build the url
-            url += data.endpoint;
-        }
-    }
-    // Build out the basic Jquery AJAX request
-    var req = {
-        type: type,
+    // Send request to server, process response
+    $.ajax({
+        type: "POST",
         url: url,
+        data: JSON.stringify(data),
+        dataType: 'json',
         crossDomain: false,
         headers: {
             'Authorization': 'Basic ' + auth, 
             'Content-Type': 'application/json; charset=UTF-8'
         },
-        complete: function(res, status){
+        complete: function(data, status){
             if(status=='success'){
                 if(typeof callback === 'function')
-                    callback(res.responseJSON);
+                    callback(data.responseJSON);
             } else if(status=='error'){
-                var errors = (res.responseJSON && res.responseJSON.error) ? res.responseJSON.error : false;
-                // If we have a specific list of errors, show them, otherwise just show communication failure
-                if(errors){
-                    var showError = true;
-                    // Ignore stupid error messages returned by the counterparty-core API
-                    if(errors == 'Destination output is dust.' && data.params.quantity==0)
-                        showError = false;
-                    if(showError)
-                        dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors);
-                    updateTransactionStatus('clear');
-                } else {
-                    updateTransactionStatus('error', 'Counterparty API communication error!');
-                }
-
+                updateTransactionStatus('error', 'Counterparty API communication error!');
             }
-        }        
-    };
-    // Handle GET requests
-    if(type=='GET'){
-        req = Object.assign({}, req, {
-            data: data.params
-        });
-    }
-    // Handle POST requests
-    if(type=='POST'){
-        req = Object.assign({}, req, {
-            data: JSON.stringify(data),
-            dataType: 'json'
-        });
-    }
-    // Send request to server, process response
-    $.ajax(req);
-}
-
-// Handle extracting the raw unsigned transaction from an API response
-// API /v1/ = o.result
-// API /v2/ = o.result.rawtransaction
-function getRawTransaction(o){
-    var tx = null;
-    if(o && o.result)
-        tx = (o.result.rawtransaction) ? o.result.rawtransaction : o.result;
-    return tx;
+        },
+    });
 }
 
 
@@ -3137,13 +2998,13 @@ function getRawTransaction(o){
 function createSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback){
     // console.log('createSend=',network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback);
     var data = {
-        type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/send',
-        params: {
+       method: "create_send",
+       params: {
+            source: source,
             destination: destination,
             asset: asset,
             quantity: parseInt(quantity),
-            exact_fee: parseInt(fee)
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3158,58 +3019,31 @@ function createSend(network, source, destination, memo, memo_is_hex, asset, quan
     });
 }
 
-// Handle creating MPMA send transaction
+// Handle creating send transaction
 function createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, callback){
     // console.log('createMultiSend=',network, source, destination, memo, memo_is_hex, asset, quantity, fee, p2sh_pretx_txid);
-    // Convert all the arrays of values to comma separated strings (POST->GET request)
-    // var destinations = destination.toString(),
-    //     assets       = asset.toString(),
-    //     memos        = memo.toString(),
-    //     memos_is_hex = memo_is_hex.toString(),
-    //     quantities   = quantity.toString();
-    // var data = {
-    //     type: 'GET',
-    //     endpoint: '/v2/addresses/' + source + '/compose/send',
-    //     params: {
-    //         address: source,
-    //         destination: destinations,
-    //         asset: assets,
-    //         quantity: quantities,
-    //         memo: memos,
-    //         memo_is_hex: memos_is_hex,
-    //         // Comment out p2sh encoding and use default
-    //         // encoding: "p2sh",
-    //         exact_fee: parseInt(fee)
-    //     },
-    //     jsonrpc: "2.0",
-    //     id: 0
-    // };
-    // POST request - Sticking with v1 endpoint now, since counterparty-core lost the ability to do multiple memos in the v2 API
-    // TODO: Switch this to a GET request once counterparty-core developers get their shit together and get MPMA sends with multiple memos working with their /v2/ send endpoint
-    // ISSUE : https://github.com/CounterpartyXCP/counterparty-core/issues/2568 
     var data = {
-        method: "create_send",
-        params: {
+       method: "create_send",
+       params: {
             source: source,
             destination: destination,
             asset: asset,
             quantity: quantity,
             memo: memo,
             memo_is_hex: memo_is_hex,
-            // Comment out p2sh encoding and use default
-            // encoding: "p2sh",
-            exact_fee: parseInt(fee)
+            fee: parseInt(fee),
+            encoding: "p2sh"
         },
         jsonrpc: "2.0",
         id: 0
     };
-    // Pass forward txid if given (used in P2SH MPMA sends to reference pre-tx)
-    // if(txid)
-    //     data.params.p2sh_pretx_txid = txid;
+    // Pass forward txid if given (used in MPMA sends to reference pre-tx)
+    if(txid)
+        data.params.p2sh_pretx_txid = txid;
     // Pass forward public key
-    // var pubkey = getPublicKey(network, source);
-    // if(pubkey)
-    //     data.params.pubkey = pubkey;
+    var pubkey = getPublicKey(network, source);
+    if(pubkey)
+        data.params.pubkey = pubkey;
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
@@ -3220,39 +3054,17 @@ function createMultiSend(network, source, destination, memo, memo_is_hex, asset,
 function createIssuance(network, source, asset, quantity, divisible, description, destination, fee, reset, callback){
     // console.log('createIssuance=', network, source, asset, quantity, divisible, description, destination, fee, callback);
     var data = {
-        type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/issuance',
-        params: {
+       method: "create_issuance",
+       params: {
+            source: source,
             asset: asset,
             quantity: parseInt(quantity),
-            divisible: (divisible) ? true : false,
+            divisible: (divisible) ? 1 : 0,
+            description: (description=='LOCK') ? null : description,
             transfer_destination: (destination) ? destination : null,
             reset: (reset) ? true : false,
             lock: (description=='LOCK') ? true : false,
-            exact_fee: parseInt(fee)
-        },
-        jsonrpc: "2.0",
-        id: 0
-    };
-    // Include description only if it is given
-    if(description!=null && description!='LOCK')
-        data.params.description = description;
-    cpRequest(network, data, function(o){
-        if(typeof callback === 'function')
-            callback(o);
-    });
-}
-
-// Handle creating fairmint transaction
-function createMint(network, source, asset, quantity, fee, callback){
-    // console.log('createMint=', network, source, asset, quantity, fee, callback);
-    var data = {
-        type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/fairmint',
-        params: {
-            asset: asset,
-            quantity: parseInt(quantity),
-            exact_fee: parseInt(fee)
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3262,20 +3074,19 @@ function createMint(network, source, asset, quantity, fee, callback){
             callback(o);
     });
 }
-
 
 // Handle creating broadcast transaction
 function createBroadcast(network, source, text, value, feed_fee, timestamp, fee, callback){
     // console.log('createBroadcast=', network, source, text, value, feed_fee, timestamp, fee, callback);
     var data = {
-        type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/broadcast',
-        params: {
+       method: "create_broadcast",
+       params: {
+            source: source,
             text: text,
             value: value,
             fee_fraction: feed_fee,
             timestamp: timestamp,
-            exact_fee: parseInt(fee)
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3290,13 +3101,13 @@ function createBroadcast(network, source, text, value, feed_fee, timestamp, fee,
 function createDividend(network, source, asset, dividend_asset, quantity_per_unit, fee, callback){
     // console.log('createDividend=', network, source, asset, dividend_asset, quantity_per_unit, fee, callback);
     var data = {
-        type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/dividend',
-        params: {
+       method: "create_dividend",
+       params: {
+            source: source,
             asset: asset,
             dividend_asset: dividend_asset,
             quantity_per_unit: quantity_per_unit,
-            exact_fee: parseInt(fee)
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3311,11 +3122,11 @@ function createDividend(network, source, asset, dividend_asset, quantity_per_uni
 function createCancel(network, source, tx_hash, fee, callback){
     // console.log('createCancel=', network, source, tx_hash, fee, callback);
     var data = {
-        type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/cancel',
-        params: {
+       method: "create_cancel",
+       params: {
+            source: source,
             offer_hash: tx_hash,
-            exact_fee: parseInt(fee)
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3330,17 +3141,18 @@ function createCancel(network, source, tx_hash, fee, callback){
 function createOrder(network, source, get_asset, give_asset, get_quantity, give_quantity, expiration, fee, callback){
     // console.log('createOrder=', network, source, get_asset, give_asset, get_quantity, give_quantity, expiration, fee, callback);
     var data = {
-        type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/order',
-        params: {
+       method: "create_order",
+       params: {
+            source: source,
             get_asset: get_asset,
             get_quantity: get_quantity,
             give_asset: give_asset,
             give_quantity: give_quantity,
             expiration: expiration,
-            // fix for bug in API (https://github.com/CounterpartyXCP/counterparty-lib/issues/1025)
+            // Temp fix for bug in API (https://github.com/CounterpartyXCP/counterparty-lib/issues/1025)
             fee_required: 0,
-            exact_fee: parseInt(fee)
+            fee_provided: 0,
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3355,11 +3167,11 @@ function createOrder(network, source, get_asset, give_asset, get_quantity, give_
 function createBtcpay(network, source, order_match_id, fee, callback){
     // console.log('createBtcpay=', network, source, order_match_id, fee, callback);
     var data = {
-        type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/btcpay',
-        params: {
+       method: "create_btcpay",
+       params: {
+            source: source,
             order_match_id: order_match_id,
-            exact_fee: parseInt(fee)
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3374,11 +3186,11 @@ function createBtcpay(network, source, order_match_id, fee, callback){
 function createBurn(network, source, quantity, fee, callback){
     // console.log('createBurn=',network, source, quantity, fee, callback);
     var data = {
-        type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/burn',
-        params: {
+       method: "create_burn",
+       params: {
+            source: source,
             quantity: parseInt(quantity),
-            exact_fee: parseInt(fee)
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3392,19 +3204,20 @@ function createBurn(network, source, quantity, fee, callback){
 
 // Handle creating destroy transaction
 function createDestroy(network, source, asset, quantity, memo, fee, callback){
-    // console.log('createBurn=',network, source, quantity, memo, fee, callback);
+    // console.log('createBurn=',network, source, quantity, fee, callback);
     var data = {
-        type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/destroy',
-        params: {
+       method: "create_destroy",
+       params: {
+            source: source,
             asset: asset,
             quantity: parseInt(quantity),
-            tag: memo,
-            exact_fee: parseInt(fee)
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
     };
+    if(memo)
+        data.params.tag = memo;
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
@@ -3415,13 +3228,13 @@ function createDestroy(network, source, asset, quantity, memo, fee, callback){
 function createSweep(network, source, destination, flags, memo, fee, callback){
     // console.log('createSweep=',network, source, destination, flags, memo, fee, callback);
     var data = {
-        type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/sweep',
-        params: {
+       method: "create_sweep",
+       params: {
+            source: source,
             destination: destination,
             flags: parseInt(flags),
             memo: memo,
-            exact_fee: parseInt(fee)
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
@@ -3437,27 +3250,26 @@ function createSweep(network, source, destination, flags, memo, fee, callback){
 function createDispenser(network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, oracle_address, callback){
     // console.log('createDispenser=',network, source, destination, asset, escrow_amount, give_amount, btc_amount, status, fee, oracle_address, callback);
     var data = {
-        type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/dispenser',
-        params: {
+       method: "create_dispenser",
+       params: {
+            source: source,
             asset: asset,
             escrow_quantity: parseInt(escrow_amount),
             give_quantity: parseInt(give_amount),
             mainchainrate: parseInt(btc_amount),
             status:  parseInt(status),
-            exact_fee: parseInt(fee)
+            fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
     };
     // Handle opening and closing dispensers on empty addresses by passing open_address
-    // Comment this out since counterparty-core 10.4 crippled dispensers
-    // if(source!=destination){
-    //     data.params.open_address = destination;
-    //     data.params.status = (status==10) ? 10 : 1;
-    // }
+    if(source!=destination){
+        data.params.open_address = destination;
+        data.params.status = (status==10) ? 10 : 1;
+    }
     // Handle setting up an oracled dispenser by passing forward the oracle address
-    if(oracle_address!=null && oracle_address!='')
+    if(oracle_address!='')
         data.params.oracle_address = oracle_address;
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
@@ -3465,25 +3277,6 @@ function createDispenser(network, source, destination, asset, escrow_amount, giv
     });
 }
 
-// Handle creating dispense transaction
-function createDispense(network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback){
-    // console.log('createDispense=',network, source, destination, memo, memo_is_hex, asset, quantity, fee, callback);
-    var data = {
-        type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/dispense',
-        params: {
-            dispenser: destination,
-            quantity: parseInt(quantity),
-            exact_fee: parseInt(fee)
-        },
-        jsonrpc: "2.0",
-        id: 0
-    };
-    cpRequest(network, data, function(o){
-        if(typeof callback === 'function')
-            callback(o);
-    });
-}
 
 
 // Handle signing a transaction using a hardware wallet
@@ -4239,21 +4032,6 @@ function dialogIssueSupply(){
         message: $('<div></div>').load('html/issuance/supply.html'),
     });
 }
-
-// 'Mint Supply' dialog box
-function dialogMintSupply(){
-    // Make sure wallet is unlocked
-    if(dialogCheckLocked('mint token supply'))
-        return;
-    BootstrapDialog.show({
-        type: 'type-default',
-        id: 'dialog-mint-supply',
-        closeByBackdrop: false,
-        title: '<i class="fa fa-fw fa-printer"></i> Mint Supply',
-        message: $('<div></div>').load('html/issuance/mint.html'),
-    });
-}
-
 
 // 'Reset Supply' dialog box
 function dialogResetSupply(){
@@ -5808,7 +5586,7 @@ function updateDispensersLists(force){
 // Handle updating a datatable view with data from a query (address/asset)
 function updateDispensersView(id, query, force){
     // console.log('updateDispensersView id, query, force=',id, query, force);
-    getDispensersList(query, force, null, function(list){
+    getDispensersList(query, force, function(list){
         // console.log('FW.DISPENSERS=',FW.DISPENSERS);
         var tid    = String(id).replace(/\./g,'-'),
             rows   = getDispensersRowCount(),
@@ -5839,7 +5617,7 @@ function updateDispensersView(id, query, force){
 }
 
 // Handle getting a list of dispensers for a given address or asset
-function getDispensersList(query, force, status, callback){
+function getDispensersList(query, force, callback){
     var info   = FW.DISPENSERS[query],
         update = (info) ? false : true;
     if(info){
@@ -5848,7 +5626,7 @@ function getDispensersList(query, force, status, callback){
             update = ((parseInt(last) + ms) <= Date.now()) ? true : false;
     }
     if(update || force){
-        updateDispensersList(query, 1, status, callback)
+        updateDispensersList(query, 1, callback)
     } else {
         if(typeof callback === 'function')
             callback(info.data);
@@ -5856,17 +5634,13 @@ function getDispensersList(query, force, status, callback){
 }
 
 // Handle loading dispensers data, saving to memory, and passing to a callback function
-function updateDispensersList(query, page, status, callback){
+function updateDispensersList(query, page, callback){
     var page  = (page) ? page : 1,
         limit = 100,
         count = (page==1) ? 0 : ((page-1)*limit),
-        url   = FW.EXPLORER_API + '/api/dispensers/' + query + '/' + page + '/' + limit,
-        type  = (!isValidAddress(query)) ? 'asset' : 'address';
-    // Only display open dispensers for asset watchlists 
-    if(type=='asset')
-        status = 'open';
-    // Display only open dispensers if option is given
-    if(status=='open')
+        url   = FW.EXPLORER_API + '/api/dispensers/' + query + '/' + page + '/' + limit;
+    // Only display open dispensers for asset watchlists
+    if(!isValidAddress(query))
         url += '?status=open';
     $.getJSON(url, function(o){
         // Bail out if we encountered any error (prevents looping requests)
@@ -5887,11 +5661,11 @@ function updateDispensersList(query, page, status, callback){
         }
         // If a full update was requested, keep updating
         if(count < o.total){
-            updateDispensersList(query, page+1, status, callback);
+            updateDispensersList(query, page+1, callback);
             return;
         }
         if(typeof callback === 'function')
-            getDispensersList(query, null, status, callback);
+            getDispensersList(query, null, callback);
     });
 }
 
@@ -6699,13 +6473,12 @@ function updateTransactionSize(additionalSize=0){
         if(o && o.result){
             var network = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
                 source  = FW.WALLET_ADDRESS,
-                dest    = (FW.SEND_DESTINATIONS) ? FW.SEND_DESTINATIONS : source,
-                rawtx   = getRawTransaction(o);
+                dest    = (FW.SEND_DESTINATIONS) ? FW.SEND_DESTINATIONS : source;
             // Set flag to disable ADS system for tx fee calculations
             FW.ADS_DISABLE = true;
             // Sign the tx, so we can get the actual transaction size
-            signTransaction(network, source, dest, rawtx, function(signedTx){
-                var txHex = (signedTx) ? signedTx : rawtx;
+            signTransaction(network, source, dest, o.result, function(signedTx){
+                var txHex = (signedTx) ? signedTx : o.result;
                     tx    = bitcoinjs.Transaction.fromHex(txHex),
                     sz    = tx.virtualSize();
                 // Re-Enable the ADS system
@@ -6717,7 +6490,7 @@ function updateTransactionSize(additionalSize=0){
                 if(additionalSize > 0)
                     sz = sz + additionalSize;
                 $('#tx-size').val(sz);
-                $('#tx-hex').val(rawtx);
+                $('#tx-hex').val(o.result);
                 updateTransactionStatus('clear');
                 updateMinersFee();
                 // Enable submit button and set flag to ignore clicks

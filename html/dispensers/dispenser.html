@@ -3,6 +3,9 @@
     <div class="form-group" id="source-address-field">
         <!-- Source Address Field -->
     </div>
+    <div class="form-group" id="destination-address-field">
+        <!-- Destination Address Field -->
+    </div>
     <div class="form-group" id="oracle-select-field">
         <!-- Oracle Field  -->
     </div>
@@ -121,6 +124,7 @@ $(document).ready(function(){
 
     // Load any field content
     $('#source-address-field').load('html/fields/source-address.html');
+    $('#destination-address-field').load('html/fields/destination-address.html');
     $('#oracle-select-field').load('html/fields/oracle-select.html');
     $('#token-name-select-field').load('html/fields/token-name-select.html');
     $('#available-field').load('html/fields/available.html');
@@ -182,20 +186,6 @@ $(document).ready(function(){
         console.log('vals=',vals);
         // Remove error indicators from any fields 
         $('.form-group').removeClass('has-error has-danger');
-
-        // Counterparty 10.X removed `origin` functionality 
-        // Note: This means no more simple opening up dispensers on an address other than source, thereby requiring 3 transactions and making dispensers more expensive to use
-        // I raised this issue to the core devs and was ignored : https://github.com/CounterpartyXCP/counterparty-core/issues/1764#issuecomment-2128001912
-        // Before counterparty-core 10.XX.XX :
-        // - Open dispenser was 1 transaction (fund dispenser address with asset and open dispenser)
-        // - Close dispenser and return funds was 1 transaction (close dispenser and return funds to `origin` address)
-        // - Could trigger a dispenser with a normal BTC send from any address (onboarded lots of ppl to Counterparty)
-        // After  counterparty-core 10.XX.XX :
-        // - Open dispenser is 3 transactions (1=send BTC to dispenser address, 2=send asset to dispenser address, 3=open dispenser)
-        // - Close dispenser and return funds  is 3 transactions (1=Close Dispenser, 2=send asset from dispenser address back to source, 3=Send BTC from dispenser address back to source)
-        // - Must use a counterparty wallet in order to trigger a dispenser (Users must first download counterparty wallet before being able to use dispensers)
-        // Hardcode source and destination to match (v10.x update)
-        vals.destination = vals.source;
 
         // Verify we have a valid dispenser address
         if(!isValidAddress(vals.destination)){

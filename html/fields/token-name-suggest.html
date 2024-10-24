@@ -35,8 +35,6 @@ $(document).ready(function(){
             txt = 'This is the name of the token you would like to transfer ownership of';
         if(type=='issue-supply')
             txt = 'This is the name of the token you would like to issue additional supply on';
-        if(type=='mint-supply')
-            txt = 'This is the name of the token you would like to mint supply of';
         if(type=='lock-supply')
             txt = 'This is the name of the token you would like to lock the supply of';
         if(type=='dividend')
@@ -98,7 +96,7 @@ $(document).ready(function(){
             var name = $(this).val();
             if(name!='' && name!=null && name!=last_asset){
                 // Handle updating tx size as token name changes
-                if(type=='issue-supply'||type=='mint-supply'||type=='reset-supply'||type=='lock-supply'||type=='transfer-ownership'||type=='dividend')
+                if(type=='issue-supply'||type=='reset-supply'||type=='lock-supply'||type=='transfer-ownership'||type=='dividend')
                     updateTransactionSize();
                 last_asset = name;
                 // Lookup if this asset is already registered to another address... send to coindaddy to make purchase offer
@@ -126,9 +124,6 @@ $(document).ready(function(){
                         if(type=='dividend'||type=='add-market'||type=='dispenser-watchlist-add')
                             return;
                         FW.ASSET_INFO = o;
-                        // Ignore the asset ownership check when we are minting supply
-                        if(type=='mint-supply')
-                            return;
                         // Error if asset is owned by another address
                         if(o.owner!=FW.WALLET_ADDRESS){
                             var found = false;
