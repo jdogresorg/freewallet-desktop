@@ -2999,7 +2999,7 @@ function cpDispenser(network, source, destination, asset, escrow_amount, give_am
 }
 
 // Handle generating a dispense transaction
-function cpdispense(network, source, destination, memo, memo_is_hex, currency, amount, fee, callback){
+function cpDispense(network, source, destination, memo, memo_is_hex, currency, amount, fee, callback){
     var cb  = (typeof callback === 'function') ? callback : false;
     updateTransactionStatus('pending', 'Generating counterparty transaction...');
     // Create unsigned send transaction
@@ -3101,8 +3101,10 @@ function cpRequest(network, data, callback){
                 } else {
                     updateTransactionStatus('error', 'Counterparty API communication error!');
                 }
-
             }
+            // Re-enable the form submit button
+            $('#btn-submit').removeClass('disabled');
+            FW.IGNORE_SUBMIT = false;
         }        
     };
     // Handle GET requests
@@ -3161,39 +3163,17 @@ function createSend(network, source, destination, memo, memo_is_hex, asset, quan
 // Handle creating MPMA send transaction
 function createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, callback){
     // console.log('createMultiSend=',network, source, destination, memo, memo_is_hex, asset, quantity, fee, p2sh_pretx_txid);
-    // Convert all the arrays of values to comma separated strings (POST->GET request)
-    // var destinations = destination.toString(),
-    //     assets       = asset.toString(),
-    //     memos        = memo.toString(),
-    //     memos_is_hex = memo_is_hex.toString(),
-    //     quantities   = quantity.toString();
-    // var data = {
-    //     type: 'GET',
-    //     endpoint: '/v2/addresses/' + source + '/compose/send',
-    //     params: {
-    //         address: source,
-    //         destination: destinations,
-    //         asset: assets,
-    //         quantity: quantities,
-    //         memo: memos,
-    //         memo_is_hex: memos_is_hex,
-    //         // Comment out p2sh encoding and use default
-    //         // encoding: "p2sh",
-    //         exact_fee: parseInt(fee)
-    //     },
-    //     jsonrpc: "2.0",
-    //     id: 0
-    // };
-    // POST request - Sticking with v1 endpoint now, since counterparty-core lost the ability to do multiple memos in the v2 API
-    // TODO: Switch this to a GET request once counterparty-core developers get their shit together and get MPMA sends with multiple memos working with their /v2/ send endpoint
-    // ISSUE : https://github.com/CounterpartyXCP/counterparty-core/issues/2568 
+    // Convert all the arrays of values to comma separated strings
+    var destinations = destination.toString(),
+        assets       = asset.toString(),
+        quantities   = quantity.toString();
     var data = {
-        method: "create_send",
+        type: 'GET',
+        endpoint: '/v2/addresses/' + source + '/compose/mpma',
         params: {
-            source: source,
-            destination: destination,
-            asset: asset,
-            quantity: quantity,
+            destinations: destinations,
+            assets: assets,
+            quantities: quantities,
             memo: memo,
             memo_is_hex: memo_is_hex,
             // Comment out p2sh encoding and use default
@@ -6693,7 +6673,7 @@ function updateTransactionSize(additionalSize=0){
     var submit = $('#btn-submit');
     // Disable submit button and set flag to ignore clicks
     FW.IGNORE_SUBMIT = true;
-    submit.addClass("disabled")
+    submit.addClass("disabled");
     updateTransactionStatus('pending', 'Calculating transaction fees...');
     generateTransaction(function(o){
         if(o && o.result){
@@ -6728,7 +6708,7 @@ function updateTransactionSize(additionalSize=0){
             updateTransactionStatus('clear');
             // Enable submit button and set flag to ignore clicks
             FW.IGNORE_SUBMIT = false;
-            submit.removeClass("disabled")
+            submit.removeClass("disabled");
         }
     });
 }
