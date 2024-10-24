@@ -68,9 +68,6 @@ $(document).ready(function(){
         // Handle updating the transaction fee based on actual tx size
         if(type=='sweep'||type=='send')
             updateTransactionSize();
-        // Handle doing pre-flight check for sends to determine if this is a send or a dispense
-        if(type=='send')
-            checkDestinationForDispenser();
     });
 
     // Display 'Address Book' when user clicks address book link

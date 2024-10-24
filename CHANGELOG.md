@@ -1,12 +1,6 @@
-Version 0.9.37 - October 21st, 2024
-- Updates to support counterparty-core /v2/ API
-
-Version 0.9.36 - October 17th, 2024
-- Updates to support Fair Minting
-
-Version 0.9.35 - October 15th, 2024
-- Disable `origin` functionality in dispensers (10.4 Required)
-- Disable P2SH encoding on MPMA Sends (10.4 Required)
+Version 0.9.35 - Version 0.9.37 Removed and replaced with:
+- `counterparty-classic` branch
+- `counterparty-2.0` branch
 
 Version 0.9.34 - August 30th, 2024
 - Fix issue with divisiblity on `Reset Supply` form
