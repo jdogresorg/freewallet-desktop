@@ -1,19 +1,19 @@
-; FreeWallet.iss
+; FreeWallet-Classic.iss
 ;
 ; Config file for creating a windows installer file for tbe
 ;
 
 
 [Setup]
-AppName=FreeWallet
-AppVersion=0.9.2
-DefaultDirName={pf}\FreeWallet
+AppName=FreeWallet Classic
+AppVersion=0.9.38
+DefaultDirName={pf}\FreeWallet Classic
 DefaultGroupName=FreeWallet
-UninstallDisplayIcon={app}\FreeWallet.exe
+UninstallDisplayIcon={app}\FreeWallet-Classic.exe
 Compression=lzma2
 SolidCompression=yes
 OutputDir=C:\Users\J-Dog\Desktop\
-OutputBaseFilename=FreeWallet
+OutputBaseFilename=FreeWallet Classic
 
 ; "ArchitecturesInstallIn64BitMode=x64" requests that the install be
 ; done in "64-bit mode" on x64, meaning it should use the native
@@ -49,5 +49,5 @@ Source: "C:\Users\J-Dog\Desktop\FreeWallet\*"; DestDir: "{app}"; Flags: ignoreve
 
 ; Setup icon group and icon on desktop
 [Icons]
-Name: "{group}\FreeWallet";          Filename: "{app}\FreeWallet.exe"
-Name: "{commondesktop}\FreeWallet";  Filename: "{app}\FreeWallet.exe"
+Name: "{group}\FreeWallet Classic";          Filename: "{app}\FreeWallet-Classic.exe"
+Name: "{commondesktop}\FreeWallet Classic";  Filename: "{app}\FreeWallet-Classic.exe"

@@ -1,13 +1,13 @@
-FreeWallet - Desktop Wallet
+FreeWallet Classic - Desktop Wallet
 ---
-FreeWallet is a free wallet which supports Bitcoin and Counterparty.
+FreeWallet Classic is a free wallet which supports Bitcoin and Counterparty Classic.
 
 Installation Instructions
 ---
 ```
-Windows : Download FreeWallet.exe, run it, complete the installer.
-Mac/OSX : Download FreeWallet.dmg, mount, and drag FreeWallet app to 'Applications' folder
-Linux   : Download FreeWallet.tgz, extract it, run FreeWallet/install.sh
+Windows : Download FreeWallet-Classic.exe, run it, complete the installer.
+Mac/OSX : Download FreeWallet-Classic.dmg, mount, and drag FreeWallet-Classic app to 'Applications' folder
+Linux   : Download FreeWallet-Classic.tgz, extract it, run FreeWallet-Classic/install.sh
 ```
 
 Build Notes
@@ -29,10 +29,10 @@ https://github.com/nwjs-ffmpeg-prebuilt/nwjs-ffmpeg-prebuilt/releases
 Generate checksum.txt file 
 ---
 ```
-sha256sum FreeWallet.linux32.tgz > checksums.txt
-sha256sum FreeWallet.linux64.tgz >> checksums.txt
-sha256sum FreeWallet.osx64.dmg   >> checksums.txt
-sha256sum FreeWallet.win32.exe   >> checksums.txt
-sha256sum FreeWallet.win64.exe   >> checksums.txt
+sha256sum FreeWallet-Classic.linux32.tgz > checksums.txt
+sha256sum FreeWallet-Classic.linux64.tgz >> checksums.txt
+sha256sum FreeWallet-Classic.osx64.dmg   >> checksums.txt
+sha256sum FreeWallet-Classic.win32.exe   >> checksums.txt
+sha256sum FreeWallet-Classic.win64.exe   >> checksums.txt
 ```
 

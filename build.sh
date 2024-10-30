@@ -249,7 +249,7 @@ while true; do
                     cp -a * /tmp/$app_name/
                     echo "### Copying additional files to install directory..."
                     cd $base_dir/misc/
-                    cp FreeWallet.png install.sh FreeWallet.desktop /tmp/$app_name/
+                    cp FreeWallet.png install.sh FreeWallet-Classic.desktop /tmp/$app_name/
                     cd /tmp
                     tar -cvzf $app_name.x$bits.tgz $app_name
                     cp $app_name.x$bits.tgz $base_dir/builds/$app_name/linux$bits/

@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=FreeWallet
+Name=FreeWallet Classic
 Comment=by Jeremy Johnson <j-dog@j-dog.net>
-Exec=/usr/share/FreeWallet/FreeWallet %U
-Icon=/usr/share/icons/FreeWallet/FreeWallet.png
+Exec=/usr/share/FreeWallet-Classic/FreeWallet-Classic %U
+Icon=/usr/share/icons/FreeWallet-Classic/FreeWallet.png
 Terminal=false
 Categories=Office;
 MimeType=x-scheme-handler/bitcoin;x-scheme-handler/counterparty;x-scheme-handler/freewallet;

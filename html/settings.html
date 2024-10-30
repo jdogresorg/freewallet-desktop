@@ -554,6 +554,7 @@ $(document).ready(function(){
             return;
         var net = $(this).val();
         setWalletNetwork(net);
+        setCounterpartyAPI(net);
     });
 
     // Handle Updating the auto-lock function
@@ -719,6 +720,11 @@ $(document).ready(function(){
             $(this).val(numeral(val).format('0.00000000'));
             usd.val(numeral(val * btc.price_usd).format('0.00'));
         }
+    });
+
+    // Handle updating CP API info if the API url changes
+    $('#mainnet-cp-host').change(function(){
+        setCounterpartyAPI(FW.WALLET_NETWORK);
     });
 
     // Handle resetting donate amount

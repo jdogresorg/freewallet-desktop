@@ -60,21 +60,21 @@ FW.WALLET_HISTORY  = JSON.parse(ls.getItem('walletHistory'))  || [];
 // Define default server info
 FW.WALLET_SERVER_INFO_DEFAULT = {
     mainnet: {
-        host: 'public.tokenscan.io',
+        host: 'classic-api.tokenscan.io',
         port: 4001,
         user: 'rpc',
         pass: 'rpc',
         ssl: true,
-        api_host: 'tokenscan.io',
+        api_host: 'classic.tokenscan.io',
         api_ssl: true
     },
     testnet: {
-        host: 'public.tokenscan.io',
+        host: 'classic-api.tokenscan.io',
         port: 14001,
         user: 'rpc',
         pass: 'rpc',
         ssl: true,
-        api_host: 'testnet.tokenscan.io',
+        api_host: 'classic-testnet.tokenscan.io',
         api_ssl: true
     }
 };
@@ -176,6 +176,9 @@ FW.ASSET_DIVISIBLE = {};
 FW.ASSET_DIVISIBLE['BTC'] = true;
 FW.ASSET_DIVISIBLE['XCP'] = true;
 
+// Define placeholder for current API information
+FW.COUNTERPARTY_API = {};
+
 // Start loading the wallet 
 $(document).ready(function(){
 
@@ -203,6 +206,9 @@ $(document).ready(function(){
     // Setup the explorer API url
     setExplorerAPI(FW.WALLET_NETWORK);
 
+    // Get info on the Counterparty API
+    setCounterpartyAPI(FW.WALLET_NETWORK);
+
     // Initialize the wallet 
     initWallet();
 
@@ -228,10 +234,23 @@ function setExplorerAPI( network ){
     FW.EXPLORER_API = getExplorerAPI(network);
 }
 
+// Handle getting Counterparty API information
+function setCounterpartyAPI(network){
+    var data = {
+       method: "get_running_info",
+        jsonrpc: "2.0",
+        id: 0
+    };
+    cpRequest(network, data, function(o){
+        if(o && o.result)
+            FW.COUNTERPARTY_API = o.result;
+    });
+}
+
 // Handle checking for an updated wallet version
 function checkWalletUpgrade(version, message){
     $.ajax({
-        url: "https://freewallet.io/releases/current",
+        url: "https://freewallet.io/releases/classic/current",
         cache: false
     }).done(function(current){
         // Only proceed if we have a response/version
@@ -3604,7 +3623,7 @@ function dialogComingSoon(){
 function dialogAbout(){
     BootstrapDialog.show({
         type: 'type-default',
-        title: '<i class="fa fa-lg fa-fw fa-info-circle"></i> About FreeWallet',
+        title: '<i class="fa fa-lg fa-fw fa-info-circle"></i> About FreeWallet Classic',
         id: 'dialog-about',
         closeByBackdrop: false,
         message: $('<div></div>').load('html/about.html')
@@ -3916,7 +3935,7 @@ function dialogUpdateAvailable(version){
                         os   = require('os'),
                         plat = os.platform(),
                         arch = os.arch(),
-                        file = 'FreeWallet.',
+                        file = 'FreeWallet-Classic.',
                         url  = 'https://github.com/jdogresorg/freewallet-desktop/releases/download/v' + version + '/';
                     // Determine the correct file to download based off platform and architecture
                     if(plat=='darwin'){
@@ -3931,7 +3950,7 @@ function dialogUpdateAvailable(version){
                     url += file;
                     nw.Shell.openExternal(url);
                 } else {
-                    var url = 'https://github.com/jdogresorg/freewallet/releases/tag/v' + version;
+                    var url = 'https://github.com/jdogresorg/freewallet-desktop/releases/tag/v' + version;
                     window.open(url);
                 }
             }
@@ -4424,7 +4443,7 @@ function dialogWelcome(){
         cssClass: 'dialog-welcome',
         closable: false,
         closeByBackdrop: false,
-        title: '<i class="fa fa-lg fa-fw fa-info-circle"></i> Welcome to FreeWallet',
+        title: '<i class="fa fa-lg fa-fw fa-info-circle"></i> Welcome to FreeWallet Classic',
         message: $('<div></div>').load('html/welcome.html'),
         buttons:[{
             label: 'Login to Existing Wallet',

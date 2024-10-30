@@ -4,18 +4,18 @@
 ###########################################################
 basedir=/usr/share
 echo "### Creating installation directories..."
-mkdir -vp $basedir/FreeWallet
-mkdir -vp $basedir/icons/FreeWallet
+mkdir -vp $basedir/FreeWallet-Classic
+mkdir -vp $basedir/icons/FreeWallet-Classic
 mkdir -vp $basedir/applications
-echo "### Installing FreeWallet..."
-cp -a * $basedir/FreeWallet/
-cp FreeWallet.png $basedir/icons/FreeWallet/
+echo "### Installing FreeWallet Classic..."
+cp -a * $basedir/FreeWallet-Classic/
+cp FreeWallet.png $basedir/icons/FreeWallet-Classic/
 echo "### Integrating FreeWallet with linux desktop..."
-cp FreeWallet.desktop $basedir/applications
+cp FreeWallet-Classic.desktop $basedir/applications
 echo "### Setting file permissions..."
-chmod 644 $basedir/icons/FreeWallet/FreeWallet.png 
-chmod 644 $basedir/applications/FreeWallet.desktop
-chmod 755 $basedir/FreeWallet/*
+chmod 644 $basedir/icons/FreeWallet-Classic/FreeWallet.png 
+chmod 644 $basedir/applications/FreeWallet-Classic.desktop
+chmod 755 $basedir/FreeWallet-Classic/*
 echo "### Updating desktop database..."
 /usr/bin/update-desktop-database
 echo "### Installation Complete!"

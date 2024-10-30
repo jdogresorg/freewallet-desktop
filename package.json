@@ -1,8 +1,8 @@
 {
   "main": "index.html",
-  "name": "FreeWallet",
-  "description": "Freewallet is a free open source desktop wallet that supports Bitcoin and Counterparty",
-  "version": "0.9.34",
+  "name": "FreeWallet-Classic",
+  "description": "Freewallet Classic is a free open source desktop wallet that supports Bitcoin and Counterparty Classic",
+  "version": "0.9.38",
   "author": "Jeremy Johnson <j-dog@j-dog.net>",
   "license": "MIT",
   "user-agent": "%name %ver (%osinfo)",
@@ -13,7 +13,7 @@
   },
   "single-instance": true,
   "window": {
-    "title": "FreeWallet",
+    "title": "FreeWallet Classic",
     "icon": "images/freewallet-icon-180.png",
     "toolbar": false,
     "min_width": 1024,
