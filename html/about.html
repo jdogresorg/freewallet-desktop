@@ -2,7 +2,8 @@
 <center>
     <p>FreeWallet is a free wallet which supports Bitcoin and Counterparty.</p>
     <a href="https://freewallet.io"><img src="images/logo.png" height="100" style="margin-bottom: 5px"></a>
-    <div id="fw_version"></div>
+    <br>FreeWallet Version (<span id="fw_version"></span>)
+    <br>Counterparty API Version (<span id="cp_version"></span>)
     <hr size=1 class="spacer">
     <p>Freewallet uses public APIs available from the following providers:</p>
     <div>
@@ -52,10 +53,15 @@ $(document).ready(function(){
     var address = '1FWDonkMbC6hL64JiysuggHnUAw2CKWszs',
         debug   = $('#btn-debug'),
         update  = $('#btn-update'),
-        version = (is_nwjs()) ? 'Version ' + nw.App.manifest.version : 'Development Build';
+        apiInfo = FW.COUNTERPARTY_API;
+
+    // Set the FreeWallet and API version information
+    var fw_version = (is_nwjs()) ? nw.App.manifest.version : 'Development Build',
+        cp_version = apiInfo.version_major + '.' + apiInfo.version_minor + '.' + apiInfo.version_revision;
 
     // Display current version number
-    $('#fw_version').html(version);
+    $('#fw_version').html(fw_version);
+    $('#cp_version').html(cp_version);
 
     // Handle showing/hiding the debug button
     if(is_nwjs()){
@@ -63,7 +69,7 @@ $(document).ready(function(){
             nw.Window.get().showDevTools();
         }));
         update.click($.debounce(100,function(e){
-            checkWalletUpgrade(version, true);
+            checkWalletUpgrade(fw_version, true);
         }));
     } else {
         debug.hide();

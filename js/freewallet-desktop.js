@@ -176,6 +176,9 @@ FW.ASSET_DIVISIBLE = {};
 FW.ASSET_DIVISIBLE['BTC'] = true;
 FW.ASSET_DIVISIBLE['XCP'] = true;
 
+// Define placeholder for current API information
+FW.COUNTERPARTY_API = {};
+
 // Start loading the wallet 
 $(document).ready(function(){
 
@@ -203,6 +206,9 @@ $(document).ready(function(){
     // Setup the explorer API url
     setExplorerAPI(FW.WALLET_NETWORK);
 
+    // Get info on the Counterparty API
+    setCounterpartyAPI(FW.WALLET_NETWORK);
+
     // Initialize the wallet 
     initWallet();
 
@@ -226,6 +232,19 @@ function getExplorerAPI( network ){
 // Handle setting server information based off current network
 function setExplorerAPI( network ){
     FW.EXPLORER_API = getExplorerAPI(network);
+}
+
+// Handle getting Counterparty API information
+function setCounterpartyAPI(network){
+    var data = {
+       method: "get_running_info",
+        jsonrpc: "2.0",
+        id: 0
+    };
+    cpRequest(network, data, function(o){
+        if(o && o.result)
+            FW.COUNTERPARTY_API = o.result;
+    });
 }
 
 // Handle checking for an updated wallet version
