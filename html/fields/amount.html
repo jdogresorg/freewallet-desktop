@@ -89,9 +89,6 @@ $(document).ready(function(){
 
     // Detect any amount change and format as valid number
     $('#amount').change(function(e){
-        // Handle updating tx size as token name changes
-        if(type=='dividend'||type=='burn'||type=='send'||type=='mint-supply')
-            updateTransactionSize();
         // Handle doing pre-flight check for sends to determine if this is a send or a dispense
         if(type=='send')
             checkDestinationForDispenser();
@@ -124,6 +121,9 @@ $(document).ready(function(){
         }
         $(this).val(numeral(amt).format(fmt));
         updateSendValue(amt);
+        // Handle updating tx size as token amount changes
+        if(type=='dividend'||type=='burn'||type=='send'||type=='mint-supply'||type=='dispenser-buy')
+            updateTransactionSize();
     });
 
     // Calculate the fiat value as the user types the amount
