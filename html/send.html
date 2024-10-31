@@ -45,6 +45,11 @@
 
 
 <script>
+// Initialize values used in pre-flight send checks
+FW.SEND_TYPE        = 'send';
+FW.SEND_DESTINATION = '';
+
+
 // Handle generating a transaction using current data and passing it to a callback function
 function generateTransaction(callback=null, broadcast=false){
     var vals    = array2Object($('#send-form').serializeArray()),
@@ -56,6 +61,8 @@ function generateTransaction(callback=null, broadcast=false){
         command = (broadcast) ? 'cpSend' : 'createSend';
     // Single Sends
     if(vals.type=='single'){
+        if(FW.SEND_TYPE=='dispense')
+            command = (broadcast) ? 'cpDispense' : 'createDispense';
         // Placeholder to easily reference destinations in updateTransactionSize()
         FW.SEND_DESTINATIONS = vals.destination;
         eval(command)(network, vals.source, vals.destination, vals.memo, is_data, vals.name, amt_sat, fee_sat, callback);
@@ -100,6 +107,33 @@ function generateTransaction(callback=null, broadcast=false){
             cpMultiSend(network, vals.source, vals.destination, vals.memos, vals.memos_are_hex, vals.asset, vals.quantity, fee_sat, callback);
         if(command=='createMultiSend')
             createMultiSend(network, vals.source, vals.destination, vals.memos, vals.memos_are_hex, vals.asset, vals.quantity, fee_sat, null, callback);
+    }
+}
+
+// Handle checking a destination address to determine if it has an active dispenser on it
+function checkDestinationForDispenser(){
+    var vals    = array2Object($('#send-form').serializeArray());
+    if(vals.type=='single' && isValidAddress(vals.destination) && vals.name=='BTC' && vals.amount>0 && vals.destination!=FW.SEND_DESTINATION){
+        // Set flag so we only check the address for dispensers once
+        FW.SEND_DESTINATION = vals.destination;
+        getDispensersList(FW.SEND_DESTINATION, null, 'open', function(o){
+            var found = false;
+            o.forEach(function(item){
+                // Detect open and closing soon dispensers
+                if(item.status==0 || item.status==11)
+                    found = true;
+            });
+            // Prompt user if they are sending to a dispenser
+            if(found){
+                var title = 'Sending to Dispenser?';
+                    msg   = getConfirmationMessage('<center>Are you trying to send BTC to a dispenser?</b></center>');
+                dialogConfirm(title, msg, false, true, function(){ 
+                    FW.SEND_TYPE = 'dispense';
+                    // Force update of transaction size so we make call to API to generate dispense (larger tx than a send as it requires an OP_RETURN)
+                    updateTransactionSize();
+                });
+            }
+        });
     }
 }
 
