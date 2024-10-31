@@ -31,7 +31,7 @@ function generateTransaction(callback=null, broadcast=false){
         dest    = FW.DIALOG_DATA.destination,
         amt_sat = getSatoshis(vals['btc-amount']),
         fee_sat = getSatoshis(vals['fee-amount']),
-        command = (broadcast) ? 'cpSend' : 'createSend';
+        command = (broadcast) ? 'cpDispense' : 'createDispense';
     eval(command)(network, source, dest, null, null, 'BTC', amt_sat, fee_sat, callback);
 }
 
@@ -118,8 +118,8 @@ $(document).ready(function(){
             placement: 'bottom'
         }); 
 
-        // Handle updating the transaction fee based on actual tx size
-        updateTransactionSize();
+        // Handle updating the transaction fee based on actual tx size (done automatically in amount field)
+        // updateTransactionSize();
 
     },100);
 

@@ -35,7 +35,7 @@ $(document).ready(function(){
                 address  = String(info[0]).trim(),
                 asset    = (info[1]) ? String(info[1]).trim() : '',
                 quantity = (info[2]) ? String(info[2]).trim() : '',
-                memo     = (info[3]) ? String(info[3]).trim().replace(/^"|"$/g,'') : '';
+                memo     = (info[3]) ? String(info[3]).trim().replace(/^"|"$/g,'') : '';                
             // Re-assemble any memos which have commas
             if(memo!='')
                 memo = String(info.slice(3,info.length).join(',')).trim().replace(/^"|"$/g,'');
@@ -75,30 +75,23 @@ $(document).ready(function(){
             if(address==FW.WALLET_ADDRESS)
                 errors.push('Source address cannot be in send destination list!');
             
-
-            //Second tx size estimation
-            let addressInList = addressesList.includes(address)
-            let addressSize = (addressInList?8:21) //21 bytes for the address without checksum and 8 bytes for the integer that represents the index of the address
-            if (!addressInList){addressesList.push(address)}
-            
+            // tx size estimation
+            let addressInList = addressesList.includes(address);
+            let addressSize = (addressInList?8:21); //21 bytes for the address without checksum and 8 bytes for the integer that represents the index of the address
+            if (!addressInList){ addressesList.push(address); }
             let assetInList = assetsList.includes(asset)
             let assetSize = (assetInList?0:(new TextEncoder().encode(asset).length))// assets only appear once in the mpma pack
-            if (!assetInList){assetsList.push(asset)}
-            
-            if (memo != ""){
-                memoAdditionalBits = memoAdditionalBits + 2 //1 bit to signal the memo and 1 bit to tell if the memo is in hex format or not
-            }
-            
+            if (!assetInList){ assetsList.push(asset); }
             estimatedMultiSendSizeData = estimatedMultiSendSizeData +
                 addressSize + //Address size in the mpma pack
                 assetSize + //Asset size in the mpma pack
-                8 + //quantity in bytes
-                (new TextEncoder().encode(memo).length)//memo size in bytes
+                8;  //quantity in bytes
         });
+        // memo size in bytes
+        estimatedMultiSendSizeData = estimatedMultiSendSizeData +(new TextEncoder().encode(memo).length);
         if (memoAdditionalBits > 0){
             estimatedMultiSendSizeData = estimatedMultiSendSizeData + Math.ceil(memoAdditionalBits/8)
         }
-        
         
         // Display any error message
         if(errors.length){
