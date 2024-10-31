@@ -30,8 +30,6 @@ function generateTransaction(callback=null, broadcast=false){
         fee_sat   = getSatoshis(vals['fee-amount']),
         divisible = (FW.ASSET_INFO.divisible) ? true : false,
         command   = (broadcast) ? 'cpMint' : 'createMint';
-    console.log('vals=',vals);
-    console.log('command=',command);
     if(asset)
         eval(command)(network, vals.source, asset, amt_sat, fee_sat, callback);
 }
