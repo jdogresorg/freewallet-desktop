@@ -3180,31 +3180,33 @@ function createSend(network, source, destination, memo, memo_is_hex, asset, quan
 }
 
 // Handle creating MPMA send transaction
-function createMultiSend(network, source, destination, memo, memo_is_hex, asset, quantity, fee, txid, callback){
-    // console.log('createMultiSend=',network, source, destination, memo, memo_is_hex, asset, quantity, fee, p2sh_pretx_txid);
+function createMultiSend(network, source, destination, memos, memos_are_hex, asset, quantity, fee, txid, callback){
+    // console.log('createMultiSend=',network, source, destination, memos, memos_are_hex, asset, quantity, fee, p2sh_pretx_txid);
     // Convert all the arrays of values to comma separated strings
     var destinations = destination.toString(),
         assets       = asset.toString(),
-        quantities   = quantity.toString();
+        quantities   = quantity.toString(),
+        endpoint     = '/v2/addresses/' + source + '/compose/mpma';
+    // Build out the MEMOS list since the CP devs decided to make shit difficult and pass a list rather than being consistent and passing a comma separated list, like the other fields
+    if(memos){
+        endpoint += '?verbose=1';
+        memos.forEach(function(memo){
+            endpoint += '&memos=' + memo;
+        });
+    }
     var data = {
         type: 'GET',
-        endpoint: '/v2/addresses/' + source + '/compose/mpma',
+        endpoint: endpoint,
         params: {
             destinations: destinations,
             assets: assets,
             quantities: quantities,
-            memo: memo,
-            memo_is_hex: memo_is_hex,
-            // Comment out p2sh encoding and use default
-            // encoding: "p2sh",
+            memos_are_hex: memos_are_hex,
             exact_fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
     };
-    // Pass forward txid if given (used in P2SH MPMA sends to reference pre-tx)
-    // if(txid)
-    //     data.params.p2sh_pretx_txid = txid;
     // Pass forward public key
     // var pubkey = getPublicKey(network, source);
     // if(pubkey)

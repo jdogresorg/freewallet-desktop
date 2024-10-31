@@ -4,10 +4,10 @@
     <a href="#" data-toggle="tooltip" title='This is a CSV separated list of recipients who will be receiving funds from you' class="pull-right"><i class="fa fa-lg fa-question-circle-o margin-top-5" ></i></a>
 </label>
 <div class="col-sm-9">
-    <div style="margin-top: 7px;font-style: italic;"><b>List Format:</b> Address, Asset, Quantity</div>
+    <div style="margin-top: 7px;font-style: italic;"><b>List Format:</b> Address, Asset, Quantity, Memo (optional)</div>
 </div>
 <div class="col-sm-12">
-    <textarea type="text" class="form-control lined" id="send-list" name="send-list" placeholder="Address, Asset, Quantity" data-minlength="1" style="height: 145px;" required rows="9"></textarea>
+    <textarea type="text" class="form-control lined" id="send-list" name="send-list" placeholder="Address, Asset, Quantity, Memo (optional)" data-minlength="1" style="height: 194px;" required rows="9"></textarea>
 </div>
 
 <script>
@@ -34,7 +34,8 @@ $(document).ready(function(){
             var info     = line.trim().split(','),
                 address  = String(info[0]).trim(),
                 asset    = (info[1]) ? String(info[1]).trim() : '',
-                quantity = (info[2]) ? String(info[2]).trim() : '';
+                quantity = (info[2]) ? String(info[2]).trim() : '',
+                memo     = (info[3]) ? String(info[3]).trim().replace(/^"|"$/g,'') : '';                
             // Re-assemble any memos which have commas
             if(memo!='')
                 memo = String(info.slice(3,info.length).join(',')).trim().replace(/^"|"$/g,'');
@@ -62,6 +63,8 @@ $(document).ready(function(){
             if(value!='')
                 value += "\n"
             value += address + ', ' + asset + ', ' + quantity;
+            if(memo!='')
+                value += ', "' + memo + '"';
             // Throw error if address/asset combo is used more than once
             var id = address + '-' + asset;
             if(sends[id])
