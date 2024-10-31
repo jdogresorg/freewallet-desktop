@@ -3114,8 +3114,10 @@ function cpRequest(network, data, callback){
                     // Ignore stupid error messages returned by the counterparty-core API
                     if(errors == 'Destination output is dust.' && data.params.quantity==0)
                         showError = false;
+                    // Show error message from the API and indicate it is coming directly from the API
+                    // Note: counterparty-core throws some nonsense errors at time, so want to clarify EXACTLY where the errors are coming from (CP API not FreeWallet)
                     if(showError)
-                        dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Error(s)', errors);
+                        dialogMessage('<i class="fa fa-lg fa-fw fa-exclamation-circle"></i> Counterparty API Error(s)', errors);
                     updateTransactionStatus('clear');
                 } else {
                     updateTransactionStatus('error', 'Counterparty API communication error!');
