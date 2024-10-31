@@ -3252,12 +3252,14 @@ function createMint(network, source, asset, quantity, fee, callback){
         endpoint: '/v2/addresses/' + source + '/compose/fairmint',
         params: {
             asset: asset,
-            quantity: parseInt(quantity),
             exact_fee: parseInt(fee)
         },
         jsonrpc: "2.0",
         id: 0
     };
+    // Only include quantity if it is greater than zero
+    if(quantity > 0)
+        data.params.quantity = parseInt(quantity);
     cpRequest(network, data, function(o){
         if(typeof callback === 'function')
             callback(o);
@@ -4250,7 +4252,7 @@ function dialogMintSupply(){
         type: 'type-default',
         id: 'dialog-mint-supply',
         closeByBackdrop: false,
-        title: '<i class="fa fa-fw fa-printer"></i> Mint Supply',
+        title: '<i class="fa fa-fw fa-print"></i> Mint Supply',
         message: $('<div></div>').load('html/issuance/mint.html'),
     });
 }
