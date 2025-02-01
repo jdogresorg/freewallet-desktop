@@ -65,7 +65,13 @@ function generateTransaction(callback=null, broadcast=false){
             command = (broadcast) ? 'cpDispense' : 'createDispense';
         // Placeholder to easily reference destinations in updateTransactionSize()
         FW.SEND_DESTINATIONS = vals.destination;
-        eval(command)(network, vals.source, vals.destination, vals.memo, is_data, vals.name, amt_sat, fee_sat, callback);
+        // Only make call to API to generate transaction if we have required fields
+        if(vals.destination!='' && vals.amount!=''){
+            eval(command)(network, vals.source, vals.destination, vals.memo, is_data, vals.name, amt_sat, fee_sat, callback);
+        } else {
+            if(callback)
+                callback();
+        }
     }
     // MPMA Sends        
     if(vals.type=='multiple'){

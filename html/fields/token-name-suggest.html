@@ -129,7 +129,6 @@ $(document).ready(function(){
                         // Ignore the asset ownership check when we are minting supply
                         if(type=='mint-supply')
                             return;
-
                         // Error if asset is owned by another address
                         if(o.owner!=FW.WALLET_ADDRESS){
                             var found = false;
@@ -147,6 +146,9 @@ $(document).ready(function(){
                                               '<a href="https://coindaddy.io/search?network=xcp&q=' + name + '" class="btn btn-success" target="_blank"><i class="fa fw-coindaddy pull-left" style="top:0px"></i> Check if ' + name + ' is for sale on CoinDaddy</a></center>', true);
                             }
                         }
+                        // Handle updating the transaction fee based on actual tx size
+                        if(type=='change-description')
+                            updateTransactionSize();
                     }
                 });
             }

@@ -51,7 +51,13 @@ function generateTransaction(callback=null, broadcast=false){
         asset      = vals.name, 
         status     = 0, // Hardcode to open for creating a dispenser... can close via dispensers interface
         command = (broadcast) ? 'cpDispenser' : 'createDispenser';
-    eval(command)(network, vals.source, vals.destination, asset, escrow_sat, give_sat, btc_sat, status, fee_sat, oracle, callback);
+    // Only make call to API to generate transaction if we have required fields
+    if(vals.destination!='' && vals['escrow-amount']>0 && vals['give-amount']>0 && btc_sat>0){
+        eval(command)(network, vals.source, vals.destination, asset, escrow_sat, give_sat, btc_sat, status, fee_sat, oracle, callback);
+    } else {
+        if(callback)
+            callback();
+    }
 }
 
 // Callback to run after broadcasting transaction

@@ -34,8 +34,13 @@ function generateTransaction(callback=null, broadcast=false){
         amt_sat   = getSatoshis(vals.amount),
         fee_sat   = getSatoshis(vals['fee-amount']),
         command   = (broadcast) ? 'cpDividend' : 'createDividend';
-    if(asset)
+    // Only make call to API to generate transaction if we have required fields
+    if(asset && vals.amount!=''){
         eval(command)(network, vals.source, asset, vals.dividend, amt_sat, fee_sat, callback);
+    } else {
+        if(callback)
+            callback();
+    }
 }
 
 $(document).ready(function(){

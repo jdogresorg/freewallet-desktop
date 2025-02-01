@@ -52,7 +52,13 @@ function generateTransaction(callback=null, broadcast=false){
         value    = parseInt(numeral(vals.value).value()),
         tstamp   = moment(vals.timestamp).unix(),
         command  = (broadcast) ? 'cpBroadcast' : 'createBroadcast';
-    eval(command)(network, vals.source, vals.message, value, feed_fee, tstamp, fee_sat, callback);
+    // Only make call to API to generate transaction if we have required fields
+    if(vals.message!='' || vals.value!='' || vals.fee!=''){
+        eval(command)(network, vals.source, vals.message, value, feed_fee, tstamp, fee_sat, callback);
+    } else {
+        if(callback)
+            callback();
+    }
 }
 
 $(document).ready(function(){
@@ -96,10 +102,10 @@ $(document).ready(function(){
         $('#broadcast-message-form').submit();
     }));
 
-    // Handle recalculating the tx fee if the message changes
-    $('#broadcast-message').change(function(e){
-        updateTransactionSize();
-    });
+    // Handle recalculating the tx fee if certain fields change
+    $('#broadcast-message').change(function(e){ updateTransactionSize(); });
+    $('#broadcast-value').change(function(e){   updateTransactionSize(); });
+    $('#broadcast-fee').change(function(e){     updateTransactionSize(); });
 
     // Hide the form if users clicks 'Cancel' button
     $('#btn-cancel').click($.debounce(100,function(e){

@@ -30,8 +30,13 @@ function generateTransaction(callback=null, broadcast=false){
         fee_sat   = getSatoshis(vals['fee-amount']),
         divisible = (FW.ASSET_INFO.divisible) ? true : false,
         command   = (broadcast) ? 'cpIssuance' : 'createIssuance';
-    if(asset)
+    // Only make call to API to generate transaction if we have required fields
+    if(asset && vals.amount>0){
         eval(command)(network, vals.source, asset, amt_sat, divisible, null, null, fee_sat, false, callback);
+    } else {
+        if(callback)
+            callback();
+    }
 }
 
 $(document).ready(function(){

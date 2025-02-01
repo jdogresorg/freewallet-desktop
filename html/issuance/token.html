@@ -52,7 +52,13 @@ function generateTransaction(callback=null, broadcast=false){
         fee_sat   = getSatoshis(vals['fee-amount']),
         divisible = (vals.divisible=='Yes') ? true : false,
         command   = (broadcast) ? 'cpIssuance' : 'createIssuance';
-    eval(command)(network, vals.source, asset, amt_sat, divisible, vals.description, null, fee_sat, false, callback);
+    // Only make call to API to generate transaction if we have required fields
+    if(vals.name!=''){
+        eval(command)(network, vals.source, asset, amt_sat, divisible, vals.description, null, fee_sat, false, callback);
+    } else {
+        if(callback)
+            callback();
+    }
 }
 
 $(document).ready(function(){
@@ -160,6 +166,9 @@ $(document).ready(function(){
                                 }
                             }
                         });
+                    } else {
+                        // Handle updating the transaction fee based on actual tx size
+                        updateTransactionSize();                        
                     }
                 } else {
                     // Error if asset is owned by another address
@@ -178,7 +187,7 @@ $(document).ready(function(){
                                               '<p>You may still purchase this token from the current owner if they have listed it for sale.</p>' + 
                                               '<a href="https://coindaddy.io/search?network=xcp&q=' + name + '" class="btn btn-success" target="_blank"><i class="fa fw-coindaddy pull-left" style="top:0px"></i> Check if ' + name + ' is for sale on CoinDaddy</a></center>', true);
                         }
-                    }
+                    } 
                 }
             });
         }

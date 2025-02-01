@@ -122,7 +122,7 @@ $(document).ready(function(){
         $(this).val(numeral(amt).format(fmt));
         updateSendValue(amt);
         // Handle updating tx size as token amount changes
-        if(type=='dividend'||type=='burn'||type=='send'||type=='mint-supply'||type=='dispenser-buy')
+        if(type=='dividend'||type=='burn'||type=='send'||type=='mint-supply'||type=='dispenser-buy'||type=='issue-supply'||type=='destroy')
             updateTransactionSize();
     });
 

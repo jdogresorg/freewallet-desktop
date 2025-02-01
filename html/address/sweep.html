@@ -61,7 +61,13 @@ function generateTransaction(callback=null, broadcast=false){
         flags += 2;
     if(vals.memo!='' && vals['memo-type']=='data')
         flags += 4
-    eval(command)(network, vals.source, vals.destination, flags, vals.memo, fee_sat, callback);
+    // Only make call to API to generate transaction if we have required fields
+    if(vals.destination!=''){
+        eval(command)(network, vals.source, vals.destination, flags, vals.memo, fee_sat, callback);
+    } else {
+        if(callback)
+            callback();
+    }
 }
 
 $(document).ready(function(){
@@ -149,7 +155,7 @@ $(document).ready(function(){
                     msg += ' and<br/>';
                 msg += 'Transfer all token ownership';
             }
-            msg += '<br/>to<br/>' + vals.destination + '</center>';
+            msg += '<br/>to<br/>' + vals.destination + ' ?</center>';
             dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
         }
     });

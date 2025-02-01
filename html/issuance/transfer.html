@@ -29,9 +29,15 @@ function generateTransaction(callback=null, broadcast=false){
         fee_sat   = getSatoshis(vals['fee-amount']),
         divisible = (FW.ASSET_INFO.divisible) ? true : false,
         command   = (broadcast) ? 'cpIssuance' : 'createIssuance';
-    if(asset)
+    // Only make call to API to generate transaction if we have required fields
+    if(asset && vals.destination!=''){
         eval(command)(network, vals.source, asset, 0, divisible, null, vals.destination, fee_sat, false, callback);
+    } else {
+        if(callback)
+            callback();
+    }
 }
+
 $(document).ready(function(){
 
     // Load any field content
@@ -117,7 +123,7 @@ $(document).ready(function(){
             }
             // Confirm the action with the user
             var title = '<i class="fa fa-lg fa-fw fa-exchange"></i> Confirm Transfer Ownership?',
-                msg   = getConfirmationMessage('Transfer ownership of <b>' + vals.name + '</b> to ' + vals.destination + ' ?', vals);
+                msg   = getConfirmationMessage('<center>Transfer ownership of <b>' + vals.name + '</b> to ' + vals.destination + ' ?</center>', vals);
             dialogConfirm(title, msg, false, true, function(){ generateTransaction(doneCb, true); });
         }
     });

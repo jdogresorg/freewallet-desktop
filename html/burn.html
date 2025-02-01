@@ -31,7 +31,13 @@ function generateTransaction(callback=null, broadcast=false){
         amt_sat   = getSatoshis(vals.amount),
         fee_sat   = getSatoshis(vals['fee-amount']),
         command   = (broadcast) ? 'cpBurn' : 'createBurn';
-    eval(command)(network, vals.source, amt_sat, fee_sat, callback);
+    // Only make call to API to generate transaction if we have required fields
+    if(vals.amount!='' && vals.amount>0){
+        eval(command)(network, vals.source, amt_sat, fee_sat, callback);
+    } else {
+        if(callback)
+            callback();
+    }
 }
 
 $(document).ready(function(){
