@@ -1,3 +1,8 @@
+Version 2.0.1 - October 31st, 2024
+- Fix ‘auto-convert BTC send to dispense` functionality
+- Add back support for “fair mints”
+- Clarify that API errors are coming from the CP API
+
 Version 2.0.0 - October 31st, 2024
 - Add `tag` as required field to /compose/destroy
 - Updates to detect BTC payment to dispenser
