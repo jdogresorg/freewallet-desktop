@@ -3616,7 +3616,42 @@ function signTransaction(network, source, destination, unsignedTx, callback){
             getUTXOs(net, source, utxoCb);
         } else {
             // Sign using bitcore
-            CWBitcore.signRawTransaction(unsignedTx, cwKey, cb);
+            // Read the tx with bitcoinjs and get all inputs tx_hashes
+            var tx = bitcoinjs.Transaction.fromHex(unsignedTx);
+            var inputsTxHashes = [];
+            for(let nextInputIndex in tx.ins){
+                let nextInput = tx.ins[nextInputIndex];
+                inputsTxHashes.push(nextInput.hash.reverse().toString("hex"));
+            }
+            let txLeftForInfo = inputsTxHashes.length;
+            // For every prev_tx in every input, get the script and copy it to the unsigned tx
+            // Note: This is necessary now since after 10.9.XX releases, the transaction handed back uses version 2 instead of 1
+            //       Version 2 should only be used in the case of time locks, which they prolly need for atomic swaps, and so decided to force all txs to version 2 rather than just those using time locks
+            //       This is also necessary because Adam and cp 2.0 core devs determined they feel passing `script_pubkey` as has been done for 10+ years is now considered a "bug"
+            let fixInputsTxs = function(txInfo){
+                var txInput = bitcoinjs.Transaction.fromHex(txInfo);
+                var txInputId = txInput.getId();
+                for(let nextInputIndex in tx.ins){
+                    let nextInput = tx.ins[nextInputIndex];
+                    if (txInputId == nextInput.hash.toString("hex")){
+                        let scriptToCopy = txInput.outs[nextInput.index].script;
+                        nextInput.script = scriptToCopy;
+                        nextInput.hash = nextInput.hash.reverse(); //This is for compatibility with Bitcore
+                        break;
+                    }
+                }
+                txLeftForInfo--;
+                if(txLeftForInfo <= 0){
+                    tx.version = 1; // Make sure the transaction has version 1
+                    let unsignedTx = tx.toHex();
+                    CWBitcore.signRawTransaction(unsignedTx, cwKey, cb);
+                }
+            }
+            // For every input tx hash, request the full tx
+            for (let nextInputHashIndex in inputsTxHashes){
+                let nextInputHash = inputsTxHashes[nextInputHashIndex];
+                getTx(network, nextInputHash, fixInputsTxs)
+            }
         }
     }
 }
@@ -3643,6 +3678,28 @@ function signP2SHTransaction(network, source, destination, unsignedTx, callback)
     var signedHex = dataTx.toHex();
     if(callback)
         callback(signedHex);
+}
+
+// Handle getting a tx for a given tx_hash
+function getTx(network, tx_hash, callback){
+    var data = {
+       method: "getrawtransaction",
+       params: {
+            tx_hash: tx_hash
+        },
+        jsonrpc: "2.0",
+        id: 0
+    };
+    cpRequest(network, data, function(o){
+        if(o && o.result){
+            if (callback){
+                callback(o.result)
+            }
+        } else {
+            if(callback)
+                callback(null);
+        }
+    });
 }
 
 // Handle getting a list of raw UTXOs for a given address
