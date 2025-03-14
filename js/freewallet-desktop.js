@@ -3541,96 +3541,96 @@ function signTransaction(network, source, destination, unsignedTx, callback){
         signHardwareWalletTransaction(network, source, unsignedTx);
     } else {
         var sourceIsBech32 = isBech32(source); //TODO: This should be evaluated for every input
-		
-		var tx       = bitcoinjs.Transaction.fromHex(unsignedTx),
-		    net      = (network=='testnet') ? 'testnet' : 'mainnet',
-		    netName  = (net=='testnet') ? 'testnet' : 'bitcoin', // bitcoinjs
+        
+        var tx       = bitcoinjs.Transaction.fromHex(unsignedTx),
+            net      = (network=='testnet') ? 'testnet' : 'mainnet',
+            netName  = (net=='testnet') ? 'testnet' : 'bitcoin', // bitcoinjs
             network  = bitcoinjs.networks[netName],
-		    privKey  = getPrivateKey(net, source),
-			cwKey = new CWPrivateKey(privKey),
-			txb      = new bitcoinjs.Psbt(network),
-		    keypair  = ECPair.fromWIF(cwKey.getWIF(), network),
-			callback = (typeof callback === 'function') ? callback : false;
-		
-		// Callback to processes response from signRawTransaction()
+            privKey  = getPrivateKey(net, source),
+            cwKey = new CWPrivateKey(privKey),
+            txb      = new bitcoinjs.Psbt(network),
+            keypair  = ECPair.fromWIF(cwKey.getWIF(), network),
+            callback = (typeof callback === 'function') ? callback : false;
+        
+        // Callback to processes response from signRawTransaction()
         var cb = function(e, signedTx){
             if(e)
                 console.log('error =',e);
             if(callback)
                 callback(signedTx);
         }
-		
-		var utxoCb = function(data){
-			var utxoMap = {};
+        
+        var utxoCb = function(data){
+            var utxoMap = {};
             data.forEach(utxo => {
                 utxoMap[utxo.txid] = utxo;
             });
-			
-		    // Handle adding inputs
+            
+            // Handle adding inputs
             for(var i=0; i < tx.ins.length; i++){
-				// We get reversed tx hashes somehow after parsing
-				var nextInput = tx.ins[i]
+                // We get reversed tx hashes somehow after parsing
+                var nextInput = tx.ins[i]
                 var txhash = nextInput.hash.reverse().toString('hex');
                 var prev = utxoMap[txhash];
-				
-				if (prev){
-					if (sourceIsBech32){
-						var prevTx = bitcoinjs.Transaction.fromHex(prev.prev_tx_hex)
+                
+                if (prev){
+                    if (sourceIsBech32){
+                        var prevTx = bitcoinjs.Transaction.fromHex(prev.prev_tx_hex)
                         var prevTxOutput = prevTx.outs[nextInput.index]
-						txb.addInput({
-							hash: prev.txid,
-							index: prev.vout,
-							sequence: 0x00000001,
-							witnessUtxo: {
-								script: prevTxOutput.scriptPubKey,
-								value: prev.value,
-							},
-						})
-					} else {
-						let wholeUtxoHex = bitcoinjs.Buffer.from(prev.prev_tx_hex,"hex")
-						txb.addInput({
-							hash: prev.txid,
-							index: prev.vout,
-							sequence: 0x00000001,
-							nonWitnessUtxo: wholeUtxoHex
-						})
-					}
-				}
-			}
+                        txb.addInput({
+                            hash: prev.txid,
+                            index: prev.vout,
+                            sequence: 0x00000001,
+                            witnessUtxo: {
+                                script: prevTxOutput.scriptPubKey,
+                                value: prev.value,
+                            },
+                        })
+                    } else {
+                        let wholeUtxoHex = bitcoinjs.Buffer.from(prev.prev_tx_hex,"hex")
+                        txb.addInput({
+                            hash: prev.txid,
+                            index: prev.vout,
+                            sequence: 0x00000001,
+                            nonWitnessUtxo: wholeUtxoHex
+                        })
+                    }
+                }
+            }
 
-			// Handle adding outputs
+            // Handle adding outputs
             for(var i=0; i < tx.outs.length; i++){
-				var txout = tx.outs[i];
-				var outputScript = txout.script;
-	
-				txb.addOutput({script:outputScript, value:txout.value});
-			}
-			
-			
-			// Loop through the inputs and sign
-			for (var i=0; i < tx.ins.length; i++) {
-				var txhash = tx.ins[i].hash.toString('hex');
-				if(txhash in utxoMap){
-					var prev = utxoMap[txhash];
-					var redeemScript = undefined;
-					txb.signInput(i, keypair);
-				} else {
-					// Throw error that we couldn't sign tx
-					console.log("Failed to sign transaction: " + "Incomplete SegWit inputs");
-				}
-			}
-			
-			var signedHex = false,
+                var txout = tx.outs[i];
+                var outputScript = txout.script;
+    
+                txb.addOutput({script:outputScript, value:txout.value});
+            }
+            
+            
+            // Loop through the inputs and sign
+            for (var i=0; i < tx.ins.length; i++) {
+                var txhash = tx.ins[i].hash.toString('hex');
+                if(txhash in utxoMap){
+                    var prev = utxoMap[txhash];
+                    var redeemScript = undefined;
+                    txb.signInput(i, keypair);
+                } else {
+                    // Throw error that we couldn't sign tx
+                    console.log("Failed to sign transaction: " + "Incomplete SegWit inputs");
+                }
+            }
+            
+            var signedHex = false,
                 error     = false;
             try {
-				txb.finalizeAllInputs();    
-				signedHex = txb.extractTransaction().toHex(); 
-			} catch(e){
-				error = e;
-			}
-			cb(error, signedHex);
-		}
-		// Get list of utxo
+                txb.finalizeAllInputs();    
+                signedHex = txb.extractTransaction().toHex(); 
+            } catch(e){
+                error = e;
+            }
+            cb(error, signedHex);
+        }
+        // Get list of utxo
         getUtxosWithRawTransactions(net, source, utxoCb);
     }
 }

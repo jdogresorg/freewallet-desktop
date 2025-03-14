@@ -32,9 +32,9 @@ while true; do
     read -p "Browserify bitcoinjs-lib?" yn
     case $yn in
         [Yy]* ) yn="Y"
-				echo "### Browserifying bitcoinjs-lib..."
+                echo "### Browserifying bitcoinjs-lib..."
                 cd $base_dir/browserify_bitcoinjs_lib 
-				npm install
+                npm install
                 npx browserify index.js -o bitcoinjs-lib.js
                 rm $base_dir/build/js/bitcoinjs-lib.min.js
                 npx uglify-js bitcoinjs-lib.js -o $base_dir/build/js/bitcoinjs-lib.min.js
