@@ -15,7 +15,7 @@ nwjs=/Applications/nwjs.app/Contents/MacOS/nwjs
 ###
 
 # Verify we are building on a mac
-if [ "$OSTYPE" != "darwin" ] ; then
+if [ "$OSTYPE" != "darwin" ] && [ "$OSTYPE" != "linux-gnu" ]; then
     echo "Build script is meant to be run on MacOS!"
     exit
 fi
@@ -26,6 +26,24 @@ base_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Extract app name and version from package.json
 app_name=`cat package.json | grep -m1 "name" | awk '{print $2}' | tr -d '",'`
 version=`cat package.json | grep -m1 "version" | awk '{print $2}' | tr -d '",'` 
+
+# Browserify bitcoinjs-lib
+while true; do
+    read -p "Browserify bitcoinjs-lib?" yn
+    case $yn in
+        [Yy]* ) yn="Y"
+				echo "### Browserifying bitcoinjs-lib..."
+                cd $base_dir/browserify_bitcoinjs_lib 
+				npm install
+                npx browserify index.js -o bitcoinjs-lib.js
+                rm $base_dir/build/js/bitcoinjs-lib.min.js
+                npx uglify-js bitcoinjs-lib.js -o $base_dir/build/js/bitcoinjs-lib.min.js
+                break;;
+        [Nn]* ) break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
 
 # Copy files to build directory
 while true; do
