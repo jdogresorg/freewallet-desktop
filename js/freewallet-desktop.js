@@ -2581,7 +2581,7 @@ function cpMultiSecondSend(network, source, destination, memo, memo_is_hex, asse
             if(o && o.result){
                 updateTransactionStatus('pending', 'Signing second counterparty transaction...');
                 // Sign the transaction
-                signP2SHTransaction(network, source, destination, o.result, function(signedTx){
+                signTransaction(network, source, destination, o.result, function(signedTx){
                     if(signedTx){
                         updateTransactionStatus('pending', 'Broadcasting second counterparty transaction...');
                         // Broadcast the transaction
@@ -3533,6 +3533,23 @@ function isHardwareWallet(address){
     return false;
 }
 
+function p2shFinalizer(inputIndex, input, script, isSegwit, isP2SH, isP2WSH){
+    if (isP2SH){
+        const decompiled = bitcoinjs.script.decompile(script);
+        
+        let scriptSig = bitcoinjs.script.compile([
+            input.partialSig[0].signature,
+            input.redeemScript
+        ])
+        
+        return {
+            finalScriptSig: scriptSig
+        };  
+    } else {
+        throw new Error(`Can not finalize input #${inputIndex}. This finalizer is meant for only p2sh inputs`);
+    }
+}
+
 // Handle signing a transaction based on what type of address it is
 function signTransaction(network, source, destination, unsignedTx, callback){
     // Check if this transaction should include a donation
@@ -3540,8 +3557,6 @@ function signTransaction(network, source, destination, unsignedTx, callback){
     if(isHardwareWallet(source)){
         signHardwareWalletTransaction(network, source, unsignedTx);
     } else {
-        var sourceIsBech32 = isBech32(source); //TODO: This should be evaluated for every input
-        
         var tx       = bitcoinjs.Transaction.fromHex(unsignedTx),
             net      = (network=='testnet') ? 'testnet' : 'mainnet',
             netName  = (net=='testnet') ? 'testnet' : 'bitcoin', // bitcoinjs
@@ -3560,41 +3575,91 @@ function signTransaction(network, source, destination, unsignedTx, callback){
                 callback(signedTx);
         }
         
-        var utxoCb = function(data){
-            var utxoMap = {};
-            data.forEach(utxo => {
-                utxoMap[utxo.txid] = utxo;
-            });
-            
+        //Get all prev_txs from inputs
+        var prevTxHashes = []
+        for(var i=0; i < tx.ins.length; i++){
+            var nextInput = tx.ins[i]
+            var txhash = nextInput.hash.reverse().toString('hex'); //bitcoinjs-lib gets tx hashes reversed
+            prevTxHashes.push(txhash)
+        }
+        
+        var rawTransactionCb = function(data){
+            let inputData = []
             // Handle adding inputs
             for(var i=0; i < tx.ins.length; i++){
                 // We get reversed tx hashes somehow after parsing
                 var nextInput = tx.ins[i]
-                var txhash = nextInput.hash.reverse().toString('hex');
-                var prev = utxoMap[txhash];
+                var txhash = nextInput.hash.toString('hex');
+                var prevTxHex = data[txhash]
+                var prevTx = bitcoinjs.Transaction.fromHex(prevTxHex)
+                var prevTxOutput = prevTx.outs[nextInput.index]
                 
-                if (prev){
-                    if (sourceIsBech32){
-                        var prevTx = bitcoinjs.Transaction.fromHex(prev.prev_tx_hex)
-                        var prevTxOutput = prevTx.outs[nextInput.index]
+                inputData[i] = {isP2SH:false} //This will avoid repeating the code to check the input type later
+
+                if (prevTxOutput){
+                    let script = prevTxOutput.script
+                    
+                    //
+                    // P2SH
+                    //
+                    if (script[0] == bitcoinjs.opcodes["OP_HASH160"]
+                      && script[1] == 20
+                      && script[script.length-1] == bitcoinjs.opcodes["OP_EQUAL"]){
+                        let witnessScriptRaw = nextInput.script //Counterparty returns the witness script as the script of the input
+                        let witnessScript = bitcoinjs.script.decompile(witnessScriptRaw)[0]
+                        let wholeUtxoHex = bitcoinjs.Buffer.from(prevTxHex,"hex")
+                        
                         txb.addInput({
-                            hash: prev.txid,
-                            index: prev.vout,
+                            hash: txhash,
+                            index: nextInput.index,
+                            sequence: 0x00000001,
+                            nonWitnessUtxo: wholeUtxoHex,
+                            redeemScript: witnessScript
+                        })
+                        
+                        inputData[i]["isP2SH"] = true
+                    //
+                    // P2WSH
+                    //
+                    } else if (script[0] == bitcoinjs.opcodes["OP_0"]
+                      && script[1] == bitcoinjs.opcodes["OP_PUSHBYTES_32"]){
+                        error = "P2WSH is not supported yet"  
+                    //
+                    // P2TR
+                    //
+                    } else if (script[0] == bitcoinjs.opcodes["OP_1"]){ 
+                        error = "P2TR is not supported yet"  
+                    //
+                    // P2WPKH
+                    //
+                    } else if (script[0] == bitcoinjs.opcodes["OP_0"]
+                      && script[1] == bitcoinjs.opcodes["OP_PUSHBYTES_20"]){
+                
+                
+                        txb.addInput({
+                            hash: txhash,
+                            index: nextInput.index,
                             sequence: 0x00000001,
                             witnessUtxo: {
                                 script: prevTxOutput.scriptPubKey,
                                 value: prev.value,
                             },
                         })
+                    //
+                    // P2PK
+                    //
                     } else {
-                        let wholeUtxoHex = bitcoinjs.Buffer.from(prev.prev_tx_hex,"hex")
+                        let wholeUtxoHex = bitcoinjs.Buffer.from(prevTxHex,"hex")
                         txb.addInput({
-                            hash: prev.txid,
-                            index: prev.vout,
+                            hash: txhash,
+                            index: nextInput.index,
                             sequence: 0x00000001,
                             nonWitnessUtxo: wholeUtxoHex
                         })
                     }
+                } else {
+                    error = "There's no prev output for an input"
+                    cb(error, null)
                 }
             }
 
@@ -3609,29 +3674,29 @@ function signTransaction(network, source, destination, unsignedTx, callback){
             
             // Loop through the inputs and sign
             for (var i=0; i < tx.ins.length; i++) {
-                var txhash = tx.ins[i].hash.toString('hex');
-                if(txhash in utxoMap){
-                    var prev = utxoMap[txhash];
-                    var redeemScript = undefined;
-                    txb.signInput(i, keypair);
-                } else {
-                    // Throw error that we couldn't sign tx
-                    console.log("Failed to sign transaction: " + "Incomplete SegWit inputs");
-                }
+                txb.signInput(i, keypair);
             }
             
             var signedHex = false,
                 error     = false;
             try {
-                txb.finalizeAllInputs();    
+                // Loop through the inputs and finalize them
+                for (var i=0; i < tx.ins.length; i++) {
+                    if (inputData[i]["isP2SH"]){
+                        txb.finalizeInput(i, p2shFinalizer);
+                    } else {
+                        txb.finalizeInput(i);
+                    }
+                }
+                
                 signedHex = txb.extractTransaction().toHex(); 
             } catch(e){
                 error = e;
             }
             cb(error, signedHex);
         }
-        // Get list of utxo
-        getUtxosWithRawTransactions(net, source, utxoCb);
+        // Get list of prev transactions of all inputs
+        getRawTransactions(network, prevTxHashes, rawTransactionCb)
     }
 }
 
