@@ -476,6 +476,9 @@ function addNewWalletAddress(net=1, type='normal'){
     if(type=='taproot'){
         // Coming soon
         label = 'Taproot ' + label;
+        var netname = (net==2) ? 'testnet' : 'bitcoin';
+        let publicKeyXOnly = d.publicKey.slice(1);
+        var address = bitcoinjs.payments.p2tr({ pubkey: publicKeyXOnly, network: bitcoinjs.networks[netname] }).address;
     }
     // Add the address to the wallet
     addWalletAddress(network, address, label, addrtype, idx);
@@ -1690,10 +1693,10 @@ function getSatoshis(amount){
 // Handle checking if addresses is bech32
 function isBech32(addr) {
     try {
-        bitcoinjs.address.fromBech32(addr)
-        return true
+        decoded_address = bitcoinjs.address.fromBech32(addr)
+        return [true, decoded_address.version]
     } catch (e) {
-        return false
+        return [false, -1]
     }
 }
 
@@ -1713,7 +1716,7 @@ function getPrivateKey(network, address, prepend=false){
     // Check any we have a match in imported addresses
     if(FW.WALLET_KEYS[address]){
         priv = FW.WALLET_KEYS[address];
-        if(prepend && isBech32(address))
+        if(prepend && isBech32(address)[0])
             priv = prependStr + priv;
     }
     // Loop through HD addresses trying to find private key
@@ -1732,7 +1735,15 @@ function getPrivateKey(network, address, prepend=false){
             if(a!=address){
                 var netname = (network=='testnet') ? 'testnet' : 'bitcoin';
                 a = bitcoinjs.payments.p2wpkh({ pubkey: d.publicKey.toBuffer(), network: bitcoinjs.networks[netname] }).address;
-                if(a==address){
+                if(a!=address){
+                    a = bitcoinjs.payments.p2tr({ pubkey: d.publicKey.toBuffer().slice(1, 33), network: bitcoinjs.networks[netname] }).address;
+                    
+                    if(a==address){
+                        priv = d.privateKey.toWIF();
+                        if(prepend)
+                            priv = prependStr + priv;
+                    }
+                } else {
                     priv = d.privateKey.toWIF();
                     if(prepend)
                         priv = prependStr + priv;
@@ -2325,6 +2336,9 @@ function updateAddressList(){
             // Match segwit address (Bech32)
             if(type==5 && (item.type==7))
                 typeMatch = true;
+            // Match taproot address (Bech32m)
+            if(type==6 && (item.type==8))
+                typeMatch = true;            
             // Only display if we have both filter and type matches
             if(filterMatch && typeMatch){
                 cnt++;
@@ -3628,7 +3642,16 @@ function signTransaction(network, source, destination, unsignedTx, callback){
                     // P2TR
                     //
                     } else if (script[0] == bitcoinjs.opcodes["OP_1"]){ 
-                        error = "P2TR is not supported yet"  
+                        txb.addInput({
+                            hash: txhash,
+                            index: nextInput.index,
+                            sequence: 0x00000001,
+                            witnessUtxo: {
+                                script: prevTxOutput.scriptPubKey,
+                                value: prev.value,
+                            },
+                            tapInternalKey: keypair.publicKey.slice(1, 33),
+                        })
                     //
                     // P2WPKH
                     //
@@ -5017,8 +5040,8 @@ function displayContextMenu(event){
                 dialogViewAddress(addr);
             }
         }));
-        // Display 'View Private Key' for certain addresses (1=normal, 2=imported, 7=segwit)
-        if([1,2,7].indexOf(info.type)!=-1){
+        // Display 'View Private Key' for certain addresses (1=normal, 2=imported, 7=segwit, 8=taproot)
+        if([1,2,7,8].indexOf(info.type)!=-1){
             mnu.append(new nw.MenuItem({ 
                 label: 'View Private Key',
                 click: function(){ 
