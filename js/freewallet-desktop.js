@@ -3634,7 +3634,7 @@ function signTransaction(network, source, destination, unsignedTx, callback){
             //       Version 2 should only be used in the case of time locks, which they prolly need for atomic swaps, and so decided to force all txs to version 2 rather than just those using time locks
             //       This is also necessary because Adam and cp 2.0 core devs determined they feel passing `script_pubkey` as has been done for 10+ years is now considered a "bug"
             let fixInputsTxs = function(txInfo){
-                var txInput = bitcoinjs.Transaction.fromHex(txInfo);
+                var txInput = bitcoinjs.Transaction.fromHex(txInfo.hex);
                 var txInputId = txInput.getId();
                 for(let nextInputIndex in tx.ins){
                     let nextInput = tx.ins[nextInputIndex];
@@ -3688,10 +3688,8 @@ function signP2SHTransaction(network, source, destination, unsignedTx, callback)
 // Handle getting a tx for a given tx_hash
 function getTx(network, tx_hash, callback){
     var data = {
-       method: "getrawtransaction",
-       params: {
-            tx_hash: tx_hash
-        },
+        type: 'GET',
+        endpoint: '/v2/bitcoin/transactions/' + tx_hash,
         jsonrpc: "2.0",
         id: 0
     };
@@ -3711,9 +3709,9 @@ function getTx(network, tx_hash, callback){
 function getUTXOs(network, address, callback){
     var utxos = [];
     var data = {
-       method: "get_unspent_txouts",
-       params: {
-            address: address,
+        type: 'GET',
+        endpoint: '/v2/bitcoin/addresses/' + address + '/utxos',
+        params: {
             unconfirmed: true
         },
         jsonrpc: "2.0",
