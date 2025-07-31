@@ -47,7 +47,7 @@ function generateTransaction(callback=null, broadcast=false){
         escrow_sat = getSatoshis(vals['escrow-amount']),
         give_sat   = getSatoshis(vals['give-amount']),
         fee_sat    = getSatoshis(vals['fee-amount']),
-        btc_sat    = (oracle!='') ? parseInt(numeral(vals['fiat-amount']).multiply(100).value()) : parseInt(numeral(vals['btc-amount']).multiply(100000000).value()),
+        btc_sat    = (oracle!='') ? parseInt(numeral(vals['fiat-amount']).multiply(100).value()) : parseInt(String(vals['btc-amount']).replace(',','').replace('.','')),
         asset      = vals.name, 
         status     = 0, // Hardcode to open for creating a dispenser... can close via dispensers interface
         command = (broadcast) ? 'cpDispenser' : 'createDispenser';
