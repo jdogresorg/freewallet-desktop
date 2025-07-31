@@ -237,7 +237,8 @@ function setExplorerAPI( network ){
 // Handle getting Counterparty API information
 function setCounterpartyAPI(network){
     var data = {
-       method: "get_running_info",
+        type: 'GET',
+        endpoint: '/v2/',
         jsonrpc: "2.0",
         id: 0
     };
