@@ -33,9 +33,10 @@ function generateTransaction(callback=null, broadcast=false){
         network   = (FW.WALLET_NETWORK==2) ? 'testnet' : 'mainnet',
         amt_sat   = getSatoshis(vals.amount),
         fee_sat   = getSatoshis(vals['fee-amount']),
-        command   = (broadcast) ? 'cpDestroy' : 'createDestroy';
+        command   = (broadcast) ? 'cpDestroy' : 'createDestroy',
+        amount    = numeral(vals.amount).value();
     // Only make call to API to generate transaction if we have required fields
-    if(vals.amount>0){
+    if(amount>0){
         eval(command)(network, vals.source, vals.name, amt_sat, vals.memo, fee_sat, callback);
     } else {
         if(callback)
