@@ -1,3 +1,9 @@
+Version 2.0.4 - August 1st, 2025
+- migrated `get_running_info` to v2 API
+- migrated `getrawtransaction` and `get_unspent_utxos` to v2 API
+- fixed issue with `off by one satoshi` problem in dispensers
+- fixed issue with dispenser form not working with quantities over 999
+
 Version 2.0.3 - Febuary 3rd, 2025
 - Revert to using nwjs.io v0.92.0 for builds (fixes right-click issues)
 

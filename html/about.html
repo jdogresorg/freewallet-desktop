@@ -57,7 +57,7 @@ $(document).ready(function(){
 
     // Set the FreeWallet and API version information
     var fw_version = (is_nwjs()) ? nw.App.manifest.version : 'Development Build',
-        cp_version = apiInfo.version_major + '.' + apiInfo.version_minor + '.' + apiInfo.version_revision;
+        cp_version = apiInfo.version;
 
     // Display current version number
     $('#fw_version').html(fw_version);
