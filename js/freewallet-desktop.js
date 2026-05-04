@@ -2229,21 +2229,26 @@ function loadAssetInfo(asset){
 
 // Function to handle requesting extended asset info (if any) and updating page with extended info
 function loadExtendedInfo(data){
-    var json  = /^(.*).json/i,
-        http  = /^http:\/\//,
-        https = /^https:\/\//,
-        ord   = /^ord:/i,
-        ipfs  = /^ipfs:/i,
-        desc  = data.description,
-        arr   = desc.split(';');
+    var json    = /^(.*).json/i,
+        http    = /^http:\/\//,
+        https   = /^https:\/\//,
+        ord     = /^ord:/i,
+        ipfs    = /^ipfs:/i,
+        ar      = /^ar:/i,
+        arweave = /^https?:\/\/arweave\.net\//i,
+        desc    = data.description;
+    // Rescue arweave URLs that used the legacy "/x.json" trick (gateway no longer accepts random suffixes)
+    if(typeof desc === 'string')
+        desc = desc.replace(/^(https?:\/\/arweave\.net\/[^\/?#]+)\/x\.json$/i, '$1');
+    var arr = desc.split(';');
     // Handle displaying green banner for any projects
     if(data.projects && data.projects.length)
         showProjectInfo(data);
     // Use cached JSON if we have it
     if(data.json)
         showExtendedAssetInfo(data.json);
-    // Handle loading any JSON, IPFS, Ordinals content
-    if(json.test(desc) || ipfs.test(desc) || ord.test(desc)){
+    // Handle loading any JSON, IPFS, Ordinals, Arweave content
+    if(json.test(desc) || ipfs.test(desc) || ord.test(desc) || ar.test(desc) || arweave.test(desc)){
         if(ipfs.test(desc)){
             url = 'https://ipfs.io/ipfs/' + String(desc).replace(ipfs,'');
         } else if(ord.test(desc)){
@@ -2251,6 +2256,10 @@ function loadExtendedInfo(data){
             if(hash.length!=64)
                 hash = base64ToHex(hash);
             url = 'https://inscription-decoder.vercel.app/api/image?type=json&tx=' + hash;
+        } else if(ar.test(desc)){
+            url = 'https://arweave.net/' + String(desc).replace(ar,'');
+        } else if(arweave.test(desc)){
+            url = desc;
         } else {
             url = 'https://' + arr[0].replace('https://','').replace('http://','');
         }
