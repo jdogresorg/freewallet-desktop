@@ -6085,6 +6085,10 @@ function stripHtml(html){
 function legacyJsonToCip25(o){
     var json = {},
         o    = (o) ? o : {};
+    // Map a top-level "icon" field (a common typo for "image" in community
+    // JSONs) onto image so the rest of the pipeline picks it up.
+    if(o.icon)
+        o.image = o.icon;
     // Pass basic asset info fields forward
     ['asset','description','image','website','pgpsig','name'].forEach(function(name){ if(o[name]) json[name]=o[name]; });
     // Owner fields
