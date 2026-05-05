@@ -6084,11 +6084,19 @@ function stripHtml(html){
 // https://github.com/CounterpartyXCP/cips/blob/master/cip-0025.md
 function legacyJsonToCip25(o){
     var json = {},
+        ipfs = /^ipfs:\/\//i,
+        ar   = /^ar:/i,
         o    = (o) ? o : {};
     // Map a top-level "icon" field (a common typo for "image" in community
     // JSONs) onto image so the rest of the pipeline picks it up.
     if(o.icon)
         o.image = o.icon;
+    // Replace any ipfs:// urls with the URL provided by Shaban of Spells of Genesis
+    if(ipfs.test(o.image))
+        o.image = 'https://ipfsc.crystalsuite.com/' + String(o.image).replace(ipfs,'');
+    // Replace any ar: urls with the arweave.net gateway
+    if(ar.test(o.image))
+        o.image = 'https://arweave.net/' + String(o.image).replace(ar,'');
     // Pass basic asset info fields forward
     ['asset','description','image','website','pgpsig','name'].forEach(function(name){ if(o[name]) json[name]=o[name]; });
     // Owner fields
@@ -6147,6 +6155,13 @@ function legacyJsonToCip25(o){
         json.images.push({ type: 'large', name: o.image_title, data: o.image_large });
     if(o.image_large_hd)
         json.images.push({ type: 'hires', name: o.image_title, data: o.image_large_hd });
+    // Loop through images and rewrite any ipfs:// or ar: URLs to gateway URLs
+    json.images.forEach(function(item){
+        if(ipfs.test(item.data))
+            item.data = 'https://ipfsc.crystalsuite.com/' + String(item.data).replace(ipfs,'');
+        if(ar.test(item.data))
+            item.data = 'https://arweave.net/' + String(item.data).replace(ar,'');
+    });
     // Audio
     json.audio = (typeof o.audio === 'object') ? o.audio : [];
     if(o.audio!='' && typeof o.audio === 'string')
@@ -6415,7 +6430,7 @@ function showExtendedInfo(o){
     }
     // Use older "image" param if we couldn't find icon in the CIP25 images array
     if(!icon && o.image)
-        icon = i.image;
+        icon = o.image;
     // Handle displaying asset icon image
     if(icon)
         setAssetIcon(icon);
@@ -6603,15 +6618,14 @@ function showAssetArtwork(o){
     // console.log('title=',title);
 }
 
-// Handle loading remote image icon
+// Handle loading remote image icon. Sets the IMG src directly so any image
+// URL works (ipfs gateway, arweave, imgur, etc.). The previous $.get-then-
+// base64 pattern was broken: $.get fetches the raw image bytes and the
+// "data:image/png;base64,<binary>" wrapper would have produced a malformed
+// data URL. IMG tags don't have a CORS issue for display.
 function setAssetIcon(image){
-    var url = image;
-    // var url = relay + image;
-    // var url = FW.EXPLORER_API + '/relay?url=' + image;
-    $.get( url, function(data){
-        if(String(data).trim().length)
-            $('#assetIcon').attr('src', 'data:image/png;base64,' + data);
-    });
+    if(image)
+        $('#assetIcon').attr('src', image);
 }
 
 // Function to handle converting a base64 string to a hex
