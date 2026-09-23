@@ -10,12 +10,19 @@
 let bitcoin = require('bitcoinjs-lib');
 
 // Handle initializing a connection to Trezor Connect
+//
+// Trezor Safe 7 is only supported through the "Connect flow in Trezor Suite"
+// (Trezor Connect >= 9.6.0). That flow requires `manifest.appName`; without it
+// Connect can't hand the request to a running Trezor Suite and falls back to the
+// legacy browser popup, which does not support Safe 7 devices.
+// See https://connect.trezor.io/9/guides/new-connect-flow-in-trezor-suite/
 function initTrezor(){
     TrezorConnect.init({
         lazyLoad: true,
         manifest: {
             email: 'j-dog@j-dog.net',
-            appUrl: 'http://freewallet.io',
+            appName: 'FreeWallet',
+            appUrl: 'https://freewallet.io',
         }
     });
 }
@@ -38,30 +45,17 @@ function isValidTransaction(unsignedTx, signedTx){
     return v;
 }
 
+// Handle returning the Trezor script type for an output
+// Trezor Connect requires every output given by address to use PAYTOADDRESS
+// (the device derives the actual script from the address itself), so this only
+// checks that the output decodes to an address at all.
 function scriptTypeFromOutputScript(output, network) {
-  network = network || bitcoin.networks.bitcoin;
-  try {
-    payments.p2pkh({ output, network }).address;
-    return "PAYTOADDRESS"
-  } catch (e) {}
-  try {
-    payments.p2sh({ output, network }).address;
-    return null //no support yet
-  } catch (e) {}
-  try {
-    payments.p2wpkh({ output, network }).address;
-    return "PAYTOWITNESS"
-  } catch (e) {}
-  try {
-    payments.p2wsh({ output, network }).address;
-    return null //no support yet
-  } catch (e) {}
-  try {
-    payments.p2tr({ output, network }).address;
-    return null //no support yet
-  } catch (e) {}
-  
-  return null
+    network = network || bitcoin.networks.bitcoin;
+    try {
+        bitcoin.address.fromOutputScript(output, network);
+        return "PAYTOADDRESS";
+    } catch (e) {}
+    return null;
 }
 
 // Handle signing a transaction
