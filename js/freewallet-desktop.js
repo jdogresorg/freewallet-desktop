@@ -5219,6 +5219,25 @@ function autoCollapseTabs(rerun=false){
         autoCollapseTabs(true);
 }
 
+// Calculate how many market rows fit on screen for whichever markets view is
+// currently in the DOM. Returns null (never NaN) when no markets view is present,
+// so stale callbacks / resize handlers can't feed a bad value into DataTables.
+function getMarketsRowCount(){
+    var el, offset, row;
+    if($('#markets-small').length){
+        el = $('#market-sidemenu-container'); offset = 380; row = 25; // sidebar list on market page
+    } else if($('#markets').length){
+        el = $('#markets'); offset = 110; row = 31;                   // full markets page
+    } else {
+        return null;
+    }
+    var height = el.height(),
+        rows   = parseInt((height - offset) / row);
+    if(!isFinite(rows))
+        return null;
+    return Math.max(rows, 5);
+}
+
 // Handle updating the base market pairs
 function updateBaseMarkets(force){
     var last   = FW.EXCHANGE_MARKETS['last_updated'] || 0,
@@ -5269,8 +5288,12 @@ function updateMarkets(market, page, full, callback){
 // Handle initializing/updating the markets tables
 function updateMarketsView(market){
     var small = ($('#markets-small').length) ? true : false,
-        table = $('#' + market + ' table.datatable').DataTable(FW.MARKETS_DATATABLE_CONFIG),
+        el    = $('#' + market + ' table.datatable'),
         rows  = getMarketsRowCount();
+    // Nothing to do if the markets view (or this market's table) is no longer on screen
+    if(!el.length || rows===null)
+        return;
+    var table = el.DataTable(FW.MARKETS_DATATABLE_CONFIG);
     // Define some random records/data for testing
     var data = [];
     // Handle looking up all market pairs for the given market
@@ -5808,11 +5831,16 @@ function updateMarketChartData(market, page, full, callback){
 
 // Handle calculating the number of rows we can fit on screen
 function getDispensersRowCount(){
-    var height = $('#dispensers-lists').height(),
+    var el = $('#dispensers-lists');
+    if(!el.length)
+        return null; // dispensers view not on screen
+    var height = el.height(),
         offset = 110, // offset for header/footer
         row    = 31,  // height of 1 row in data
         rows   = parseInt((height - offset) / row);
-    return rows;
+    if(!isFinite(rows))
+        return null;
+    return Math.max(rows, 5);
 }
 
 // Handle adding a market tab and content table
@@ -5885,7 +5913,11 @@ function updateDispensersView(id, query, force){
             data.push([name, o.escrow_quantity, o.give_quantity, o.give_remaining, o.satoshi_price, o.status, o.tx_hash, asset, o.source]);
         });
         try {
-            var table = $(tid + ' table.datatable').DataTable(FW.DISPENSERS_DATATABLE_CONFIG);
+            var el = $(tid + ' table.datatable');
+            // Bail if the dispensers view is no longer on screen (stale async callback)
+            if(!el.length || rows===null)
+                return;
+            var table = el.DataTable(FW.DISPENSERS_DATATABLE_CONFIG);
         } catch(e){
             console.log('error e,table=',e,table);
         }

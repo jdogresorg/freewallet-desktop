@@ -724,10 +724,10 @@ $(document).ready(function(){
         lastHeight = 0,
         lastRows   = 0;
 
-    // Unbind the event to prevent duplicate listeners
-    $(window).unbind('resize');
+    // Remove resize handlers left behind by other pages, then bind ours (namespaced)
+    $(window).off('resize.fw');
     // Detect any window resizes and resize datatables to fit 
-    $(window).resize($.debounce(10,function(e){
+    $(window).on('resize.fw', $.debounce(10,function(e){
         var win    = $(window),
             height = win.height(),
             width  = win.width();
@@ -740,7 +740,7 @@ $(document).ready(function(){
         // Try to fit max amount of rows on screen (vertically)
         if(height!=lastHeight && $('#markets-small').length){
             var rows = getMarketsRowCount();
-            if(rows!=lastRows){
+            if(rows!==null && rows!=lastRows){
                 lastRows = rows;
                 $('#markets-small .datatable').each(function(idx, el){
                     $(this).DataTable().page.len(rows).draw();

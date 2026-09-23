@@ -363,11 +363,11 @@ $(document).ready(function(){
     // Display BTC asset info
     loadAssetInfo('BTC');
 
-    // Unbind the event to prevent duplicate listeners
-    $(window).unbind('resize');
+    // Remove resize handlers left behind by other pages, then bind ours (namespaced)
+    $(window).off('resize.fw');
 
     // Detect any window resizes and resize datatables to fit 
-    $(window).resize($.debounce(10,function(e){
+    $(window).on('resize.fw', $.debounce(10,function(e){
         var el    = $('#asset-info .panel-heading'),
             height = el.height(),
             width  = el.width();
