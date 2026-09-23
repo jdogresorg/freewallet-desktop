@@ -83,7 +83,7 @@ FW.DISPENSERS_DATATABLE_CONFIG = {
     dom: '<"datatable-options text-center"<"pull-left"><"pull-right"i>p>t',
     destroy: true, // automatically destroy and re-create this datatable if it has already been initialized
     deferRender: true,
-    pageLength: getDispensersRowCount(),
+    pageLength: getDispensersRowCount() || 10,
     pagingType: "full",
     autoWidth: false,
     order: dtDispensersSortOrder,
@@ -276,10 +276,13 @@ $(document).ready(function(){
         lastHeight = 0,
         lastRows   = 0;
 
-    // Unbind the event to prevent duplicate listeners
-    $(window).unbind('resize');
+    // Remove resize handlers left behind by other pages, then bind ours (namespaced)
+    $(window).off('resize.fw');
     // Detect any window resizes and resize datatables to fit 
-    $(window).resize($.debounce(10,function(e){
+    $(window).on('resize.fw', $.debounce(10,function(e){
+        // Ignore if the dispensers page has been navigated away from
+        if(!$('#dispensers-lists').length)
+            return;
         var win    = $(window),
             height = win.height(),
             width  = win.width();
@@ -289,9 +292,9 @@ $(document).ready(function(){
         // Try to fit max amount of rows on screen (vertically)
         if(height!=lastHeight){
             var rows = getDispensersRowCount();
-            if(rows!=lastRows){
+            if(rows!==null && rows!=lastRows){
                 lastRows = rows;
-                $('.datatable').each(function(idx, el){
+                $('#dispensers-lists .datatable').each(function(idx, el){
                     $(this).DataTable().page.len(rows).draw();
                 });
             }

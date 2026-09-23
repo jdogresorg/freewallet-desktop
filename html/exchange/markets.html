@@ -59,14 +59,7 @@
 // Setup alias for localStorage
 var ls = localStorage;
 
-// Handle calculating the number of rows we can fit on screen
-function getMarketsRowCount(){
-    var height = $('#markets').height(),
-        offset = 110, // offset for header/footer
-        row    = 31,  // height of 1 row in data
-        rows   = parseInt((height - offset) / row);
-    return rows;
-}
+// NOTE: getMarketsRowCount() now lives in js/freewallet-desktop.js (shared, DOM-aware)
 
 // Handle adding a market tab and content table
 function addMarket(market){
@@ -103,7 +96,7 @@ FW.MARKETS_DATATABLE_CONFIG = {
     dom: '<"datatable-options text-center"<"market-name"><"market-volume">p>t',
     destroy: true, // automatically destroy and re-create this datatable if it has already been initialized
     deferRender: true,
-    pageLength: getMarketsRowCount(),
+    pageLength: getMarketsRowCount() || 10,
     pagingType: "full",
     autoWidth: false,
     order: dtMarketsSortOrder,
@@ -286,10 +279,13 @@ $(document).ready(function(){
         lastHeight = 0,
         lastRows   = 0;
 
-    // Unbind the event to prevent duplicate listeners
-    $(window).unbind('resize');
+    // Remove resize handlers left behind by other pages, then bind ours (namespaced)
+    $(window).off('resize.fw');
     // Detect any window resizes and resize datatables to fit 
-    $(window).resize($.debounce(10,function(e){
+    $(window).on('resize.fw', $.debounce(10,function(e){
+        // Ignore if the markets page has been navigated away from
+        if(!$('#markets').length)
+            return;
         var win    = $(window),
             height = win.height(),
             width  = win.width();
@@ -299,9 +295,9 @@ $(document).ready(function(){
         // Try to fit max amount of rows on screen (vertically)
         if(height!=lastHeight){
             var rows = getMarketsRowCount();
-            if(rows!=lastRows){
+            if(rows!==null && rows!=lastRows){
                 lastRows = rows;
-                $('.datatable').each(function(idx, el){
+                $('#markets .datatable').each(function(idx, el){
                     $(this).DataTable().page.len(rows).draw();
                 });
             }
